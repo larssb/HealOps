@@ -2,7 +2,7 @@
     .SYNOPSIS
         Ensures that Citrix services are running.
 #>
-Configuration StartCitrixServices
+Configuration HealCitrixServices
 {
     Import-DscResource -Name MSFT_xServiceResource -ModuleName xPSDesiredStateConfiguration
 
