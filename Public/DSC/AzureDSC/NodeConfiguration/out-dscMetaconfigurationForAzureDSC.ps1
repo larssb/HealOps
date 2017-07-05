@@ -6,7 +6,7 @@
 #####################
 # PUBLIC FUNCTIONS - START #
 #####################
-function out-dscMetaconfiguration() {
+function out-dscMetaconfigurationForAzureDSC() {
 <#
 .DESCRIPTION
     Helper function to create the required meta configuration file to apply to nodes that you want
@@ -21,7 +21,7 @@ function out-dscMetaconfiguration() {
 .PARAMETER azureAutomationURL
     The URL of your Azure automation account.
 .PARAMETER computerToOnboard
-
+    The computer or computers to onboard to Azure automation DSC.
 .EXAMPLE
     C:\PS>
     <Description of example>
@@ -35,7 +35,7 @@ function out-dscMetaconfiguration() {
         [Parameter(Mandatory=$true, ParameterSetName="default", HelpMessage="The URL of your Azure automation account.")]
         [ValidateNotNullOrEmpty()]
         $azureAutomationURL,
-        [Parameter(Mandatory=$true, ParameterSetName="default", HelpMessage="The computer")]
+        [Parameter(Mandatory=$true, ParameterSetName="default", HelpMessage="The computer or computers to onboard to Azure automation DSC.")]
         [ValidateNotNullOrEmpty()]
         [string[]]$computerToOnboard
     )
@@ -44,7 +44,7 @@ function out-dscMetaconfiguration() {
     # PREP
     ####
     # Import the private DscMetaConfigs script. The DSConfiguration that creates the metaconfiguration
-    . $PSScriptRoot\..\..\..\Private\DscMetaConfigs.ps1;
+    . $PSScriptRoot\..\..\..\Private\DSC\AzureDSC\NodeConfiguration\DscMetaConfigs.ps1;
 
     ####
     # Execution
@@ -54,7 +54,8 @@ function out-dscMetaconfiguration() {
         RegistrationUrl = $azureAutomationURL;
         RegistrationKey = $azureAutomationRegistrationKey;
         ComputerName = @($computerToOnboard);
-        NodeConfigurationName = 'SimpleConfig.webserver';
+        #NodeConfigurationName = 'SimpleConfig.webserver';
+        NodeConfigurationName = 'healOps.AzureAutomationDSC';
         RefreshFrequencyMins = 30;
         ConfigurationModeFrequencyMins = 15;
         RebootNodeIfNeeded = $False;
@@ -67,9 +68,6 @@ function out-dscMetaconfiguration() {
     # Generate the mof
     DscMetaConfigs @params;
 }
-
-
-
 ###################
 # PUBLIC FUNCTIONS - END #
 ####################
