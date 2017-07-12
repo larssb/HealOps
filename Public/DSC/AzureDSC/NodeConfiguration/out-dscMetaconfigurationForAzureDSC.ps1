@@ -62,11 +62,13 @@ function out-dscMetaconfigurationForAzureDSC() {
         AllowModuleOverwrite = $False;
         ConfigurationMode = 'ApplyAndMonitor';
         ActionAfterReboot = 'ContinueConfiguration';
-        ReportOnly = $False;  # Set to $True to have machines only report to AA DSC but not pull from it
+        ReportOnly = $False;  # Set to $True to have machines only report to a DSC but not pull from it
     }
 
     # Generate the mof
     DscMetaConfigs @params;
+
+    # .
 }
 ###################
 # PUBLIC FUNCTIONS - END #
