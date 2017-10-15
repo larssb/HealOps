@@ -27,7 +27,7 @@ Configuration heal_CitrixServicesProvisioningRole
         DependsOn = "[xPowerShellExecutionPolicy]ExecutionPolicy"
     }
 
-        xService citrixService_soapserver
+    xService citrixService_soapserver
     {
         Name   = 'soapserver'
         Ensure = 'Present'
@@ -35,7 +35,7 @@ Configuration heal_CitrixServicesProvisioningRole
         DependsOn = "[xPowerShellExecutionPolicy]ExecutionPolicy"
     }
 
-        xService citrixService_StreamService
+    xService citrixService_StreamService
     {
         Name   = 'StreamService'
         Ensure = 'Present'
@@ -43,7 +43,7 @@ Configuration heal_CitrixServicesProvisioningRole
         DependsOn = "[xPowerShellExecutionPolicy]ExecutionPolicy"
     }
 
-        xService citrixService_BNTFTP
+    xService citrixService_BNTFTP
     {
         Name   = 'BNTFTP'
         Ensure = 'Present'
@@ -51,7 +51,7 @@ Configuration heal_CitrixServicesProvisioningRole
         DependsOn = "[xPowerShellExecutionPolicy]ExecutionPolicy"
     }
 
-        xService citrixService_PVSTSB
+    xService citrixService_PVSTSB
     {
         Name   = 'PVSTSB'
         Ensure = 'Present'

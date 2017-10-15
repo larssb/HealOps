@@ -39,23 +39,20 @@ Configuration DscMetaConfigs
         [Boolean]$ReportOnly
     )
 
-    if (!$NodeConfigurationName -or $NodeConfigurationName -eq "") {
-        $ConfigurationNames = $null
-    }
-    else {
-        $ConfigurationNames = @($NodeConfigurationName)
+    if ($NodeConfigurationName -eq $false -or $NodeConfigurationName -eq "") {
+        $ConfigurationNames = $null;
+    } else {
+        $ConfigurationNames = @($NodeConfigurationName);
     }
 
     if ($ReportOnly) {
-        $RefreshMode = "PUSH"
-    }
-    else {
-        $RefreshMode = "PULL"
+        $RefreshMode = "PUSH";
+    } else {
+        $RefreshMode = "PULL";
     }
 
     Node $ComputerName
     {
-
         Settings {
             RefreshFrequencyMins           = $RefreshFrequencyMins
             RefreshMode                    = $RefreshMode
@@ -66,7 +63,7 @@ Configuration DscMetaConfigs
             ConfigurationModeFrequencyMins = $ConfigurationModeFrequencyMins
         }
 
-        if (!$ReportOnly) {
+        if ($ReportOnly -eq $false) {
             ConfigurationRepositoryWeb AzureAutomationDSC {
                 ServerUrl          = $RegistrationUrl
                 RegistrationKey    = $RegistrationKey
