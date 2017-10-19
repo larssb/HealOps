@@ -41,7 +41,7 @@ function register-OnPremNodeToAzureDSC() {
     if (Test-Path -Path $path) {
         Set-DscLocalConfigurationManager -Path $path -ComputerName $computername;
     } else {
-        throw "- The path specified could be verified.";
+        throw "- The path specified could not be verified.";
     }
 }
 
