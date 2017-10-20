@@ -1,5 +1,8 @@
 Describe "Sitecore instance healthy" {
-    It "The Sitecore website returns HTTP200" {
+    <#
+        - Test that the Sitecore website instance is ready
+    #>
+    It "The Sitecore should return HTTP200" {
         <#
             - Set webrequest variables
 
@@ -22,6 +25,9 @@ Describe "Sitecore instance healthy" {
         $webReq.StatusCode | Should be "200";
     }
 
+    <#
+        - Test that the W3WP is not CPU exhausting the server
+    #>
     It "W3WP IIS process usage should be below 80% over a 5minute period" {
         # Do the measurement
         $cpuPercentMeasures = Get-Counter -ComputerName localhost -Counter '\Process(w3wp)\% Processor Time' -MaxSamples 10 -SampleInterval 1 `
@@ -43,15 +49,87 @@ Describe "Sitecore instance healthy" {
         $cpuPercentagesEnumerator = $cpuPercentages.GetEnumerator();
         $sortedCpuPercentages = $cpuPercentagesEnumerator | Sort-Object Value;
 
-        write-host "Just checking > $($sortedCpuPercentages.value)"
-
         # Find the median
         $cpuPercentageMedian = $sortedCpuPercentages.Get(5); # 29 is our median number as we are doing 59 samples.
 
         # Determine the result of the test
         $cpuPercentageMedian.value | Should BeLessThan 80;
     }
+
+    <#
+        - Test that there is enough diskspace left
+    #>
+    It "All available drives should have 10GB or more diskspace left" {
+        # Get the local drives
+        $localDrives = Get-PSDrive -PSProvider FileSystem | Where-Object { $null -eq $_.DisplayRoot };
+
+        # Measure if above freespace threshold
+        foreach ($drive in $localDrives) {
+            $freeSpaceOkay = $drive.Free/1GB -gt 10;
+        }
+
+        # Determine the result of the test
+        $freeSpaceOkay | Should Be $true;
+    }
+
+    <#
+        - Test that the Octopus Deploy tentacle agent is running
+    #>
+    It "The Octopus Deploy tentacle agent should be running" {
+        # Define general variables
+        $octopusDeployTentacleURI = "https://localhost:10933/";
+
+    $definition = @"
+    using System.Collections.Generic;
+    using System.Net;
+    using System.Net.Security;
+    using System.Security.Cryptography.X509Certificates;
+
+    public static class SSLValidator
+    {
+        private static Stack<System.Net.Security.RemoteCertificateValidationCallback > funcs = new Stack<System.Net.Security.RemoteCertificateValidationCallback>();
+
+        private static bool OnValidateCertificate(object sender, X509Certificate certificate, X509Chain chain,
+                                                    SslPolicyErrors sslPolicyErrors)
+        {
+            return true;
+        }
+
+        public static void OverrideValidation()
+        {
+            funcs.Push(ServicePointManager.ServerCertificateValidationCallback);
+            ServicePointManager.ServerCertificateValidationCallback =
+                OnValidateCertificate;
+        }
+
+        public static void RestoreValidation()
+        {
+            if (funcs.Count > 0) {
+                ServicePointManager.ServerCertificateValidationCallback = funcs.Pop();
+            }
+        }
+    }
+"@
+
+        <#[System.Net.ServicePointManager]::ServerCertificateValidationCallback = (New-ScriptBlockCallback -Callback {
+            new-item C:\Options\test.txt;
+            Set-Content C:\Options\test.txt -Value "sjovt";
+         });
+         #>
+        #[System.Net.ServicePointManager]::ServerCertificateValidationCallback = function hej { return $true }; hej;
+#[System.Net.ServicePointManager]::ServerCertificateValidationCallback = function hej { return $true }; hej;
+
+        # Request the Octopus Deploy Tentacle endpoint
+        add-type $definition;
+        [SSLValidator]::OverrideValidation();
+        $request = Invoke-WebRequest -Uri $octopusDeployTentacleURI -Method Get;
+        [SSLValidator]::RestoreValidation();
+
+        # Determine the result of test
+        $request.StatusCode | Should Be 200;
+    }
 }
+
 
 
 
