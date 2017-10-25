@@ -16,9 +16,11 @@ Describe "Sitecore instance healthy" {
 
         # request the endpoint
         try {
-            $webReq = Invoke-WebRequest -Uri $uri -Method Get;
+            $webReq = Invoke-WebRequest -Uri $uri -Method Get -UseBasicParsing;
         } catch {
             $webReq = "requestFailed";
+
+            "The error was > $_ " | Add-Content -Path $PSScriptRoot\log.txt -Encoding UTF8;
         }
 
         # Determine the result of the test
@@ -122,12 +124,20 @@ Describe "Sitecore instance healthy" {
         # Request the Octopus Deploy Tentacle endpoint
         add-type $definition;
         [SSLValidator]::OverrideValidation();
-        $request = Invoke-WebRequest -Uri $octopusDeployTentacleURI -Method Get;
+        try {
+            $request = Invoke-WebRequest -Uri $octopusDeployTentacleURI -Method Get -UseBasicParsing;
+        } catch {
+            "The Octopus Deploy webrequest call falied. The error was > $_ " | Add-Content -Path $PSScriptRoot\log.txt -Encoding UTF8;
+        }
         [SSLValidator]::RestoreValidation();
 
         # Determine the result of test
         $request.StatusCode | Should Be 200;
     }
+
+    <#
+        - Test for IIS logs over 30days
+    #>
 }
 
 

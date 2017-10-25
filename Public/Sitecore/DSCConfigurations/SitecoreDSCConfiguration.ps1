@@ -3,9 +3,9 @@
         WRITE_HERE
 #>
 Configuration heal_sitecore {
-    Import-DscResource -ModuleName sitecore_DSCResource;
+    Import-DscResource -ModuleName SitecoreDSCResource;
 
-    sitecore_DSCResource sitecoreInstance {
+    SitecoreDSCResource sitecoreInstance {
         dsSitecoreInstance = "localhost";
         Ensure = "Answering"
     }
