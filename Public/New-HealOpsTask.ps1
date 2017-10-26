@@ -1,11 +1,5 @@
-###################
-# FUNCTION - PREP #
-###################
-#Requires -
+##Requires -
 
-####################
-# FUNCTION - START #
-####################
 function New-HealOpsTask() {
 <#
 .DESCRIPTION
@@ -30,15 +24,12 @@ function New-HealOpsTask() {
     [CmdletBinding()]
     [OutputType([SPECIFY_THE_RETURN_TYPE_OF_THE_FUNCTION_HERE])]
     param(
-        [Parameter(Mandatory=$, ParameterSetName="NAME", HelpMessage="MESSAGE")]
+        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="Used to name the task.")]
         [ValidateNotNullOrEmpty()]
-        $
+        $name
     )
 
     #############
     # Execution #
     #############
 }
-##################
-# FUNCTION - END #
-##################

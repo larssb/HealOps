@@ -4,3 +4,5 @@
 ####################
 # Files to ignore  #
 *.mof
+*.txt
+*.log

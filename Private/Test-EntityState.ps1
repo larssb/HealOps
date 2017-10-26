@@ -1,9 +1,9 @@
 function Test-EntityState() {
 <#
 .DESCRIPTION
-    Long description
+    Uses OVF to invoke Pester tests on a specific Tests file. Provided via the TestFilePath parameter.
 .INPUTS
-    Inputs (if any)
+    <none>
 .OUTPUTS
     Either:
         a) A System.Array containing the failed OVF test/s or
@@ -13,14 +13,13 @@ function Test-EntityState() {
 .EXAMPLE
     PS C:\> <example usage>
     Explanation of what the example does
-.PARAMETER NAME_OF_THE_PARAMETER_WITHOUT_THE_QUOTES
-    Parameter HelpMessage text
-    Add a .PARAMETER per parameter
+.PARAMETER TestFilePath
+    A file containig the Pester tests to run. This should be a full-path to a file.
 #>
 
     # Define parameters
     [CmdletBinding()]
-    [OutputType([System.Array])]
+    [OutputType([Array])]
     param(
         [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="A file containig the Pester tests to run. This should be a full-path to a file.")]
         [ValidateNotNullOrEmpty()]
@@ -32,7 +31,7 @@ function Test-EntityState() {
     #############
     try {
         # Run the tests with OVF
-        $ovfOutput = Invoke-OperationValidation -testFilePath $TestFilePath;
+        $ovfTestOutput = Invoke-OperationValidation -testFilePath $TestFilePath
     } catch {
         # Log
         "invoke-operationValidation failed with: $_" | Add-Content -Path $PSScriptRoot\log.txt -Encoding UTF8;
@@ -40,23 +39,26 @@ function Test-EntityState() {
         throw "Test-EntityState failed with: $_";
     }
 
-    if ($null -ne $ovfOutput.Result) {
-        # Add an a ID number to tests. Needs to happen before removing okay tests. As a top-down hierarchy approach is used for id'ing tests.
-
+    if ($null -ne $ovfTestOutput.Result) {
         # Parse the results & .add() only failed tests, if any, to a temp. collection
-        $result = @() # TODO: Should likely use System.ArrayList collection.
-        foreach ($test in $ovfOutput) {
-
+        $result = New-Object System.Collections.ArrayList
+        $index = 0
+        foreach ($test in $ovfTestOutput) {
             if ($test.Result -eq "Failed") {
-                $result.Add();
+                <#
+                    Create PSCustomobject in order to add an ID number to a failed test.
+                    A top-down hierarchy approach is in effect. Order in *.Tests.ps1 file will be the same order in the OVF output. So when iterating
+                    We can simply match the Array index to order in *.Tests.ps1 file.
+                #>
+                $tempObject = [PSCustomObject]@{Name=$test.Name;Result=$test.Result;ID=$index}
+                $result.Add($tempObject) | Out-Null
 
                 # Report that the IT Service/Entity was found to be in a failed state
-                Submit-ServiceStateReport
+                #Submit-ServiceStateReport
             }
+            $index++
         }
-
-        # Return the result
-        $result;
+        $result
     } else {
 
     }

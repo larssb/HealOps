@@ -1,28 +1,20 @@
-﻿###################
-# FUNCTION - PREP #
-###################
-#Requires -
-
-####################
-# FUNCTION - START #
-####################
+﻿#Requires -Module OperationValidation
 function Invoke-HealOps() {
 <#
 .DESCRIPTION
     Invoke-HealOps is the function you call to initiate a HealOps package. Thereby testing "X" infrastructure.
     Where "X" could be n+m.
 .INPUTS
-    Inputs (if any)
+    <none>
 .OUTPUTS
-    Outputs (if any)
+    <none>
 .NOTES
     General notes
 .EXAMPLE
     PS C:\> <example usage>
     Explanation of what the example does
-.PARAMETER NAME_OF_THE_PARAMETER_WITHOUT_THE_QUOTES
-    Parameter HelpMessage text
-    Add a .PARAMETER per parameter
+.PARAMETER TestFilePath
+    A file containig the Pester tests to run. This should be a full-path to a file.
 #>
 
     # Define parameters
@@ -59,6 +51,3 @@ function Invoke-HealOps() {
     }
     End {}
 }
-##################
-# FUNCTION - END #
-##################
