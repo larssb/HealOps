@@ -6,8 +6,7 @@ function Test-EntityState() {
     <none>
 .OUTPUTS
     Either:
-        a) A System.Array containing the failed OVF test/s or
-        b) An empty System.Array
+
 .NOTES
     General notes
 .EXAMPLE
@@ -19,7 +18,7 @@ function Test-EntityState() {
 
     # Define parameters
     [CmdletBinding()]
-    [OutputType([Array])]
+    [OutputType([Boolean])]
     param(
         [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="A file containig the Pester tests to run. This should be a full-path to a file.")]
         [ValidateNotNullOrEmpty()]
@@ -39,29 +38,17 @@ function Test-EntityState() {
         throw "Test-EntityState failed with: $_";
     }
 
+    $state = $true
     if ($null -ne $ovfTestOutput.Result) {
-        # Parse the results & .add() only failed tests, if any, to a temp. collection
-        $result = New-Object System.Collections.ArrayList
-        $index = 0
-        foreach ($test in $ovfTestOutput) {
-            if ($test.Result -eq "Failed") {
-                <#
-                    Create PSCustomobject in order to add an ID number to a failed test.
-                    A top-down hierarchy approach is in effect. Order in *.Tests.ps1 file will be the same order in the OVF output. So when iterating
-                    We can simply match the Array index to order in *.Tests.ps1 file.
-                #>
-                #$tempObject = [PSCustomObject]@{Name=$test.Name;Result=$test.Result;ID=$index}
-                $result.Add($tempObject) | Out-Null
+        if ($ovfTestOutput.Result -eq "Failed") {
+            $state = $false
 
-                # Report that the IT Service/Entity was found to be in a failed state
-                #Submit-ServiceStateReport
-            }
-            $index++
+            # Report that the IT Service/Entity was found to be in a failed state
+            #Submit-EntityStateReport
         }
 
-        # Use the comma trick to avoid PowerShell unrolling the collection.
-        ,$result
+        $state
     } else {
-
+        throw "The OperationValidation result contains no result data."
     }
 }
