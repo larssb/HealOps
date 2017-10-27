@@ -50,7 +50,7 @@ function Test-EntityState() {
                     A top-down hierarchy approach is in effect. Order in *.Tests.ps1 file will be the same order in the OVF output. So when iterating
                     We can simply match the Array index to order in *.Tests.ps1 file.
                 #>
-                $tempObject = [PSCustomObject]@{Name=$test.Name;Result=$test.Result;ID=$index}
+                #$tempObject = [PSCustomObject]@{Name=$test.Name;Result=$test.Result;ID=$index}
                 $result.Add($tempObject) | Out-Null
 
                 # Report that the IT Service/Entity was found to be in a failed state
@@ -58,7 +58,9 @@ function Test-EntityState() {
             }
             $index++
         }
-        $result
+
+        # Use the comma trick to avoid PowerShell unrolling the collection.
+        ,$result
     } else {
 
     }

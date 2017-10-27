@@ -36,13 +36,17 @@ function Invoke-HealOps() {
         # TODO: Think of supporting that 1 could just specify a folder and the all files will be picked up
         if (Test-Path -Path $TestFilePath) {
             # Run the test
-            $testResult = Test-EntityState -TestFilePath $TestFilePath;
+            $testResult = Test-EntityState -TestFilePath $TestFilePath
+            Write-Verbose -Message "- $($testResult.count) test/s failed."
 
             # Control for any failed tests
             if ($testResult.Count -ge 1) {
+                Write-Verbose -Message "- Now trying to repair the 'Failed' test/s."
+
                 # iterate over the failed tests & invoke repairs matching the failed test
                 foreach ($failedTest in $testResult) {
-                    Repair-EntityState -Repair $failedTest.ID -TestFilePath $TestFilePath
+                    #Repair-EntityState -Repair $failedTest.ID -TestFilePath $TestFilePath
+                    Repair-EntityState -TestFilePath $TestFilePath
                 }
             }
         } else {

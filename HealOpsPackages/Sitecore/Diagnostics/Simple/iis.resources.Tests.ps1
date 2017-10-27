@@ -1,4 +1,4 @@
-Describe "The Sitecore instance is alive" {
+Describe "IIS health" {
     <#
         - Test for IIS logs over 30days
     #>
