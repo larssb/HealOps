@@ -17,12 +17,19 @@ Repairing works when:
         * File "F" > iisLogs.Repairs.ps1.
     * These two files needs to be located next to each-other.
 
-// DEPRECATED: 1 The ID of a repair to run must match the order of the tests in a *.Tests.ps1 file.
+## Reporting
 
-    * The order of tests follows a top-down hierarchy.
-        * The top test in a *.Tests.ps1 file has ID == 1
-        * The following test will then have ID == 2 and so forth for any remaining tests.
-\\
+### Naming scheme
+
+The std. is:
+
+    * Needed values:
+        * Name of the IT Service/Entity.
+        * Component/part of the IT service/Entity that was tested.
+        * Sub-component/Resource of the component/part of the IT service/Entity that was tested.
+        * Tags >
+
+    __e.g. >__ ``
 
 ## Setup and configuration of HealOps
 
@@ -41,24 +48,7 @@ Repairing works when:
 
 ### The *.Repairs.ps1 file
 
-// DEPRECATED: 1 A *.Repairs.ps1 file is a JSON format complaint file
-
-    * Here is an example:
-`
-{
-    "ServiceItRepairs": "X",
-    "Repairs": [
-        {
-            "id": 1,
-            "name": "N",
-            "powershellCode": ""
-        }
-    ]
-}
-`
-\\
-
-2 Naming:
+1 Naming:
 
     * Function name: Use the following verb. = Repair-
     * Function name: the rest of the function name should be named after what it repairs. Typically a good name would be the name of the *.Repairs.ps1 file that is specific to the IT Service/Entity in question.
