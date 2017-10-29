@@ -1,4 +1,4 @@
-function Submit-ServiceStateReport() {
+function Submit-EntityStateReport() {
 <#
 .DESCRIPTION
     Long description

@@ -30,17 +30,21 @@ function Test-EntityState() {
     #############
     try {
         # Run the tests with OVF
-        $ovfTestOutput = Invoke-OperationValidation -testFilePath $TestFilePath
+        #$ovfTestOutput = Invoke-OperationValidation -testFilePath $TestFilePath
+        $PesterTestOutput = Invoke-Pester $TestFilePath -PassThru
     } catch {
         # Log
-        "invoke-operationValidation failed with: $_" | Add-Content -Path $PSScriptRoot\log.txt -Encoding UTF8;
+        #"invoke-operationValidation failed with: $_" | Add-Content -Path $PSScriptRoot\log.txt -Encoding UTF8;
+        "invoke-pester failed with: $_" | Add-Content -Path $PSScriptRoot\log.txt -Encoding UTF8;
 
         throw "Test-EntityState failed with: $_";
     }
 
     $state = $true
-    if ($null -ne $ovfTestOutput.Result) {
-        if ($ovfTestOutput.Result -eq "Failed") {
+    #if ($null -ne $ovfTestOutput.Result) {
+    if ($null -ne $PesterTestOutput.TestResult) {
+        #if ($ovfTestOutput.Result -eq "Failed") {
+        if ($PesterTestOutput.FailedCount -ge 1) {
             $state = $false
 
             # Report that the IT Service/Entity was found to be in a failed state
@@ -49,6 +53,7 @@ function Test-EntityState() {
 
         $state
     } else {
-        throw "The OperationValidation result contains no result data."
+        #throw "The OperationValidation result contains no result data."
+        throw "The Pester result contains no result data."
     }
 }
