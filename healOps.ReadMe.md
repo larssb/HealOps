@@ -46,6 +46,13 @@ The std. is:
     * Use the New-HealOpsTaks cmdlet to create a job for invoking HealOps on the IT Service/Entity
         * Refer to the file you created in step (1).
 
+2 The HealOpsConfig.json file
+
+    * Used for configuring an instance of HealOps.
+    * Here-in you configure e.g.
+        * The reporting system backend used. Possible values are so far (171030)
+            * OpenTSDB
+
 ### The *.Repairs.ps1 file
 
 1 Naming:

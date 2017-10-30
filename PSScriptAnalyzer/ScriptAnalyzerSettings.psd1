@@ -16,9 +16,9 @@
     #                 'PSUseDeclaredVarsMoreThanAssigments')
 
     # Use ExcludeRules when you want to run most of the default set of rules except
-    # for a few rules you wish to "exclude".  Note: if a rule is in both IncludeRules
+    # for a few rules you wish to "exclude". Note: if a rule is in both IncludeRules
     # and ExcludeRules, the rule will be excluded.
-    #ExcludeRules = @('PSAvoidUsingWriteHost')
+    ExcludeRules = @('PSAvoidUsingInvokeExpression')
 
     # You can use the following entry to supply parameters to rules that take parameters.
     # For instance, the PSAvoidUsingCmdletAliases rule takes a whitelist for aliases you

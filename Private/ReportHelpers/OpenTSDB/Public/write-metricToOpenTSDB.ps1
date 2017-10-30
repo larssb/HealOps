@@ -59,28 +59,33 @@ function write-metricToOpenTSDB() {
 
     # Validate input and transfrom to JSON
     $metricInJSON = @{}
-    if ($null -eq $entitySubComponent) {
-        $metricInJSON.metric = "$entityName.$entityComponent"
-    } else {
+    if ($PSBoundParameters.ContainsKey('entitySubComponent')) {
         $metricInJSON.metric = "$entityName.$entityComponent.$entitySubComponent"
+    } else {
+        $metricInJSON.metric = "$entityName.$entityComponent"
     }
-    $metricInJSON.tags =
+    $metricInJSON.tags = $tagPairs
     $metricInJSON.timestamp = get-date -UFormat %s; # Unix/POSIX Epoch timestamp. Conforming to the OpenTSDB std.
     $metricInJSON.value = $metricValue
 
     # POST the metric to OpenTSDB
     try {
         $openTSDBendpoint = $OpenTSDBconfig.endpointIP
-        $result = Invoke-WebRequest -Uri http://$openTSDBendpoint/api/put -Method post -ContentType "application/json" -body $metricInJSON -UseBasicParsing
+        $openTSDBport = $openTSDBendpoint.port
+        $result = Invoke-WebRequest -Uri http://$openTSDBendpoint":"$openTSDBport/api/put -Method post -ContentType "application/json" -body $metricInJSON -UseBasicParsing
     } catch {
         throw "HTTP POST to OpenTSDB on $openTSDBendpoint failed with: $_"
     }
 
     # Check the result of the POST to OpenTSDB
-    # TODO: Maybe this changes in OpenTSDB v2.3 <-- where it migth return HTTP204
-    if ($result.openTSDBendpoint) {
+    # TODO: Maybe this changes in OpenTSDB v2.3 <-- where it returns HTTP204
+    if ($result.status -eq 200) {
+        $true
 
+        # TODO: Log info
+    } else {
+        $false
+
+        # TODO: Log info
     }
-
-
 }
