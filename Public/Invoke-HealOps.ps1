@@ -1,4 +1,4 @@
-﻿#Requires -Module Pester
+﻿#Requires -Module Pester, powershellTooling
 function Invoke-HealOps() {
 <#
 .DESCRIPTION
