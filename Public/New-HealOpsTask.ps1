@@ -9,7 +9,7 @@ function New-HealOpsTask() {
 .INPUTS
     Inputs (if any)
 .OUTPUTS
-    Outputs (if any)
+    [Boolean]
 .NOTES
     General notes
 .EXAMPLE
@@ -22,7 +22,7 @@ function New-HealOpsTask() {
 
     # Define parameters
     [CmdletBinding()]
-    [OutputType([SPECIFY_THE_RETURN_TYPE_OF_THE_FUNCTION_HERE])]
+    [OutputType([Boolean])]
     param(
         [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="Used to name the task.")]
         [ValidateNotNullOrEmpty()]
