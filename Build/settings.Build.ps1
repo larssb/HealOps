@@ -2,7 +2,7 @@
 # Customize these properties and tasks
 ###############################################################################
 param(
-    $Artifacts = "$PSScriptRoot/Artifacts",
+    $Artifacts = "$PSScriptRoot/Artefacts",
     $ModulePath = "$PSScriptRoot/..",
     $BuildNumber = $env:BUILD_NUMBER,
     $PercentCompliance  = '80'
