@@ -1,4 +1,4 @@
-Describe "The Octopus Deploy tentacle is alive" {
+Describe "octopusdeploy.tentacle" {
     <#
         - Test that the Octopus Deploy tentacle agent is running
     #>
@@ -42,16 +42,23 @@ Describe "The Octopus Deploy tentacle is alive" {
         # Request the Octopus Deploy Tentacle endpoint
         add-type $definition;
         [SSLValidator]::OverrideValidation();
-
         try {
             $request = Invoke-WebRequest -Uri $octopusDeployTentacleURI -Method Get -UseBasicParsing;
         } catch {
-            "The Octopus Deploy webrequest call falied. The error was > $_ " | Add-Content -Path $PSScriptRoot\log.txt -Encoding UTF8;
-        }
+            "The Octopus Deploy webrequest call failed. The error was > $_ " | Add-Content -Path $PSScriptRoot\log.txt -Encoding UTF8;
 
+            $testException = $_
+        }
         [SSLValidator]::RestoreValidation();
 
-        # Determine the result of test
-        $request.StatusCode | Should Be 200;
+        # Test if the request came through at all
+        if($testException) {
+            # The request did not come through. Reasoning > the endpoint is not available therefore HTTP503
+            $testException = 503
+        }
+        $testException | Should Not Be 503
+
+        # Determine the result of a successfull invoke-webrequest try
+        $request.StatusCode | Should Be 200
     }
 }

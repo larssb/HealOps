@@ -1,12 +1,11 @@
 function Test-EntityState() {
 <#
 .DESCRIPTION
-    Uses OVF to invoke Pester tests on a specific Tests file. Provided via the TestFilePath parameter.
+   Invokes Pester tests on a specific Tests file. Provided via the TestFilePath parameter.
 .INPUTS
     <none>
 .OUTPUTS
-    Either:
-
+    If the Pester test resulted in a verification of an okay state of the tested entity.
 .NOTES
     General notes
 .EXAMPLE
@@ -29,12 +28,10 @@ function Test-EntityState() {
     # Execution #
     #############
     try {
-        # Run the tests with OVF
-        #$ovfTestOutput = Invoke-OperationValidation -testFilePath $TestFilePath
-        $PesterTestOutput = Invoke-Pester $TestFilePath -PassThru
+        # Execute the tests
+        $PesterTestOutput = Invoke-Pester $TestFilePath -PassThru -Show None
     } catch {
         # Log
-        #"invoke-operationValidation failed with: $_" | Add-Content -Path $PSScriptRoot\log.txt -Encoding UTF8;
         "invoke-pester failed with: $_" | Add-Content -Path $PSScriptRoot\log.txt -Encoding UTF8;
 
         throw "Test-EntityState failed with: $_";
@@ -43,17 +40,30 @@ function Test-EntityState() {
     $state = $true
     #if ($null -ne $ovfTestOutput.Result) {
     if ($null -ne $PesterTestOutput.TestResult) {
-        #if ($ovfTestOutput.Result -eq "Failed") {
         if ($PesterTestOutput.FailedCount -ge 1) {
             $state = $false
 
+            # TODO: Maybe parse the Pester TestResult output here.....or into its own function
+
             # Report that the IT Service/Entity was found to be in a failed state
-            #Submit-EntityStateReport
+            $healOpsConfig = Get-Content -Path $PSScriptRoot/../Artefacts/HealOpsConfig.json -Encoding UTF8 | ConvertFrom-Json
+            $metricValue = $PesterTestOutput.TestResult.FailureMessage -replace ".+{","" -replace "}.+",""
+
+            # Define tags in JSON
+            $tagsOuterContainer = @{}
+            $tagPair = @{}
+            $tagPair.node = get-hostname
+            $tagsOuterContainer.tags = $tagPair
+            $tagsInJSON = ConvertTo-Json -InputObject $tagsOuterContainer
+
+            # Call to get the metric reported to the reporting backend
+            # TODO: try/catch here?
+            Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($PesterTestOutput.TestResult.Describe) -tagpairs $tagsInJSON -metricValue $metricValue
         }
 
+        # Return the result to caller
         $state
     } else {
-        #throw "The OperationValidation result contains no result data."
         throw "The Pester result contains no result data."
     }
 }

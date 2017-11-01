@@ -29,7 +29,7 @@ The std. is:
         * Sub-component/Resource of the component/part of the IT service/Entity that was tested.
         * Tags >
 
-    __e.g. >__ ``
+    __e.g. >__ `octopusdeploy.tentacle`
 
 ## Setup and configuration of HealOps
 

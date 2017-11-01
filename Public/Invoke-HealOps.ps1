@@ -29,9 +29,7 @@ function Invoke-HealOps() {
     #############
     # Execution #
     #############
-    Begin {
-
-    }
+    Begin {}
     Process {
         if (Test-Path -Path $TestFilePath) {
             # Run the test

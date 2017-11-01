@@ -13,12 +13,8 @@ function Submit-EntityStateReport() {
     Explanation of what the example does
 .PARAMETER reportBackendSystem
     Used to specify the software used as the reporting backend. For storing test result metrics.
-.PARAMETER entityName
-    The name of the IT service/Entity that a metric is being recorded for.
-.PARAMETER entityComponent
-    The name of the component of IT service/Entity that a metric is being recorded for.
-.PARAMETER entitySubComponent
-    The name of a sub-component/entity of the IT service/Entity that a metric is being recorded for. This is not required as this level of depth might not be needed or possible.
+.PARAMETER metric
+    The metric value, in a format supported by OpenTSDB, of the IT service/Entity to log data for, into OpenTSDB.
 .PARAMETER tagPairs
     The tags to set on the metric. Used to improve querying OpenTSDB. Provided as a Key/Value collection.
 .PARAMETER metricValue
@@ -33,15 +29,9 @@ function Submit-EntityStateReport() {
         [ValidateNotNullOrEmpty()]
         [ValidateSet("OpenTSDB")]
         [string]$reportBackendSystem,
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The name of the IT service/Entity that a metric is being recorded for.")]
+        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The metric value, in a format supported by OpenTSDB, of the IT service/Entity to log data for, into OpenTSDB.")]
         [ValidateNotNullOrEmpty()]
-        [String]$entityName,
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The name of the component of IT service/Entity that a metric is being recorded for.")]
-        [ValidateNotNullOrEmpty()]
-        [String]$entityComponent,
-        [Parameter(Mandatory=$false, ParameterSetName="Default", HelpMessage="The name of a sub-component/entity of the IT service/Entity that a metric is being recorded for. This is not required as this level of depth might not be needed or possible.")]
-        [ValidateNotNullOrEmpty()]
-        [String]$entitySubComponent,
+        [String]$metric,
         [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The tags to set on the metric. Used to improve querying OpenTSDB. Provided as a Key/Value collection.")]
         [ValidateNotNullOrEmpty()]
         [hashtable]$tagPairs,
@@ -57,11 +47,7 @@ function Submit-EntityStateReport() {
     switch ($reportBackendSystem) {
         { $_ -eq "OpenTSDB" } {
             Import-Module -name $PSScriptRoot/ReportHelpers/OpenTSDB/OpenTSDB
-            if ($PSBoundParameters.ContainsKey('entitySubComponent')) {
-                $reportExpression = "write-metricToOpenTSDB -entityName $entityName -entityComponent $entityComponent -entitySubComponent $entitySubComponent -tagPairs $tagPairs -metricValue $metricValue"
-            } else {
-                $reportExpression = "write-metricToOpenTSDB -entityName $entityName -entityComponent $entityComponent -tagPairs $tagPairs -metricValue $metricValue"
-            }
+            $reportExpression = "write-metricToOpenTSDB -metric $metric -tagPairs $tagPairs -metricValue $metricValue"
         }
         Default {
             # TODO: Make sure that personnel is alarmed that reporting is not working!
