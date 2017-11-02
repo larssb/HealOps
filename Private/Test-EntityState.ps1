@@ -50,15 +50,12 @@ function Test-EntityState() {
             $metricValue = $PesterTestOutput.TestResult.FailureMessage -replace ".+{","" -replace "}.+",""
 
             # Define tags in JSON
-            $tagsOuterContainer = @{}
-            $tagPair = @{}
-            $tagPair.node = get-hostname
-            $tagsOuterContainer.tags = $tagPair
-            $tagsInJSON = ConvertTo-Json -InputObject $tagsOuterContainer
+            $tags = @{}
+            $tags.Add("node",(get-hostname))
 
             # Call to get the metric reported to the reporting backend
             # TODO: try/catch here?
-            Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($PesterTestOutput.TestResult.Describe) -tagpairs $tagsInJSON -metricValue $metricValue
+            Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($PesterTestOutput.TestResult.Describe) -tagpairs $tags -metricValue $metricValue
         }
 
         # Return the result to caller

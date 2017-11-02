@@ -1,25 +1,25 @@
 function Submit-EntityStateReport() {
-<#
-.DESCRIPTION
-    Long description
-.INPUTS
-    <none>
-.OUTPUTS
-    <none>
-.NOTES
-    General notes
-.EXAMPLE
-    PS C:\> <example usage>
-    Explanation of what the example does
-.PARAMETER reportBackendSystem
-    Used to specify the software used as the reporting backend. For storing test result metrics.
-.PARAMETER metric
-    The metric value, in a format supported by OpenTSDB, of the IT service/Entity to log data for, into OpenTSDB.
-.PARAMETER tagPairs
-    The tags to set on the metric. Used to improve querying OpenTSDB. Provided as a Key/Value collection.
-.PARAMETER metricValue
-    The value to record on the metric being writen to OpenTSDB.
-#>
+    <#
+    .DESCRIPTION
+        Long description
+    .INPUTS
+        <none>
+    .OUTPUTS
+        <none>
+    .NOTES
+        General notes
+    .EXAMPLE
+        PS C:\> <example usage>
+        Explanation of what the example does
+    .PARAMETER reportBackendSystem
+        Used to specify the software used as the reporting backend. For storing test result metrics.
+    .PARAMETER metric
+        The metric value, in a format supported by OpenTSDB, of the IT service/Entity to log data for, into OpenTSDB.
+    .PARAMETER tagPairs
+        The tags to set on the metric. Used to improve querying OpenTSDB. Provided as a Key/Value collection.
+    .PARAMETER metricValue
+        The value to record on the metric being writen to OpenTSDB.
+    #>
 
     # Define parameters
     [CmdletBinding()]
@@ -43,11 +43,11 @@ function Submit-EntityStateReport() {
     #############
     # Execution #
     #############
-    # Determine the reporting backend system to use
+    # Determine the reporting backend system to use & push the report
     switch ($reportBackendSystem) {
         { $_ -eq "OpenTSDB" } {
-            Import-Module -name $PSScriptRoot/ReportHelpers/OpenTSDB/OpenTSDB
-            $reportExpression = "write-metricToOpenTSDB -metric $metric -tagPairs $tagPairs -metricValue $metricValue"
+            Import-Module -name $PSScriptRoot/ReportHelpers/OpenTSDB/OpenTSDB -Force
+            $result = write-metricToOpenTSDB -metric $metric -tagPairs $tagPairs -metricValue $metricValue -verbose
         }
         Default {
             # TODO: Make sure that personnel is alarmed that reporting is not working!
@@ -55,16 +55,10 @@ function Submit-EntityStateReport() {
         }
     }
 
-    # Push the report to the reporting backend
-    [System.Diagnostics.CodeAnalysis.SuppressMessage('PSAvoidUsingInvokeExpression', '')]
-    $reportExpressionResult = Invoke-Expression -Command $reportExpression
-
-    if ($reportExpressionResult -eq $false) {
+    if ($result -eq $false) {
         # TODO: Make sure that personnel is alarmed that reporting is not working!
             ## Who to report to
                 ### Driften?
                 ### HealOps admins?
     }
 }
-
-

@@ -19,7 +19,9 @@ Repairing works when:
 
 ## Reporting
 
-### Naming scheme
+### Metrics
+
+#### Naming scheme
 
 The std. is:
 
@@ -30,6 +32,8 @@ The std. is:
         * Tags >
 
     __e.g. >__ `octopusdeploy.tentacle`
+
+    * The above name description is to be used when defining the "Describe" keyword value in the Pester *.Tests.ps1 file. As this is where the metric name will be derived from when reporting on a metric to the backend system.
 
 ## Setup and configuration of HealOps
 

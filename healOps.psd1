@@ -30,7 +30,9 @@ CompanyName = 'Unknown'
 Copyright = '(c) 2017 Labe | labe@danskespil.dk. All rights reserved.'
 
 # Description of the functionality provided by this module
-Description = 'A self-healing monitoring system. Based on PowerShell DSC.'
+Description = 'A self-healing monitoring system. Uses Pester tests to determine the state of a system entity
+then if the state is in a faulted state it is tried repaired. All along reports on metrics and HealOps status
+is sent to stakeholders as well as backend monitoring systems.'
 
 # Minimum version of the Windows PowerShell engine required by this module
 # PowerShellVersion = ''

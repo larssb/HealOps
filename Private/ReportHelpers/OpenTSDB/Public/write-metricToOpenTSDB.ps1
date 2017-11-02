@@ -1,23 +1,23 @@
 function write-metricToOpenTSDB() {
-<#
-.DESCRIPTION
-    Wraps a HTTP Push request to an OpenTSDB endpoint. Used to record a metric measured on "X" IT service/Entity
-.INPUTS
-    <none>
-.OUTPUTS
-    [Boolean]
-.NOTES
-    General notes
-.EXAMPLE
-    PS C:\> <example usage>
-    Explanation of what the example does
-.PARAMETER metric
-    The metric value, in a format supported by OpenTSDB, of the IT service/Entity to log data for, into OpenTSDB.
-.PARAMETER tagPairs
-    The tags to set on the metric. Used to improve querying OpenTSDB. Provided as a Key/Value collection (comparable to pairs of "P").
-.PARAMETER metricValue
-    The value to record on the metric being writen to OpenTSDB.
-#>
+    <#
+    .DESCRIPTION
+        Wraps a HTTP Push request to an OpenTSDB endpoint. Used to record a metric measured on "X" IT service/Entity
+    .INPUTS
+        <none>
+    .OUTPUTS
+        [Boolean]
+    .NOTES
+        General notes
+    .EXAMPLE
+        PS C:\> <example usage>
+        Explanation of what the example does
+    .PARAMETER metric
+        The metric value, in a format supported by OpenTSDB, of the IT service/Entity to log data for, into OpenTSDB.
+    .PARAMETER tagPairs
+        The tags to set on the metric. Used to improve querying OpenTSDB. Provided as a Key/Value collection (comparable to pairs of "P").
+    .PARAMETER metricValue
+        The value to record on the metric being writen to OpenTSDB.
+    #>
 
     # Define parameters
     [CmdletBinding()]
@@ -47,18 +47,18 @@ function write-metricToOpenTSDB() {
     }
 
     # Validate input and transfrom to JSON
-    $metricInJSON = @{}
-
     # TODO: validate metric input > should conform to "sss.sss.sss.sss.sss"
-    $metricInJSON.metric = $metric
-    $metricInJSON.tags = $tagPairs
-    $metricInJSON.timestamp = get-date -UFormat %s; # Unix/POSIX Epoch timestamp. Conforming to the OpenTSDB std.
-    $metricInJSON.value = $metricValue
+    $metricHolder = @{}
+    $metricHolder.metric = $metric
+    $metricHolder.tags = $tagPairs
+    $metricHolder.timestamp = (get-date -UFormat %s) -replace ",.+",""; # Unix/POSIX Epoch timestamp. Conforming to the OpenTSDB std.
+    $metricHolder.value = $metricValue
+    $metricInJSON = ConvertTo-Json -InputObject $metricHolder -Depth 3
 
     # POST the metric to OpenTSDB
     try {
         $openTSDBendpoint = $OpenTSDBconfig.endpointIP
-        $openTSDBport = $openTSDBendpoint.port
+        $openTSDBport = $OpenTSDBconfig.port
         $result = Invoke-WebRequest -Uri http://$openTSDBendpoint":"$openTSDBport/api/put -Method post -ContentType "application/json" -body $metricInJSON -UseBasicParsing
     } catch {
         throw "HTTP POST to OpenTSDB on $openTSDBendpoint failed with: $_"
