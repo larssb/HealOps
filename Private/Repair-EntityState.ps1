@@ -13,6 +13,8 @@ function Repair-EntityState() {
     Explanation of what the example does
 .PARAMETER TestFilePath
     A file containig the Pester tests to run. This should be a full-path to a file. From this file the Repairs file will be found.
+.PARAMETER TestData
+    Data from an executed test.
 #>
 
     # Define parameters
@@ -22,7 +24,10 @@ function Repair-EntityState() {
         [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="A file containig the Pester tests to run. This should be a full-path to a file.
         From this file the Repairs file will be found.")]
         [ValidateNotNullOrEmpty()]
-        [string[]]$TestFilePath
+        [string[]]$TestFilePath,
+        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="Data from an executed test.")]
+        [ValidateNotNullOrEmpty()]
+        $TestData
     )
 
     #############
@@ -36,7 +41,11 @@ function Repair-EntityState() {
 
     if (Test-Path -Path $repairsFile) {
         # Run the repair
-        $repairResult = . $repairsFile
+        if ($PSBoundParameters.ContainsKey('Verbose')) {
+            $repairResult = . $repairsFile -TestData $TestData -Verbose
+        } else {
+            $repairResult = . $repairsFile -TestData $TestData
+        }
         Write-Verbose -Message "The result of the repair is: $repairResult"
 
         # Report on the success of repairing the IT Service/Entity

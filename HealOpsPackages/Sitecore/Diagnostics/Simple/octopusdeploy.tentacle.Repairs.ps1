@@ -1,41 +1,38 @@
-<#function Repair-octopusTentacle() {
-#
-.DESCRIPTION
-    Remediates the failure of the Octopus deploy tentacle client.
-.INPUTS
-    Repair  of the remediating code to execute.
-.OUTPUTS
-    [Boolean] on the status of the remediation.
-.NOTES
-    General notes
-.EXAMPLE
-    PS C:\> <example usage>
-    Explanation of what the example does
-#.#PARAMETER Repair
-    The ID of the repair to run on an IT Service/Entity that is in a faild state.
-#
+# Define parameters
+[CmdletBinding()]
+[OutputType([Boolean])]
+param(
+    [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="Data from the result of testing the state of an IT Service/Entity.")]
+    [ValidateNotNullOrEmpty()]
+    $TestData
+)
 
-    # Define parameters
-    [CmdletBinding()]
-    [OutputType([Boolean])]
-    param(
-        #[Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The ID of the repair to run on an IT Service/Entity that is in a faild state.")]
-        [ValidateNotNullOrEmpty()]
-        [int]$Repair
-        #
-    )
+#############
+# Execution #
+#############
+Write-Verbose -Message "Trying to remediate the Octopus Deploy tentacle as it was in a failed state"
 
-    #############
-    # Execution #
-    #############
+# Parse the incoming test data to determine what remediating effort to try
+if($TestData.FailureMessage -eq 503) {
+    # Service unavailable. Let's try a service restart
+    $svc = Get-Service -Name "OctopusDeploy Tentacle"
+    if($null -ne $svc) {
+        try {
+            Start-Service $svc
 
-    Write-Verbose -Message "Hello freaking world!"
+            $remediationResult = $true
+        } catch {
+            Write-Output "Failed to start the Octopus Deploy service. Failed with: $_"
 
-    $true
+            $remediationResult = $false
+        }
+    } else {
+        # Report that the server is missing on the node.
+        $remediationResult = $false
+    }
 
+    # Report on the result of the remediation
+
+    # Return to caller
+    $remediationResult
 }
-#>
-
-Write-Verbose -Message "Hello freaking world!"
-
-    $true
