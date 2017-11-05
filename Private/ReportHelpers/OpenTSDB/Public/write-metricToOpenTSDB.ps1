@@ -51,9 +51,12 @@ function write-metricToOpenTSDB() {
     $metricHolder = @{}
     $metricHolder.metric = $metric
     $metricHolder.tags = $tagPairs
-    $metricHolder.timestamp = (get-date -UFormat %s) -replace ",.+",""; # Unix/POSIX Epoch timestamp. Conforming to the OpenTSDB std.
+    #$metricHolder.timestamp = (get-date -UFormat %s) -replace ",.+","" -replace "\..+","" # Unix/POSIX Epoch timestamp. Conforming to the OpenTSDB std.
+    $metricHolder.timestamp = (get-date ((get-date).touniversaltime()) -UFormat %s) -replace ",.+","" -replace "\..+",""
     $metricHolder.value = $metricValue
     $metricInJSON = ConvertTo-Json -InputObject $metricHolder -Depth 3
+
+    Write-Verbose -Message "Payload to sent to OpenTSDB is: $metricInJSON"
 
     # POST the metric to OpenTSDB
     try {

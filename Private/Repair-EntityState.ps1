@@ -5,7 +5,7 @@ function Repair-EntityState() {
 .INPUTS
     <none>
 .OUTPUTS
-    <none>
+    [Boolean] relative to the result of the attempt to repair the state of "X" IT service/Entity
 .NOTES
     General notes
 .EXAMPLE
@@ -35,7 +35,6 @@ function Repair-EntityState() {
     #############
 
     # Define the filename of the Repairs file.
-    # TODO: If JSON do the necessary
     $repairsFile = $TestFilePath -replace "Tests","Repairs"
     Write-Verbose -Message "The repairs file was resolved to: $repairsFile"
 
@@ -50,17 +49,14 @@ function Repair-EntityState() {
 
         # Report on the success of repairing the IT Service/Entity
         if($repairResult -eq $true) {
-            # Report that it was repaired
-            #Submit-EntityStateReport -Status -Service
-
+            # Return
+            $true
         } else {
-            # Alarm on-call personnel
-            #Ping-Personnel -entityName $
-
-            # Report that the personnel was contacted
-            # Submit-EntityStateReport
+            # Return
+            $false
         }
     } else {
+        # TODO report it, log it == HARDEN
         throw "The repairs file $repairsFile could not be found.";
     }
 }

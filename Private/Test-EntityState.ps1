@@ -34,48 +34,35 @@ function Test-EntityState() {
         $TestOutput = Invoke-Pester $TestFilePath -PassThru -Show None
     } catch {
         # Log
-        "invoke-pester failed with: $_" | Add-Content -Path $PSScriptRoot\log.txt -Encoding UTF8;
-
-        throw "Test-EntityState failed with: $_"
+        Write-Verbose -Message "Test-EntityState failed with: $_"
     }
 
-    $state = $true
     if ($null -ne $TestOutput.TestResult) {
-        #
+        # Set state semaphore
+        $state = $true
+
+        # Define tags in JSON
+        $tags = @{}
+        $tags.Add("node",(get-hostname))
 
         if ($TestOutput.FailedCount -ge 1) {
             $state = $false
-
-            <#
-                - # Transform the output from the test
-
-                # TODO: Maybe into its own funtion!
-            #>
+            # Transform the output from the failed test
             $TestOutputTransformed = @{}
 
-            # Get the FailureMessage
+            # Get the FailureMessage - should always be numeric to support TSDB's
             $FailureMessage = $TestOutput.TestResult.FailureMessage -replace ".+{","" -replace "}.+",""
 
-            # Add the transformed to the HashTable
+            # Add the transformed failure message to the HashTable
             $TestOutputTransformed.add("FailureMessage",$FailureMessage)
-
-#############
-            # Report that the IT Service/Entity was found to be in a failed state
-            $healOpsConfig = Get-Content -Path $PSScriptRoot/../Artefacts/HealOpsConfig.json -Encoding UTF8 | ConvertFrom-Json
-
-            # Define tags in JSON
-            $tags = @{}
-            $tags.Add("node",(get-hostname))
-
-            # Call to get the metric reported to the reporting backend
-            # TODO: try/catch here?
-            Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($TestOutput.TestResult.Describe) -tagpairs $tags -metricValue $FailureMessage
         }
 
         # Collect the result
         $tempCollection = @{}
         $tempCollection.Add("state",$state)
         $tempCollection.Add("testdata",$TestOutputTransformed)
+        $tempCollection.Add("tags",$tags)
+        $tempCollection.Add("metric",$($TestOutput.TestResult.Describe))
 
         # Return to caller
         $tempCollection
