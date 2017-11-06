@@ -1,5 +1,4 @@
-﻿#Requires -Module Pester, powershellTooling
-function Invoke-HealOps() {
+﻿function Invoke-HealOps() {
 <#
 .DESCRIPTION
     Invoke-HealOps is the function you call to initiate a HealOps package. Thereby testing "X" IT service/Entity.

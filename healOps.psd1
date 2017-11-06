@@ -53,7 +53,7 @@ is sent to stakeholders as well as backend monitoring systems.'
 # ProcessorArchitecture = ''
 
 # Modules that must be imported into the global environment prior to importing this module
-# RequiredModules = @()
+RequiredModules = @('powershellTooling','Pester')
 
 # Assemblies that must be loaded prior to importing this module
 # RequiredAssemblies = @()
