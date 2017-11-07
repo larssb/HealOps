@@ -47,6 +47,9 @@
         * Citrix prod.
         *
     * Create a Plaster template for easily creating a HealOpsPackage
+    * Talk with the Linux DevOps about:
+        * A good way to automatize creating Cron jobs.
+    * Create the New-HealOpsPackageRunner script so that it takes pipelin input. In this case a string to a path....a path obj.???
 
 ## Think about
 
