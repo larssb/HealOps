@@ -9,7 +9,7 @@
 @{
 
 # Script module or binary module file associated with this manifest.
-RootModule = 'healOps.psm1'
+RootModule = 'HealOps.psm1'
 
 # Version number of this module.
 ModuleVersion = '0.0.0.1'

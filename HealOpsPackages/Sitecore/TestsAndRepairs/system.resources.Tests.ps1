@@ -1,4 +1,4 @@
-Describe "Diskspace left is sufficient" {
+Describe "windows.resource.diskspace" {
     <#
         - Test that there is enough diskspace left
     #>

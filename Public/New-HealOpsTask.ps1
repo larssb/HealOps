@@ -1,3 +1,4 @@
+#Requires -RunAsAdministrator
 function New-HealOpsTask() {
 <#
 .DESCRIPTION
@@ -27,8 +28,8 @@ function New-HealOpsTask() {
         [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The interval, in minutes, between repeating the task.")]
         [ValidateNotNullOrEmpty()]
         [Int]$TaskRepetitionInterval,
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="Specify the file that is used to execute the HealOps package and its code.
-        This file will then be called by the platforms job engine when its due time.")]
+        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="Specify the path to the file that is used to execute the HealOps package and its code.
+        This file will then be called by the platforms job engine as scheduled.")]
         [ValidateNotNullOrEmpty()]
         [String]$InvokeHealOpsFile
     )
@@ -57,7 +58,7 @@ function New-HealOpsTask() {
         StartIfOnBattery = $true;
         MultipleInstancePolicy = "Queue";
         RunElevated = $true;
-        ContinueIfGoingOnBattery = $true
+        ContinueIfGoingOnBattery = $true;
     }
 
     <#
@@ -66,10 +67,13 @@ function New-HealOpsTask() {
             - The task will be repeated with the incoming minute interval.
             - It will keep repeating forever.
     #>
-    # MAYBE: New-TimeSpan -Minutes 5
     $jobTriggerSplatting = @{
         At = (Get-date).AddMinutes(5);
-        RepetitionInterval = $TaskRepetitionInterval;
+        RepetitionInterval = (New-TimeSpan -Minutes $TaskRepetitionInterval);
         RepeatIndefinitely = $true;
+        Once = $true;
     }
+
+    # Create the job with the above options
+    New-ScheduledJob -TaskName $TaskName -TaskOptions $jobOptionsSplatting -TaskTriggerOptions $jobTriggerSplatting -TaskPayload "File" -FilePath $InvokeHealOpsFile -verbose
 }

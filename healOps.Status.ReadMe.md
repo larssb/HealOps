@@ -32,10 +32,11 @@
         * ...maybe assume no systemname if there isn't at least one 'dot/.'.
 
         SUGGESTION 2: Use a healopspackage.packageSpecificName.json file for specifying stuff like systemName/Environment
+            <-- This 1 made it through!
 
         SUGGESTION 3: Use a global variable inside the *.Tests.ps1 file.
     * Scheduled tasks helper scripts.
-        * For Windows
+        * For Windows <-- Working, needs fine-tuning and support for defining job executing user.
         * For Linux/MacOS
     * Better building of HealOps
     * Deployment tactics
@@ -45,6 +46,7 @@
         e.g.
         * Citrix prod.
         *
+    * Create a Plaster template for easily creating a HealOpsPackage
 
 ## Think about
 
