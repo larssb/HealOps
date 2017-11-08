@@ -1,4 +1,4 @@
-#Requires -
+##Requires -
 function New-HealOpsPackageRunner() {
 <#
 .DESCRIPTION
@@ -13,11 +13,10 @@ function New-HealOpsPackageRunner() {
 .NOTES
     General notes
 .EXAMPLE
-    PS C:\> <example usage>
+    New-HealOpsPackageRunner -PathToTestsAndRepairsFolder
     Explanation of what the example does
-.PARAMETER NAME_OF_THE_PARAMETER_WITHOUT_THE_QUOTES
-    Parameter_HelpMessage_text
-    Add_a_PARAMETER_per_parameter
+.PARAMETER PathToTestsAndRepairsFolder
+    The full path to the TestsAndRepairs folder of the HealOpsPackage to generate a runner script for.
 #>
 
     # Define parameters
@@ -29,41 +28,28 @@ function New-HealOpsPackageRunner() {
         $PathToTestsAndRepairsFolder
     )
 
-    DynamicParam {
-        if($PARAMETER -eq "") {
-            # Configure parameter
-            $attributes = new-object System.Management.Automation.ParameterAttribute;
-            $attributes.Mandatory = $true;
-            $attributes.HelpMessage = " PARAMETER_DESCRIPTION ";
-            $ValidateNotNullOrEmptyAttribute = New-Object Management.Automation.ValidateNotNullOrEmptyAttribute;
-
-            # Define parameter collection
-            $attributeCollection = new-object -Type System.Collections.ObjectModel.Collection[System.Attribute];
-            $attributeCollection.Add($attributes);
-            $attributeCollection.Add($ValidateNotNullOrEmptyAttribute);
-
-            # Prepare to return & expose the parameter
-            $ParameterName = "PARAMETER_NAME";
-            [Type]$ParameterType = "PARAMETER_TYPE";
-            $Parameter = New-Object Management.Automation.RuntimeDefinedParameter($ParameterName, $ParameterType, $AttributeCollection);
-            if ($psboundparameters.ContainsKey('DefaultValue')) {
-                $Parameter.Value = $DefaultValue;
-            }
-            $paramDictionary = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary;
-            $paramDictionary.Add($ParameterName, $Parameter);
-
-            return $paramDictionary;
-        }
-    }
-
     #############
     # Execution #
     #############
-    Begin {}
+    Begin {
+        # Test that the path actually existss
+        if(-not (Test-Path -Path $PathToTestsAndRepairsFolder)) {
+            Write-Error -Message "The path you provided does not exist."
+            break
+        }
+
+        # Try to get the config file for the HealOpsPackage
+        [System.IO.Path]::DirectorySeparatorChar
+
+        $HealOpsPackageConfig = Get-ChildItem -Path $PSScriptRoot/.. -Recurse -File -Force -Include *.json
+        if (-not ($null -eq $HealOpsPackageConfig) -and -not ($HealOpsPackageConfig.count -gt 1)) {
+            "hi"
+            $HealOpsPackageConfig
+            $HealOpsPackageConfig.Count
+        }
+    }
     Process {
 
     }
     End{}
 }
-
-Export-ModuleMember -Function ""
