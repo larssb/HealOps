@@ -10,10 +10,10 @@
 .NOTES
     General notes
 .EXAMPLE
-    PS C:\> <example usage>
+    Invoke-HealOps -TestFilePath $TestFilePath -
     Explanation of what the example does
 .PARAMETER TestFilePath
-    A file containig the tests to run. This should be the full-path to the *.Tests.ps1 file.
+    A file containing the tests to run. This should be the full-path to the *.Tests.ps1 file.
 #>
 
     # Define parameters
@@ -22,7 +22,10 @@
     param(
         [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="A file containig the Pester tests to run. This should be a full-path to a file.")]
         [ValidateNotNullOrEmpty()]
-        [string[]]$TestFilePath
+        [string[]]$TestFilePath,
+        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="A JSON file containing settings and tag value data for reporting. Relative to a specific HealOpsPackage.")]
+        [ValidateNotNullOrEmpty()]
+        [string[]]$HealOpsPackageConfigPath
     )
 
     #############
@@ -31,6 +34,15 @@
     Begin {
         # Get the HealOps config file
         $healOpsConfig = Get-Content -Path $PSScriptRoot/../Artefacts/HealOpsConfig.json -Encoding UTF8 | ConvertFrom-Json
+
+        # Get the HealOps package config file. A JSON file containing settings and tag value data for reporting. Relative to a specific HealOpsPackage.
+
+        <#
+            - Should be "somewhere" in the specific HealOpsPackage folder
+            - We will just go look for it....
+            - Document this in the ReadMe....
+        #>
+        $HealOpsPackageConfig = Get-Content -Path $TestFilePath -Encoding UTF8 | ConvertFrom-Json
     }
     Process {
         if (Test-Path -Path $TestFilePath) {

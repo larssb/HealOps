@@ -32,67 +32,42 @@ Rules of thumb and design of the *.Repairs.ps1 file
 
 ### The *.Repairs.ps1 file
 
-1 Is functionless
+1 Is functionless.
 
 2 However still has parames.
 
-    * An e.g.
+    - E.g. of a *.Repairs.ps1 functionless parameter filled file.
     `
-    Describe 'myPlatform.haproxy' {
-        # general variables
-        $URI = " URI ";
+        # Define parameters
+        [CmdletBinding()]
+        [OutputType([Boolean])]
+        param(
+            [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="Data from the result of testing the state of an IT Service/Entity.")]
+            [ValidateNotNullOrEmpty()]
+            $TestData
+        )
 
-        <#
-            - Test that HAProxy is up
-
-            Runs inside Docker container
-        #>
-        # The HAproxy stats endpoint URI
-        $haproxyStatsURI = "$URI/haproxy?stats";
-
-        # Prep. query parameters for the call to HAProxy's stats endpoint.
-        $username = " USERNAME ";
-        $password = " PASSWORD ";
-        $secpasswd = ConvertTo-SecureString $password -AsPlainText -Force;
-        $credential = New-Object System.Management.Automation.PSCredential($username, $secpasswd)
- An e.g.
+        #############
+        # Execution #
+        #############
+        CODE_TO_REMEDATE_FAILED_IT_SERVICE_/_ENTITY
     `
-    Describe 'myPlatform.haproxy' {
-        # general variables
-        $URI = " URI ";
 
-        <#
-            - Test that HAProxy is up
+3 An global variable named ' assertionResult ' has to be used for cases of state okay. This global variable is used to report to the backend that the okay state of "X" IT Service/Entity
 
-            Runs inside Docker container
-        #>
-        # The HAproxy stats endpoint URI
-        $haproxyStatsURI = "$URI/haproxy?stats";
+        - It has to fulfill:
 
-        # Prep. query parameters for the call to HAProxy's stats endpoint.
-        $username = " USERNAME ";
-        $password = " PASSWORD ";
-        $secpasswd = ConvertTo-SecureString $password -AsPlainText -Force;
-        $credential = New-Object System.Management.Automation.PSCredential($username, $secpasswd)
+            * Name > assertionResult
+            * Be global
 
-        try {
-            # Call the HAProxy stats endpoint
-            $requestResult = Invoke-WebRequest $haproxyStatsURI -Method Get -Credential $credential
-        } catch {
-            # TODO: LOG IT
-            #$exception = $_
-
-            # FIGURE OUT THE CAUSE AND THROW HTTP STATUS NUM.
-            throw 401
-        }
-
+        - E.g. (from inside *.Tests.ps1 Describe block)
+        `
         It "return.http.200" {
             # Assert
             $global:assertionResult = $requestResult.StatusCode
             $requestResult.StatusCode | Should Be 200;
         }
-    }
-    `
+        `
 
 ## Reporting
 
@@ -156,3 +131,49 @@ The std. is:
     * Here-in you configure e.g.
         * The reporting system backend used. Possible values are so far (171030)
             * OpenTSDB
+
+## Termonology
+
+    * HealOpsPackage > A unit of execution in relative to the testing and repairing of "X" IT Service/Entity.
+
+## Testing
+
+    *
+    * E.g. of a *.Tests.ps1 file.
+    `
+    Describe 'myPlatform.haproxy' {
+        # general variables
+        $URI = " URI ";
+
+        <#
+            - Test that HAProxy is up
+
+            Runs inside Docker container
+        #>
+        # The HAproxy stats endpoint URI
+        $haproxyStatsURI = "$URI/haproxy?stats";
+
+        # Prep. query parameters for the call to HAProxy's stats endpoint.
+        $username = " USERNAME ";
+        $password = " PASSWORD ";
+        $secpasswd = ConvertTo-SecureString $password -AsPlainText -Force;
+        $credential = New-Object System.Management.Automation.PSCredential($username, $secpasswd)
+
+        try {
+            # Call the HAProxy stats endpoint
+            $requestResult = Invoke-WebRequest $haproxyStatsURI -Method Get -Credential $credential
+        } catch {
+            # TODO: LOG IT
+            #$exception = $_
+
+            # FIGURE OUT THE CAUSE AND THROW HTTP STATUS NUM.
+            throw 401
+        }
+
+        It "return.http.200" {
+            # Assert
+            $global:assertionResult = $requestResult.StatusCode
+            $requestResult.StatusCode | Should Be 200;
+        }
+    }
+    `
