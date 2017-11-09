@@ -12,36 +12,127 @@
 .EXAMPLE
     Invoke-HealOps -TestFilePath $TestFilePath -
     Explanation of what the example does
-.PARAMETER TestFilePath
-    A file containing the tests to run. This should be the full-path to the *.Tests.ps1 file.
+.PARAMETER TestsFilesRootPath
+    The folder that contains the tests to execute.
 .PARAMETER HealOpsPackageConfigPath
     The path to a JSON file containing settings and tag value data for reporting. Relative to a specific HealOpsPackage.
+.PARAMETER TestsFile
+    The full path to a specific *.Tests.ps1 file to execute.
 #>
 
     # Define parameters
     [CmdletBinding()]
     [OutputType([Void])]
+    [System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidGlobalVars","")]
+    [System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseDeclaredVarsMoreThanAssignments","")]
     param(
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="A file containig the Pester tests to run. This should be a full-path to a file.")]
+        [Parameter(Mandatory=$true, ParameterSetName="Path", HelpMessage="The folder that contains the tests to execute.")]
         [ValidateNotNullOrEmpty()]
-        [string]$TestFilePath,
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The path to a JSON file containing settings and tag value data for reporting. Relative to a specific HealOpsPackage.")]
+        [string]$TestsFilesRootPath,
+        [Parameter(Mandatory=$true, ParameterSetName="Path", HelpMessage="The path to a JSON file containing settings and tag value data for reporting. Relative to a specific HealOpsPackage.")]
+        [Parameter(Mandatory=$true, ParameterSetName="File", HelpMessage="The path to a JSON file containing settings and tag value data for reporting. Relative to a specific HealOpsPackage.")]
         [ValidateNotNullOrEmpty()]
-        [string]$HealOpsPackageConfigPath
+        [string]$HealOpsPackageConfigPath,
+        [Parameter(Mandatory=$true, ParameterSetName="File", HelpMessage="The full path to a specific *.Tests.ps1 file to execute.")]
+        [ValidateNotNullOrEmpty()]
+        [String]$TestsFile
     )
 
     #############
     # Execution #
     #############
     Begin {
-# TODO: Test that the config files exist....
+        <#
+            - Sanity tests
+        #>
+        if($PSBoundParameters.ContainsKey('TestsFilesRootPath')) {
+            if (-not (Test-Path -Path $TestsFilesRootPath)) {
+                $message = "The path > $TestsFilesRootPath is invalid. Please provide an existing folder."
+                Write-Verbose -Message $message
 
-        # Get the HealOps config file
-        $healOpsConfig = Get-Content -Path $PSScriptRoot/../Artefacts/HealOpsConfig.json -Encoding UTF8 | ConvertFrom-Json
+                # Log it
 
-        # Get the HealOps package config file. A JSON file containing settings and tag value data for reporting. Relative to a specific HealOpsPackage.
-        $global:HealOpsPackageConfig = Get-Content -Path $HealOpsPackageConfigPath -Encoding UTF8 | ConvertFrom-Json
+                # Exit by throwing
+                throw $message
+            }
+        }
 
+        if($PSBoundParameters.ContainsKey('TestsFile')) {
+            if(-not (Test-Path -Path $TestsFile)) {
+                $message = "The file > $TestsFile cannot be found. Please provide a *.Tests.ps1 file that exists."
+                Write-Verbose -Message $message
+
+                # Log it
+
+                # Exit by throwing
+                throw $message
+            }
+        }
+
+        $HealOpsConfigPath = "$PSScriptRoot/../Artefacts/HealOpsConfig.json"
+        if(-not (Test-Path -Path $HealOpsConfigPath)) {
+            $message = "The file > $HealOpsConfigPath cannot be found. Please provide a HealOpsConfig.json file."
+            Write-Verbose -Message $message
+
+            # Log it
+
+            # Exit by throwing
+            throw $message
+        } else {
+            # Check file integrity & get config data
+            $healOpsConfig = Get-Content -Path $HealOpsConfigPath -Encoding UTF8 | ConvertFrom-Json
+            if ($null -eq $healOpsConfig) {
+                $message = "The HealOpsConfig contains no date. Please generate a proper HealOpsConfig file. See the documentation and generate a proper one."
+                Write-Verbose -Message $message
+
+                # Log it
+
+                # Exit by throwing
+                throw $message
+            } elseif(-not ($healOpsConfig.reportingBackend.Length -gt 1)) {
+                $message = "The HealOpsConfig file is not valid. Please generate a proper HealOpsConfig file. See the documentation and generate a proper one."
+                Write-Verbose -Message $message
+
+                # Log it
+
+                # Exit by throwing
+                throw $message
+            }
+        }
+
+        if(-not (Test-Path -Path $HealOpsPackageConfigPath)) {
+            $message = "The file > $HealOpsPackageConfigPath cannot be found. Please provide a HealOps package config file that exists."
+            Write-Verbose -Message $message
+
+            # Log it
+
+            # Exit by throwing
+            throw $message
+        } else {
+            # Check file integrity & get config data
+            $global:HealOpsPackageConfig = Get-Content -Path $HealOpsPackageConfigPath -Encoding UTF8 | ConvertFrom-Json
+            if ($null -eq $HealOpsPackageConfig) {
+                $message = "The HealOps package config contains no date. Please provide a proper HealOps package config file."
+                Write-Verbose -Message $message
+
+                # Log it
+
+                # Exit by throwing
+                throw $message
+            } elseif($null -eq $HealOpsPackageConfig[0]) {
+                $message = "The HealOps package config file is not valid. Please provide a proper one."
+                Write-Verbose -Message $message
+
+                # Log it
+
+                # Exit by throwing
+                throw $message
+            }
+        }
+
+        <#
+            - General module runtime config
+        #>
         # Handle verbosity
         $commonParms = @{}
         if ($PSBoundParameters.ContainsKey("Verbose")) {
@@ -51,9 +142,12 @@
         }
     }
     Process {
-        if (Test-Path -Path $TestFilePath) {
-            # Run the test
-            $testResult = Test-EntityState -TestFilePath $TestFilePath
+            # Run the tests
+            if ($PSBoundParameters.ContainsKey('TestsFilesRootPath')) {
+                $testResult = Test-EntityState -TestsFilesRootPath $TestsFilesRootPath
+            } elseif ($PSBoundParameters.ContainsKey('TestsFile')) {
+                $testResult = Test-EntityState -TestsFile $TestsFile
+            }
 
             if ($testResult.state -eq $false) {
                 ####
@@ -96,10 +190,6 @@
                     Write-Verbose -Message "The assertionResult variable was not defined in the *.Tests.ps1 file > $TestFilePath <- this HAS to be done."
                 }
             }
-        } else {
-            throw "The tests file $TestFilePath was not found."
-
-            # TODO: Somebody needs to know.
         }
     }
     End {}
