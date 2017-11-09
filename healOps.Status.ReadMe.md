@@ -11,10 +11,6 @@
         * Also, some tests can come back empty ... or throw as written in the above line.
         * !!!! If throwing and thereby stopping the execution of additional It assertion Pester checks, becomes the std. this needs to be described in the documentation.
 
-    * in repair-entitystate > $repairsFile = $TestFilePath -replace "Tests","Repairs"
-        * This line blows if there is actually a folder in the path that is named Tests. See if we can hit only the filename
-        part of the path ... bam! Even though it is not the described folder structure in the documentation.
-
 ## Work
 
     * Call-graph over the flow of HealOps, from invocation and the outcomes of that.
@@ -24,17 +20,7 @@
     * Create Pester tests for HealOps itself, that:
         * Tests the implicit axioms that can be derived from the description and documentation in the HealOps.ReadMe.md file.
     * Create tests for testing *.Tests.ps1 files.
-        * Test > that every 'It' block contains an global variable named 'assertionResult'
-    * To derive system name:
-        SUGGESTION 1: Use the description under Metrics in the HealOps.ReadMe.md file -> systemName.SystemComponent.SystemSubComponent.(SystemSubComponent)
-        * Control that there is at least one 'dot/.' in the name.
-        * Parse the name and get the sub-string up until the first dot.
-        * ...maybe assume no systemname if there isn't at least one 'dot/.'.
-
-        SUGGESTION 2: Use a healopspackage.packageSpecificName.json file for specifying stuff like systemName/Environment
-            <-- This 1 made it through!
-
-        SUGGESTION 3: Use a global variable inside the *.Tests.ps1 file.
+        * Test > that every 'It' block contains a global variable named 'assertionResult'
     * Scheduled tasks helper scripts.
         * For Windows <-- Working, needs fine-tuning and support for defining job executing user.
         * For Linux/MacOS
@@ -49,7 +35,7 @@
     * Create a Plaster template for easily creating a HealOpsPackage
     * Talk with the Linux DevOps about:
         * A good way to automatize creating Cron jobs.
-    * Create the New-HealOpsPackageRunner script so that it takes pipelin input. In this case a string to a path....a path obj.???
+    * Create the New-HealOpsPackageRunner script so that it takes pipeline input. In this case a string to a path....a path obj.???
 
 ## Think about
 
@@ -69,3 +55,10 @@
     - See under ## Work
 
     * Should we have a general report/status feature in HealOps. <-- definetely later but still.
+
+    * Metrics to get:
+        * TTLB (Time to last byte)
+        * Danskespil.dk sub-sites
+        * Exceptions
+        * Perf. counters
+            * custom as well

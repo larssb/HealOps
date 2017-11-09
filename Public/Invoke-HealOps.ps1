@@ -2,7 +2,7 @@
 <#
 .DESCRIPTION
     Invoke-HealOps is the function you call to initiate a HealOps package. Thereby testing "X" IT service/Entity.
-    Where "X" could be n+m.
+    Where "X" can be n+m.
 .INPUTS
     <none>
 .OUTPUTS
@@ -14,6 +14,8 @@
     Explanation of what the example does
 .PARAMETER TestFilePath
     A file containing the tests to run. This should be the full-path to the *.Tests.ps1 file.
+.PARAMETER HealOpsPackageConfigPath
+    The path to a JSON file containing settings and tag value data for reporting. Relative to a specific HealOpsPackage.
 #>
 
     # Define parameters
@@ -22,27 +24,31 @@
     param(
         [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="A file containig the Pester tests to run. This should be a full-path to a file.")]
         [ValidateNotNullOrEmpty()]
-        [string[]]$TestFilePath,
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="A JSON file containing settings and tag value data for reporting. Relative to a specific HealOpsPackage.")]
+        [string]$TestFilePath,
+        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The path to a JSON file containing settings and tag value data for reporting. Relative to a specific HealOpsPackage.")]
         [ValidateNotNullOrEmpty()]
-        [string[]]$HealOpsPackageConfigPath
+        [string]$HealOpsPackageConfigPath
     )
 
     #############
     # Execution #
     #############
     Begin {
+# TODO: Test that the config files exist....
+
         # Get the HealOps config file
         $healOpsConfig = Get-Content -Path $PSScriptRoot/../Artefacts/HealOpsConfig.json -Encoding UTF8 | ConvertFrom-Json
 
         # Get the HealOps package config file. A JSON file containing settings and tag value data for reporting. Relative to a specific HealOpsPackage.
+        $global:HealOpsPackageConfig = Get-Content -Path $HealOpsPackageConfigPath -Encoding UTF8 | ConvertFrom-Json
 
-        <#
-            - Should be "somewhere" in the specific HealOpsPackage folder
-            - We will just go look for it....
-            - Document this in the ReadMe....
-        #>
-        $HealOpsPackageConfig = Get-Content -Path $TestFilePath -Encoding UTF8 | ConvertFrom-Json
+        # Handle verbosity
+        $commonParms = @{}
+        if ($PSBoundParameters.ContainsKey("Verbose")) {
+            $commonParms.Add("Verbose",$true)
+        } else {
+            $commonParms.Add("Verbose",$false)
+        }
     }
     Process {
         if (Test-Path -Path $TestFilePath) {
@@ -56,12 +62,12 @@
                 Write-Verbose -Message "Trying to repair the 'Failed' test/s."
 
                 # Invoke repairs matching the failed test
-                $resultOfRepair = Repair-EntityState -TestFilePath $TestFilePath -TestData $testResult.testdata
+                $resultOfRepair = Repair-EntityState -TestFilePath $TestFilePath -TestData $testResult.testdata @commonParms
 
                 if ($resultOfRepair -eq $false) {
                     # Report the state of the service to the backend report system. Which should then further trigger an alarm to the on-call personnel.
                     try {
-                        Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -tagpairs $($testResult.tags) -metricValue $($testResult.testdata.FailureMessage)
+                        Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -metricValue $($testResult.testdata.FailureMessage)
                     } catch {
                         Write-Verbose "Submit-EntityStateReport failed with: $_"
 
@@ -79,7 +85,7 @@
                 if ((Get-Variable -Name assertionResult)) {
                     # Report the state of the service to the backend report system.
                     try {
-                        Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -tagpairs $($testResult.tags) -metricValue $assertionResult
+                        Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -metricValue $assertionResult
                     } catch {
                         Write-Verbose "Submit-EntityStateReport failed with: $_"
 

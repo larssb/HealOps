@@ -79,6 +79,11 @@ Rules of thumb and design of the *.Repairs.ps1 file
 
 Report data is based on metrics. Where metris is in the form e.g. ' systemName.SystemComponent.SystemSubComponent '.
 
+#### Metric values
+
+    * OpenTSDB:
+        * Only accepts numerical values for the metric value.
+
 #### Naming scheme
 
 The std. is:
@@ -94,11 +99,6 @@ The std. is:
 
     * The above name description is to be used when defining the "Describe" keyword value in the Pester *.Tests.ps1 file. As this is where the metric name will be derived from when reporting on a metric to the backend system.
 
-#### Metric values
-
-    * OpenTSDB:
-        * Only accepts numerical values for the metric value.
-
 #### On state test succes
 
     * A global variable should be used to report the value to be used for the metric value. This global variable will be read by HealOps when reporting.
@@ -109,6 +109,23 @@ The std. is:
 #### On state test failed
 
     *
+
+#### Report software specific documentation
+
+    * OpenTSDB
+        * Chunking needs to be enabled in the OpenTSDB config file. I.e.:
+        `
+        # Enable chunking
+        tsd.http.request.enable_chunked = true
+        tsd.http.request.max_chunk = 4096
+        `
+        * The conf file is could be located at e.g.
+            * /opt/opentsdb/opentsdb-"version"/src/opentsdb.conf
+        * For the chunking config change to be picked you need to:
+            * Add --config= e.g.:
+            `
+            /opt/opentsdb/opentsdb-${TSDB_VERSION}/build/tsdb tsd --config=/opt/opentsdb/opentsdb-${TSDB_VERSION}/src/opentsdb.conf --port=4242 --staticroot=/opt/opentsdb/opentsdb-${TSDB_VERSION}/build/staticroot --cachedir=/tmp --auto-metric
+            `
 
 ## Setup and configuration of HealOps
 

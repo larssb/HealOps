@@ -41,10 +41,6 @@ function Test-EntityState() {
         # Set state semaphore
         $state = $true
 
-        # Define tags in JSON
-        $tags = @{}
-        $tags.Add("node",(get-hostname))
-
         if ($TestOutput.FailedCount -ge 1) {
             $state = $false
             # Transform the output from the failed test
@@ -61,7 +57,6 @@ function Test-EntityState() {
         $tempCollection = @{}
         $tempCollection.Add("state",$state)
         $tempCollection.Add("testdata",$TestOutputTransformed)
-        $tempCollection.Add("tags",$tags)
         $tempCollection.Add("metric",$($TestOutput.TestResult.Describe))
 
         # Return to caller

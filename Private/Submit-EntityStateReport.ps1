@@ -15,8 +15,6 @@ function Submit-EntityStateReport() {
         Used to specify the software used as the reporting backend. For storing test result metrics.
     .PARAMETER metric
         The metric value, in a format supported by OpenTSDB, of the IT service/Entity to log data for, into OpenTSDB.
-    .PARAMETER tagPairs
-        The tags to set on the metric. Used to improve querying OpenTSDB. Provided as a Key/Value collection.
     .PARAMETER metricValue
         The value to record on the metric being writen to OpenTSDB.
     #>
@@ -32,9 +30,6 @@ function Submit-EntityStateReport() {
         [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The metric value, in a format supported by OpenTSDB, of the IT service/Entity to log data for, into OpenTSDB.")]
         [ValidateNotNullOrEmpty()]
         [String]$metric,
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The tags to set on the metric. Used to improve querying OpenTSDB. Provided as a Key/Value collection.")]
-        [ValidateNotNullOrEmpty()]
-        [hashtable]$tagPairs,
         [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The value to record on the metric being writen to OpenTSDB.")]
         [ValidateNotNullOrEmpty()]
         [int]$metricValue
@@ -43,11 +38,19 @@ function Submit-EntityStateReport() {
     #############
     # Execution #
     #############
+    <#
+        - Transform incoming data to send to the report backend
+    #>
+    # Define tags in JSON
+    $tags = @{}
+    $tags.Add("node",(get-hostname))
+    $tags.Add("environment",$($HealOpsPackageConfig.environment))
+
     # Determine the reporting backend system to use & push the report
     switch ($reportBackendSystem) {
         { $_ -eq "OpenTSDB" } {
             Import-Module -name $PSScriptRoot/ReportHelpers/OpenTSDB/OpenTSDB -Force
-            $result = write-metricToOpenTSDB -metric $metric -tagPairs $tagPairs -metricValue $metricValue -verbose
+            $result = write-metricToOpenTSDB -metric $metric -tagPairs $tags -metricValue $metricValue -verbose
         }
         Default {
             # TODO: Make sure that personnel is alarmed that reporting is not working!

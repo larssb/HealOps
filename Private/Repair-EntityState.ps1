@@ -35,7 +35,7 @@ function Repair-EntityState() {
     #############
 
     # Define the filename of the Repairs file.
-    $repairsFile = $TestFilePath -replace "Tests","Repairs"
+    $repairsFile = $TestFilePath -replace "Tests.ps1","Repairs.ps1"
     Write-Verbose -Message "The repairs file was resolved to: $repairsFile"
 
     if (Test-Path -Path $repairsFile) {

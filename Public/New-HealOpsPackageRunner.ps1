@@ -39,7 +39,7 @@ function New-HealOpsPackageRunner() {
         }
 
         # Try to get the config file for the HealOpsPackage
-        [System.IO.Path]::DirectorySeparatorChar
+        $dirSeparator = [System.IO.Path]::DirectorySeparatorChar
 
         $HealOpsPackageConfig = Get-ChildItem -Path $PSScriptRoot/.. -Recurse -File -Force -Include *.json
         if (-not ($null -eq $HealOpsPackageConfig) -and -not ($HealOpsPackageConfig.count -gt 1)) {
