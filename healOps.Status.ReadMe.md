@@ -11,6 +11,9 @@
         * Also, some tests can come back empty ... or throw as written in the above line.
         * !!!! If throwing and thereby stopping the execution of additional It assertion Pester checks, becomes the std. this needs to be described in the documentation.
 
+    * Find a better way to load the module. Don't need export-modulemember on all functions. Just that there are exposed via the manifest. At least if it makes a difference in relation to this > #Requires -RunAsAdministrator --> in New-HealOpsTask <-- as it throws ==  : The script 'New-HealOpsTask.ps1' cannot be run because it contains a "#requires" statement for running as Administr
+tor. The current Windows PowerShell session is not running as Administrator. Start Windows PowerShell by  using the Ru.....
+
 ## Work
 
     * Call-graph over the flow of HealOps, from invocation and the outcomes of that.
@@ -62,3 +65,5 @@
         * Exceptions
         * Perf. counters
             * custom as well
+
+    * Saving lookups in the test running status checks. By. Could have a tests[[]] in the HealOps package config....to MAYBE save a lookup.

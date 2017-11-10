@@ -1,4 +1,4 @@
-#Requires -RunAsAdministrator
+##Requires -RunAsAdministrator
 function New-HealOpsTask() {
 <#
 .DESCRIPTION
