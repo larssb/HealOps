@@ -39,6 +39,8 @@ tor. The current Windows PowerShell session is not running as Administrator. Sta
     * Talk with the Linux DevOps about:
         * A good way to automatize creating Cron jobs.
     * Create the New-HealOpsPackageRunner script so that it takes pipeline input. In this case a string to a path....a path obj.???
+    * Use jobs for executing multiple tests. In order to get to a less sequential approach.
+        * Invoke-HealOps ready for the use of get-jobs and the like.
 
 ## Think about
 

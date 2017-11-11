@@ -30,7 +30,6 @@ function Update-TestRunningStatus() {
         [ValidateNotNullOrEmpty()]
         [String]$TestFileName,
         [Parameter(Mandatory=$false, ParameterSetName="Default", HelpMessage="Set this switch to indicate that the test is running.")]
-        [ValidateNotNullOrEmpty()]
         [Switch]$TestRunning
     )
 
@@ -42,54 +41,57 @@ function Update-TestRunningStatus() {
         # Define data for updating the status of a test
         $tempTestsCollection = @{}
         $tempTestsCollection.Add("name",$TestFileName)
-        $tempTestsCollection.Add("running",$TestRunning)
-        $tempTestsArray = @();
+        $tempTestsCollection.Add("running",$($TestRunning.ToString()))
 
         # Start controlling the state of the test in question
         if ($null -eq $HealOpsPackageConfig.tests) {
             # Tests[] is not defined. Fix.
-            Add-Member -InputObject $HealOpsPackageConfig -MemberType NoteProperty -Name "tests" -Value @()
-            #$HealOpsPackageConfig.tests = $tempTestsArray
-            $HealOpsPackageConfig.tests += $tempTestsCollection
+            $ModifiedHealOpsPackageConfig = Add-Member -InputObject $HealOpsPackageConfig -MemberType NoteProperty -Name "tests" -Value @() -PassThru
+            $ModifiedHealOpsPackageConfig.tests += $tempTestsCollection
 
             # Write the config file
             try {
                 # Convert to JSON
-
+                $ModifiedHealOpsPackageConfig_InJSON = ConvertTo-Json -InputObject $ModifiedHealOpsPackageConfig -Depth 3
+                Write-Verbose -Message "The HealOps package object, converted to JSON > $ModifiedHealOpsPackageConfig_InJSON"
 
                 # Write
-                Set-Content -Path $HealOpsPackageConfigPath -Value $HealOpsPackageConfig -Force -Encoding UTF8
+                Set-Content -Path $HealOpsPackageConfigPath -Value $ModifiedHealOpsPackageConfig_InJSON -Force -Encoding UTF8
             } catch {
                 # Log it
 
                 throw "Failed to write the HealOps package config file. Failed with > $_"
             }
-        }
-
-        if(-not ($HealOpsPackageConfig.tests.GetType().BaseType.Name) -eq "Array") {
+        } elseif(-not ($HealOpsPackageConfig.tests.GetType().BaseType.Name) -eq "Array") {
             # Tests inside the HealOps package config is of the wrong datatype. Cannot trust it. Fix.
-            $HealOpsPackageConfig.tests = $tempTestsArray
-            $HealOpsPackageConfig.tests += $tempTestsCollection
+            $ModifiedHealOpsPackageConfig = Add-Member -InputObject $HealOpsPackageConfig -MemberType NoteProperty -Name "tests" -Value @() -PassThru
+            $ModifiedHealOpsPackageConfig.tests += $tempTestsCollection
 
             # Write the config file
             try {
-                Set-Content -Path $HealOpsPackageConfigPath -Value $HealOpsPackageConfig -Force -Encoding UTF8
+                # Convert to JSON
+                $ModifiedHealOpsPackageConfig_InJSON = ConvertTo-Json -InputObject $ModifiedHealOpsPackageConfig -Depth 3
+                Write-Verbose -Message "The HealOps package object, converted to JSON > $ModifiedHealOpsPackageConfig_InJSON"
+
+                Set-Content -Path $HealOpsPackageConfigPath -Value $ModifiedHealOpsPackageConfig_InJSON -Force -Encoding UTF8
             } catch {
                 # Log it
 
                 throw "Failed to write the HealOps package config file. Failed with > $_"
             }
-        }
-
-        if($HealOpsPackageConfig.tests.name.Contains($TestFileName)) {
+        } elseif($HealOpsPackageConfig.tests.name.Contains($TestFileName)) {
             # Update an already registered test
             $idxOfTheTest = $HealOpsPackageConfig.tests.name.IndexOf($TestFileName)
             $TestData = $HealOpsPackageConfig.tests[$idxOfTheTest]
-            $TestData.Running = $TestRunning
+            $TestData.Running = $($TestRunning.ToString())
 
             # Write the config file
             try {
-                Set-Content -Path $HealOpsPackageConfigPath -Value $HealOpsPackageConfig -Force -Encoding UTF8
+                # Convert to JSON
+                $HealOpsPackageConfig_InJSON = ConvertTo-Json -InputObject $HealOpsPackageConfig -Depth 3
+                Write-Verbose -Message "The HealOps package object, converted to JSON > $HealOpsPackageConfig_InJSON"
+
+                Set-Content -Path $HealOpsPackageConfigPath -Value $HealOpsPackageConfig_InJSON -Force -Encoding UTF8
             } catch {
                 # Log it
 
@@ -101,7 +103,11 @@ function Update-TestRunningStatus() {
 
             # Write the config file
             try {
-                Set-Content -Path $HealOpsPackageConfigPath -Value $HealOpsPackageConfig -Force -Encoding UTF8
+                # Convert to JSON
+                $HealOpsPackageConfig_InJSON = ConvertTo-Json -InputObject $HealOpsPackageConfig -Depth 3
+                Write-Verbose -Message "The HealOps package object, converted to JSON > $HealOpsPackageConfig_InJSON"
+
+                Set-Content -Path $HealOpsPackageConfigPath -Value $HealOpsPackageConfig_InJSON -Force -Encoding UTF8
             } catch {
                 # Log it
 

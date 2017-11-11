@@ -142,7 +142,6 @@
         }
     }
     Process {
-        $testExecutedOrNot = $false # Semaphore to control if a test was executed or not. Relative to if a test is already running or not.
         if ($PSBoundParameters.ContainsKey('TestsFilesRootPath')) {
             # Get the *.Tests.ps1 files in the provided directory
             $TestsFiles = Get-ChildItem -Path $TestsFilesRootPath -Recurse -Force -Include "*.Tests.ps1"
@@ -178,89 +177,94 @@
                         throw $_
                     }
 
-                    # Update the test executed status semaphore
-                    $testExecutedOrNot = $true
+                    if ($testResult.state -eq $false) {
+                        ###################
+                        # The test failed #
+                        ###################
+                        Write-Verbose -Message "Trying to repair the 'Failed' test/s."
+
+                        # Invoke repairs matching the failed test
+                        $resultOfRepair = Repair-EntityState -TestFilePath $testfile.FullName -TestData $testResult.testdata @commonParms
+
+                        if ($resultOfRepair -eq $false) {
+                            # Report the state of the service to the backend report system. Which should then further trigger an alarm to the on-call personnel.
+                            try {
+                                Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -metricValue $($testResult.testdata.FailureMessage)
+                            } catch {
+                                Write-Verbose "Submit-EntityStateReport failed with: $_"
+
+                                # TODO: LOG IT and inform x
+                            }
+                        } else {
+                            # Run the *.Tests.ps1 file again to verify and get data for reporting to the backend so that a monitored state of "X" IT service/Entity will get back to an okay state in the monitoring system.
+
+                            # THINK THIS THROUGH!
+                        }
+                    } else {
+                        ######################
+                        # The test succeeded #
+                        ######################
+                        if ((Get-Variable -Name assertionResult)) {
+                            # Report the state of the service to the backend report system.
+                            try {
+                                Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -metricValue $assertionResult
+                            } catch {
+                                Write-Verbose "Submit-EntityStateReport failed with: $_"
+
+                                # TODO: LOG IT and inform x
+                            }
+                        } else {
+                            # TODO: Log IT and inform x!
+                            Write-Verbose -Message "The assertionResult variable was not defined in the *.Tests.ps1 file > $TestFilePath <- this HAS to be done."
+                        }
+                    }
                 }
             }
         } elseif ($PSBoundParameters.ContainsKey('TestsFile')) {
-            # Determine the name of the *.Tests.ps1 file
-            $dirSeparatorChar = [System.IO.Path]::DirectorySeparatorChar
-            $idxOfSeparatorChar = $TestsFile.LastIndexOf($dirSeparatorChar)
-            $TestFileName = $TestsFile.Substring($idxOfSeparatorChar+1)
+            # Test execution
+            Write-Verbose -Message "Executing the test"
+            $testResult = Test-EntityState -TestFilePath $TestsFile
 
-            # Control if "X" tests is already running. If so == do not execute the test
-            try {
-                $testRunning = Test-RunningTest -TestFileName $TestFileName
-            } catch {
-                # Log it
+            if ($testResult.state -eq $false) {
+                ###################
+                # The test failed #
+                ###################
+                Write-Verbose -Message "Trying to repair the 'Failed' test/s."
 
-                throw "The function Test-RunningTest failed with: $_"
-            }
+                # Invoke repairs matching the failed test
+                $resultOfRepair = Repair-EntityState -TestFilePath $TestsFile -TestData $testResult.testdata @commonParms
 
-            # Execute the test if it isn't already running
-            if ($testRunning -eq $false) {
-                # Update the HealOps package config to reflect that the test is NOW running
-                try {
-                    Update-TestRunningStatus -HealOpsPackageConfigPath $HealOpsPackageConfigPath -TestFileName $TestFileName -TestRunning
-                } catch {
-                    throw $_
-                }
+                if ($resultOfRepair -eq $false) {
+                    # Report the state of the service to the backend report system. Which should then further trigger an alarm to the on-call personnel.
+                    try {
+                        Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -metricValue $($testResult.testdata.FailureMessage)
+                    } catch {
+                        Write-Verbose "Submit-EntityStateReport failed with: $_"
 
-                # Test execution
-                Write-Verbose -Message "Executing the test"
-                $testResult = Test-EntityState -TestFilePath $TestsFile
+                        # TODO: LOG IT and inform x
+                    }
+                } else {
+                    # Run the *.Tests.ps1 file again to verify and get data for reporting to the backend so that a monitored state of "X" IT service/Entity will get back to an okay state in the monitoring system.
 
-                # Update the HealOps package config to reflect that the test is NO longer running
-                try {
-                    Update-TestRunningStatus -HealOpsPackageConfigPath $HealOpsPackageConfigPath -TestFileName $TestFileName
-                } catch {
-                    throw $_
-                }
-
-                # Update the test executed status semaphore
-                $testExecutedOrNot = $true
-            }
-        }
-
-        if ($testResult.state -eq $false -and $testExecutedOrNot -eq $true) {
-            ###################
-            # The test failed #
-            ###################
-            Write-Verbose -Message "Trying to repair the 'Failed' test/s."
-
-            # Invoke repairs matching the failed test
-            $resultOfRepair = Repair-EntityState -TestFilePath $TestFilePath -TestData $testResult.testdata @commonParms
-
-            if ($resultOfRepair -eq $false) {
-                # Report the state of the service to the backend report system. Which should then further trigger an alarm to the on-call personnel.
-                try {
-                    Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -metricValue $($testResult.testdata.FailureMessage)
-                } catch {
-                    Write-Verbose "Submit-EntityStateReport failed with: $_"
-
-                    # TODO: LOG IT and inform x
+                    # THINK THIS THROUGH!
                 }
             } else {
-                # Run the *.Tests.ps1 file again to verify and get data for reporting to the backend so that a monitored state of "X" IT service/Entity will get back to an okay state in the monitoring system.
+                ######################
+                # The test succeeded #
+                ######################
+                if ((Get-Variable -Name assertionResult)) {
+                    # Report the state of the service to the backend report system.
+                    try {
+                        Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -metricValue $assertionResult
+                    } catch {
+                        Write-Verbose "Submit-EntityStateReport failed with: $_"
 
-                # THINK THIS THROUGH!
-            }
-        } else {
-            ######################
-            # The test succeeded #
-            ######################
-            if ((Get-Variable -Name assertionResult)) {
-                # Report the state of the service to the backend report system.
-                try {
-                    Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -metricValue $assertionResult
-                } catch {
-                    Write-Verbose "Submit-EntityStateReport failed with: $_"
-
-                    # TODO: LOG IT and inform x
+                        # TODO: LOG IT and inform x
+                    }
+                } else {
+                    # TODO: Log IT and inform x!
+                    Write-Verbose -Message "The assertionResult variable was not defined in the *.Tests.ps1 file > $TestFilePath <- this HAS to be done."
                 }
-            } else {
-                # TODO: Log IT and inform x!
-                Write-Verbose -Message "The assertionResult variable was not defined in the *.Tests.ps1 file > $TestFilePath <- this HAS to be done."
             }
         }
     }
