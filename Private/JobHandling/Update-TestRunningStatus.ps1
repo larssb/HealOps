@@ -37,7 +37,7 @@ function Update-TestRunningStatus() {
     # Execution #
     #############
     # Use the global variable that contains the config of "X" HealOps package
-    if ((Get-variable -Name HealOpsPackageConfig)) {
+    if ((Get-variable -Name HealOpsPackageConfig -ErrorAction SilentlyContinue)) {
         # Define data for updating the status of a test
         $tempTestsCollection = @{}
         $tempTestsCollection.Add("name",$TestFileName)

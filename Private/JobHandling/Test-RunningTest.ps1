@@ -28,7 +28,7 @@ function Test-RunningTest() {
     # Execution #
     #############
     # Use the global variable that contains the config of "X" HealOps package
-    if ((Get-variable -Name HealOpsPackageConfig)) {
+    if ((Get-variable -Name HealOpsPackageConfig -ErrorAction SilentlyContinue)) {
         # Start controlling the state of the test in question
         if ($null -eq $HealOpsPackageConfig.tests) {
             # No tests are running at all, as the HealOps package config has not been written to

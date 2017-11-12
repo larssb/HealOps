@@ -11,7 +11,7 @@ function Test-EntityState() {
 .NOTES
     General notes
 .EXAMPLE
-    $Test-EntityState -TestFilePath ./PATH/ENTITY_TO_TEST.TESTS.ps1
+    Test-EntityState -TestFilePath ./PATH/ENTITY_TO_TEST.TESTS.ps1
     Explanation of what the example does
 .PARAMETER TestFilePath
     A file containig the Pester tests to run. This should be a full-path to a file.

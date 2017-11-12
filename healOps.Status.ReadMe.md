@@ -27,7 +27,9 @@ tor. The current Windows PowerShell session is not running as Administrator. Sta
     * Scheduled tasks helper scripts.
         * For Windows <-- Working, needs fine-tuning and support for defining job executing user.
         * For Linux/MacOS
-    * Better building of HealOps
+    * Better build scripts of HealOps
+        * Code coverage
+        * Script Analyzer and so forth
     * Deployment tactics
     * Tooling, meaning code, that can control a Package Management system for updates to a HealOps package.
         * And the well thought out logic flow of doing that and when....yeah yeah.
@@ -41,6 +43,19 @@ tor. The current Windows PowerShell session is not running as Administrator. Sta
     * Create the New-HealOpsPackageRunner script so that it takes pipeline input. In this case a string to a path....a path obj.???
     * Use jobs for executing multiple tests. In order to get to a less sequential approach.
         * Invoke-HealOps ready for the use of get-jobs and the like.
+
+        STATUS 171112:
+            * Dropping that *.Tests.ps1 shares the *.HealOpsPackage.json file.
+            * 1 file per *.Tests.ps1 file
+            * Name for the file > *.Status.json
+            * Logic
+                * Check for this file when determining if a test is running.
+                    no file == not running
+                    file == check data integrity and the like
+                    file == check running status
+                * When a test is done > update the *.Status.json file
+            * The *.Status.json file is just stored in the same folder as the Tests and Repairs files.
+    * Program function that can > Cache and queue reports on “X” IT service. In case of the reporting backend being down or that it is not possible to reach it.
 
 ## Think about
 
