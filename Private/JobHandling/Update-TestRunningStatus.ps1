@@ -1,18 +1,20 @@
 function Update-TestRunningStatus() {
 <#
 .DESCRIPTION
-
+    Updates or creates a json file relative to the test running, in order to be able to determine if a test is currently running or not. Needed because when running all the tests in
+    "X" folder each test will be started via the Start-Job cmdlet.
 .INPUTS
     <none>
 .OUTPUTS
-    [Boolean] corresponding to the result of updating the HealOps package config file.
+    <none>
 .NOTES
-    General notes
+    - If the file does not already exist it will be created.
+    - If it exists its contents will be overwritten.
 .EXAMPLE
-    Update-TestRunningStatus -
-    Explanation of what the example does
-.PARAMETER HealOpsPackageConfigPath
-    The path to a JSON file containing settings and tag value data for reporting. Relative to a specific HealOpsPackage.
+    Update-TestRunningStatus -TestsFilesRootPath $TestsFilesRootPath -TestFileName $TestFileName
+    Updates the .json file relative to the Tests file specified via the TestFileName parameter. This will mark the test as not running because the TestRunning switch parameter is not used.
+.PARAMETER TestsFilesRootPath
+    The folder that contains the tests to execute.
 .PARAMETER TestFileName
     The name of the *.Tests.ps1 file.
 .PARAMETER TestRunning
@@ -21,11 +23,11 @@ function Update-TestRunningStatus() {
 
     # Define parameters
     [CmdletBinding()]
-    [OutputType([Boolean])]
+    [OutputType([Void])]
     param(
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The path to a JSON file containing settings and tag value data for reporting. Relative to a specific HealOpsPackage.")]
+        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage=" The folder that contains the tests to execute.")]
         [ValidateNotNullOrEmpty()]
-        [String]$HealOpsPackageConfigPath,
+        [String]$TestsFilesRootPath,
         [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The name of the *.Tests.ps1 file.")]
         [ValidateNotNullOrEmpty()]
         [String]$TestFileName,
@@ -36,87 +38,34 @@ function Update-TestRunningStatus() {
     #############
     # Execution #
     #############
-    # Use the global variable that contains the config of "X" HealOps package
-    if ((Get-variable -Name HealOpsPackageConfig -ErrorAction SilentlyContinue)) {
-        # Define data for updating the status of a test
-        $tempTestsCollection = @{}
-        $tempTestsCollection.Add("name",$TestFileName)
-        $tempTestsCollection.Add("running",$($TestRunning.ToString()))
+    <#
+        - Define data for updating the status of a test
+    #>
+    # Remove the extension from the Tests file name
+    $fileExtension = [System.IO.Path]::GetExtension($TestFileName)
+    $TestFileName_NoExt = $TestFileName -replace "$fileExtension",""
 
-        # Start controlling the state of the test in question
-        if ($null -eq $HealOpsPackageConfig.tests) {
-            # Tests[] is not defined. Fix.
-            $ModifiedHealOpsPackageConfig = Add-Member -InputObject $HealOpsPackageConfig -MemberType NoteProperty -Name "tests" -Value @() -PassThru
-            $ModifiedHealOpsPackageConfig.tests += $tempTestsCollection
+    # Remove the .Tests part of the filename
+    $statusFileName = $TestFileName_NoExt -replace "Tests","Status"
 
-            # Write the config file
-            try {
-                # Convert to JSON
-                $ModifiedHealOpsPackageConfig_InJSON = ConvertTo-Json -InputObject $ModifiedHealOpsPackageConfig -Depth 3
-                Write-Verbose -Message "The HealOps package object, converted to JSON > $ModifiedHealOpsPackageConfig_InJSON"
+    # Define the object that will be written to the tests *.Status.json file.
+    $tempTestsCollection = @{}
+    $tempTestsCollection.Add("name",$statusFileName)
+    $tempTestsCollection.Add("running",$($TestRunning.ToString()))
 
-                # Write
-                Set-Content -Path $HealOpsPackageConfigPath -Value $ModifiedHealOpsPackageConfig_InJSON -Force -Encoding UTF8
-            } catch {
-                # Log it
+    <#
+        - Write the update to the status file
+    #>
+    # Convert to JSON
+    $tempTestsCollection_InJSON = ConvertTo-Json -InputObject $tempTestsCollection -Depth 3
+    Write-Verbose -Message "Status JSON to write to the $TestFileName status file > $tempTestsCollection_InJSON"
 
-                throw "Failed to write the HealOps package config file. Failed with > $_"
-            }
-        } elseif(-not ($HealOpsPackageConfig.tests.GetType().BaseType.Name) -eq "Array") {
-            # Tests inside the HealOps package config is of the wrong datatype. Cannot trust it. Fix.
-            $ModifiedHealOpsPackageConfig = Add-Member -InputObject $HealOpsPackageConfig -MemberType NoteProperty -Name "tests" -Value @() -PassThru
-            $ModifiedHealOpsPackageConfig.tests += $tempTestsCollection
-
-            # Write the config file
-            try {
-                # Convert to JSON
-                $ModifiedHealOpsPackageConfig_InJSON = ConvertTo-Json -InputObject $ModifiedHealOpsPackageConfig -Depth 3
-                Write-Verbose -Message "The HealOps package object, converted to JSON > $ModifiedHealOpsPackageConfig_InJSON"
-
-                Set-Content -Path $HealOpsPackageConfigPath -Value $ModifiedHealOpsPackageConfig_InJSON -Force -Encoding UTF8
-            } catch {
-                # Log it
-
-                throw "Failed to write the HealOps package config file. Failed with > $_"
-            }
-        } elseif($HealOpsPackageConfig.tests.name.Contains($TestFileName)) {
-            # Update an already registered test
-            $idxOfTheTest = $HealOpsPackageConfig.tests.name.IndexOf($TestFileName)
-            $TestData = $HealOpsPackageConfig.tests[$idxOfTheTest]
-            $TestData.Running = $($TestRunning.ToString())
-
-            # Write the config file
-            try {
-                # Convert to JSON
-                $HealOpsPackageConfig_InJSON = ConvertTo-Json -InputObject $HealOpsPackageConfig -Depth 3
-                Write-Verbose -Message "The HealOps package object, converted to JSON > $HealOpsPackageConfig_InJSON"
-
-                Set-Content -Path $HealOpsPackageConfigPath -Value $HealOpsPackageConfig_InJSON -Force -Encoding UTF8
-            } catch {
-                # Log it
-
-                throw "Failed to write the HealOps package config file. Failed with > $_"
-            }
-        } else {
-            # The test has not already been registered. Register it.
-            $HealOpsPackageConfig.tests += $tempTestsCollection
-
-            # Write the config file
-            try {
-                # Convert to JSON
-                $HealOpsPackageConfig_InJSON = ConvertTo-Json -InputObject $HealOpsPackageConfig -Depth 3
-                Write-Verbose -Message "The HealOps package object, converted to JSON > $HealOpsPackageConfig_InJSON"
-
-                Set-Content -Path $HealOpsPackageConfigPath -Value $HealOpsPackageConfig_InJSON -Force -Encoding UTF8
-            } catch {
-                # Log it
-
-                throw "Failed to write the HealOps package config file. Failed with > $_"
-            }
-        }
-    } else {
+    # Write the file
+    try {
+        Set-Content -Path $TestsFilesRootPath/$statusFileName.json -Value $tempTestsCollection_InJSON -Force -Encoding UTF8
+    } catch {
         # Log it
 
-        throw "The HealOpsPackageConfig variable is not defined. Cannot update the running status of the test."
+        throw "Failed to write the status file for the tests file > $TestFileName. Failed with > $_"
     }
 }

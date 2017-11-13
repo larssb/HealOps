@@ -150,7 +150,7 @@
             foreach ($testfile in $TestsFiles) {
                 # Control if "X" tests is already running. If so == do not execute the test
                 try {
-                    $testRunning = Test-RunningTest -TestFileName $testfile.name
+                    $testRunning = Test-RunningTest -TestFileName $testfile.name -TestsFilesRootPath $TestsFilesRootPath @commonParms
                 } catch {
                     # Log it
 
@@ -159,9 +159,9 @@
 
                 # Execute the test if it isn't already running
                 if ($testRunning -eq $false) {
-                    # Update the HealOps package config to reflect that the test is NOW running
+                    # Update the test *.Status.json file to reflect that the test is NOW running
                     try {
-                        Update-TestRunningStatus -HealOpsPackageConfigPath $HealOpsPackageConfigPath -TestFileName $testfile.name -TestRunning
+                        Update-TestRunningStatus -TestsFilesRootPath $TestsFilesRootPath -TestFileName $testfile.name -TestRunning
                     } catch {
                         throw $_
                     }
@@ -184,14 +184,14 @@
                         #########################
                         # Start-Job ScriptBlock #
                         #########################
-                        param($HealOpsPackageConfig,$commonParms)
+                        param($TestsFilesRootPath,$commonParms,$HealOpsPackageConfig)
 
                         # Test execution
                         $testResult = Test-EntityState -TestFilePath $using:testfile.FullName
 
-                        # Update the HealOps package config to reflect that the test is NO longer running
+                        # Update the test *.Status.json file to reflect that the test is NO longer running
                         try {
-                            Update-TestRunningStatus -HealOpsPackageConfigPath $using:HealOpsPackageConfigPath -TestFileName $using:testfile.name
+                            Update-TestRunningStatus -TestsFilesRootPath $TestsFilesRootPath -TestFileName $using:testfile.name
                         } catch {
                             throw $_
                         }
@@ -215,9 +215,24 @@
                                     # TODO: LOG IT and inform x
                                 }
                             } else {
-                                # Run the *.Tests.ps1 file again to verify and get data for reporting to the backend so that a monitored state of "X" IT service/Entity will get back to an okay state in the monitoring system.
+                                # Run the *.Tests.ps1 file again to verify that repairing was successful and to get data for reporting to the backend so that a monitored state of "X" IT service/Entity will get back to an okay state in the monitoring system.
+                                $testResult = Test-EntityState -TestFilePath $using:testfile.FullName
 
-                                # THINK THIS THROUGH!
+                                # Test on the result in order to get correct data for the metric value.
+                                if ($testResult.state -eq $true) {
+                                    $metricValue = $assertionResult # Uses the global variable set in the *.Tests.ps1 file to capture a numeric value to report to the reporting backend.
+                                } else {
+                                    $metricValue = $($testResult.testdata.FailureMessage)
+                                }
+
+                                # Report the result
+                                try {
+                                    Submit-EntityStateReport -reportBackendSystem $($using:healOpsConfig.reportingBackend) -metric $($testResult.metric) -metricValue $metricValue
+                                } catch {
+                                    Write-Verbose "Submit-EntityStateReport failed with: $_"
+
+                                    # TODO: LOG IT and inform x
+                                }
                             }
                         } else {
                             ######################
@@ -237,7 +252,7 @@
                                 Write-Verbose -Message "The assertionResult variable was not defined in the *.Tests.ps1 file > $($using:testfile.name) <- this HAS to be done."
                             }
                         }
-                    } -Verbose -ArgumentList $HealOpsPackageConfig,$commonParms
+                    } -Verbose -ArgumentList $TestsFilesRootPath,$commonParms,$HealOpsPackageConfig
                 }
             } # End of foreach tests file in $TestsFilesRootPath
         } elseif ($PSBoundParameters.ContainsKey('TestsFile')) {
