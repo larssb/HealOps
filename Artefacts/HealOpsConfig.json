@@ -1,3 +1,8 @@
 {
-    "reportingBackend": "OpenTSDB"
+    "reportingBackend": "OpenTSDB",
+    "checkForUpdates": "True",
+    "checkForUpdatesInterval_InDays": 3,
+    "checkForUpdates_Repository": "DSPowerShellPackages",
+    "checkForUpdates_URI": "http://teamcity.danskespil.dk:8082/nuget/dsPowerShellPackages/",
+    "checkedForUpdates": ""
 }

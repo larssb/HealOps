@@ -140,6 +140,26 @@
         } else {
             $commonParms.Add("Verbose",$false)
         }
+
+        <#
+            - Check for updates. For required modules and HealOps itself
+        #>
+        #$checkForUpdatesInterval = $healOpsConfig.checkForUpdatesInterval_InDays
+        $currentDate = get-date
+        $checkedForUpdates = $healOpsConfig.checkedForUpdates ... > to date
+        $lastUpdateDate = (get-date).AddDays($($healOpsConfig.))
+        $checkForUpdates = (get-date). -gt (get-date)
+
+        if ($healOpsConfig.checkedForUpdates -eq $null -or $healOpsConfig) {
+            # Get modules required by HealOps - As we are in the HealOps module itself, we know that HealOps is installed ;-)
+            $HealOpsModule = Get-Module -All -Name HealOps
+
+            foreach ($requiredModule in $HealOpsModule.RequiredModules) {
+                #
+            }
+
+            # Check for updates to HealOps itself.
+        }
     }
     Process {
         if ($PSBoundParameters.ContainsKey('TestsFilesRootPath')) {
