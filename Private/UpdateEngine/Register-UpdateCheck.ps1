@@ -2,28 +2,28 @@
 function Register-UpdateCheck() {
 <#
 .DESCRIPTION
-    Long description
+    Intern HealOps function that registers a dateTime object in the HealOpsConfig json file. Which is used as part of the checkForUpdates functionality of HealOps.
 .INPUTS
-    Inputs (if any)
+    <none>
 .OUTPUTS
-    Outputs (if any)
+    [Boolean] relative to the result of storing the dateTime of a processed update check, to the HealOps config json file.
 .NOTES
-    General notes
+    Uses the global variable $healOpsConfig. Setup in the invoke-healops function.
 .EXAMPLE
-    PS C:\> <example usage>
+    Register-UpdateCheck -
     Explanation of what the example does
-.PARAMETER NAME_OF_THE_PARAMETER_WITHOUT_THE_QUOTES
+.PARAMETER dateTime
     Parameter_HelpMessage_text
     Add_a_PARAMETER_per_parameter
 #>
 
     # Define parameters
     [CmdletBinding()]
-    [OutputType([SPECIFY_THE_RETURN_TYPE_OF_THE_FUNCTION_HERE])]
+    [OutputType([Boolean])]
     param(
-        [Parameter(Mandatory=$true, ParameterSetName="NAME", HelpMessage="MESSAGE")]
+        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The ")]
         [ValidateNotNullOrEmpty()]
-        $NAMEOFPARAMETER
+        [date]$dateTime
     )
 
     #############

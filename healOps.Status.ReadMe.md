@@ -32,7 +32,8 @@ tor. The current Windows PowerShell session is not running as Administrator. Sta
         * Script Analyzer and so forth
     * Deployment tactics
     * Tooling, meaning code, that can control a Package Management system for updates to a HealOps package.
-        * And the well thought out logic flow of doing that and when....yeah yeah.
+        * Hardening
+            * If a required module is not installed get-module returns nothing, update-module could also react in weird ways. But aren't we sure that modules required by HealOps are instaled, if not HealOps wouldn't work at all. And! It should be a part of the bootstrap/install of HealOps to install required modules.
     * Tests and Repairs for 'X' systems.
         e.g.
         * Citrix prod.
@@ -41,21 +42,9 @@ tor. The current Windows PowerShell session is not running as Administrator. Sta
     * Talk with the Linux DevOps about:
         * A good way to automatize creating Cron jobs.
     * Create the New-HealOpsPackageRunner script so that it takes pipeline input. In this case a string to a path....a path obj.???
-    * Use jobs for executing multiple tests. In order to get to a less sequential approach.
-        * Invoke-HealOps ready for the use of get-jobs and the like.
-
-        STATUS 171112:
-            * Dropping that *.Tests.ps1 shares the *.HealOpsPackage.json file.
-            * 1 file per *.Tests.ps1 file
-            * Name for the file > *.Status.json
-            * Logic
-                * Check for this file when determining if a test is running.
-                    no file == not running
-                    file == check data integrity and the like
-                    file == check running status
-                * When a test is done > update the *.Status.json file
-            * The *.Status.json file is just stored in the same folder as the Tests and Repairs files.
     * Program function that can > Cache and queue reports on “X” IT service. In case of the reporting backend being down or that it is not possible to reach it.
+    * Need to put externally made modules, such as Pester onto the ProGet package management backend we have.
+
 
 ## Think about
 
