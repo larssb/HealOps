@@ -141,144 +141,50 @@
             $commonParms.Add("Verbose",$false)
         }
 
-        <#
-            - Check for updates. For the modules that HealOps has a dependency on and for HealOps itself
-        #>
-        $HealOpsModuleName = "HealOps"
-        $updateCycleRan = $false # Semaphore from which to determine if an update cycle ran or not.
-        if ($healOpsConfig.checkForUpdatesNext.length -le 2) {
+        if ($healOpsConfig.checkForUpdates -eq "True") {
             <#
-                - checkForUpdatesNext not correctly defined in the HealOps config json file or not defined at all. Assumption > check for updates now.
+            - Check for updates. For the modules that HealOps has a dependency on and for HealOps itself
             #>
-            # Get modules required by HealOps - As we are in the HealOps module itself, we know that HealOps is installed ;-)
-            $HealOpsModule = Get-Module -All -Name $HealOpsModuleName
-            foreach ($requiredModule in $HealOpsModule.RequiredModules) {
-                # Register the current version of the module
-                $moduleVersionBeforeUpdate = $requiredModule.version
+            $HealOpsModuleName = "HealOps"
+            $updateCycleRan = $false # Semaphore from which to determine if an update cycle ran or not.
+            if ($healOpsConfig.checkForUpdatesNext.length -le 2) {
+                <#
+                - checkForUpdatesNext not correctly defined in the HealOps config json file or not defined at all. Assumption > check for updates now.
+                #>
+                Write-Verbose -Message "checkForUpdatesNext not correctly defined in the HealOps config json."
 
-                try {
-                    # Update
-                    Update-Module -Name $requiredModule.Name -ErrorAction Stop
-                    $updateRan = $true
-                } catch {
-                    # Log it - To the Reporting backend???
-
-                    # When in verbose mode
-                    Write-Verbose -Message "Updating the module $($requiredModule.Name) failed with > $_"
-                }
-
-                # Control if the module was actually updated
-                if ($updateRan) {
-                    # Test for update
-                    $moduleVersionAfterUpdate = Get-module -Name $requiredModule.Name
-
-                    if ($moduleVersionAfterUpdate.Version -gt $moduleVersionBeforeUpdate) {
-                        # Log it
-
-                        # When in verbose mode
-                        Write-Verbose -Message "The module $($requiredModule.Name) was bumped to $($moduleVersionAfterUpdate.Version) from $moduleVersionBeforeUpdate"
-                    } else {
-                        # Log it
-
-                        # When in verbose mode
-                        Write-Verbose -Message "There was no update available on the Package Management backend. The module $($requiredModule.Name) was therefore not updated. `
-                        Module version before the update > $moduleVersionBeforeUpdate. Module version after trying an update > $($moduleVersionAfterUpdate.Version)"
-                    }
-
-                    # Clear the updateRan variable
-                    Remove-Variable -Name updateRan -Force -Confirm:$false
-                }
-            }
-
-            # Check for updates to HealOps itself.
-            try {
-                # Update
-                Update-Module -Name $HealOpsModuleName -ErrorAction Stop
-                $updateRan = $true
-            } catch {
-                # Log it - To the Reporting backend???
-
-                # When in verbose mode
-                Write-Verbose -Message "Updating the module $HealOpsModuleName failed with > $_"
-            }
-
-            # Control if the module was actually updated
-            if ($updateRan) {
-                # Test for update
-                $moduleVersionAfterUpdate = Get-module -Name $HealOpsModuleName
-
-                if ($moduleVersionAfterUpdate.Version -gt $HealOpsModule.Version) {
-                    # Log it
-
-                    # When in verbose mode
-                    Write-Verbose -Message "The module $HealOpsModuleName was bumped to $($moduleVersionAfterUpdate.Version) from $($HealOpsModule.Version)"
-                } else {
-                    # Log it
-
-                    # When in verbose mode
-                    Write-Verbose -Message "There was no update available on the Package Management backend. The module was therefore not updated. `
-                    Module version before the update > $($HealOpsModule.Version). Module version after trying an update > $($moduleVersionAfterUpdate.Version)"
-                }
-
-                # Clear the updateRan variable
-                Remove-Variable -Name updateRan -Force -Confirm:$false
-            }
-
-            # The update cycle ran
-            $updateCycleRan = $true
-        } else {
-            # checkedForUpdates properly defined. Control the date of the last update and hold it up against checkForUpdatesNext
-            $currentDate = get-date
-            $checkForUpdatesNext = $healOpsConfig.checkForUpdatesNext -as [datetime]
-
-            if ($currentDate -gt $checkForUpdatesNext) {
                 # Get modules required by HealOps - As we are in the HealOps module itself, we know that HealOps is installed ;-)
                 $HealOpsModule = Get-Module -All -Name $HealOpsModuleName
-
-                # We should update
                 foreach ($requiredModule in $HealOpsModule.RequiredModules) {
                     # Register the current version of the module
                     $moduleVersionBeforeUpdate = $requiredModule.version
 
                     try {
                         # Update
-                        Update-Module $requiredModule.Name -ErrorAction Stop
-                        $updateRan = $true
+                        Update-Module -Name $requiredModule.Name -ErrorAction Stop -ErrorVariable updateModuleEV
                     } catch {
-                        # Log it
+                        # Log it - To the Reporting backend???
 
                         # When in verbose mode
                         Write-Verbose -Message "Updating the module $($requiredModule.Name) failed with > $_"
                     }
 
-                    # Control if the module was actually updated
-                    if ($updateRan) {
-                        # Test for update
-                        $moduleVersionAfterUpdate = Get-module -Name $requiredModule.Name
+                    if ($null -eq $updateModuleEV) {
+                        $updateRan = $true
+                    } else {
+                        $updateRan = $false
+                    }
 
-                        if ($moduleVersionAfterUpdate.Version -gt $moduleVersionBeforeUpdate) {
-                            # Log it
-
-                            # When in verbose mode
-                            Write-Verbose -Message "The module $($requiredModule.Name) was bumped to $($moduleVersionAfterUpdate.Version) from $moduleVersionBeforeUpdate"
-                        } else {
-                            # Log it
-
-                            # When in verbose mode
-                            Write-Verbose -Message "There was no update available on the Package Management backend. The module $($requiredModule.Name) was therefore not updated. `
-                            Module version before the update > $moduleVersionBeforeUpdate. Module version after trying an update > $($moduleVersionAfterUpdate.Version)"
-                        }
-
-                        # Clear the updateRan variable
-                        Remove-Variable -Name updateRan -Force -Confirm:$false
+                    # Control if the module was actually updated after a non-terminating update-module execution
+                    if ($updateRan -eq $true) {
+                        Test-ModuleUpdated -ModuleName $requiredModule.Name -ModuleVersionBeforeUpdate $moduleVersionBeforeUpdate
                     }
                 }
 
                 # Check for updates to HealOps itself.
                 try {
                     # Update
-                    Update-Module -Name $HealOpsModuleName -ErrorAction Stop
-                    $updateRan = $true
+                    Update-Module -Name $HealOpsModuleName -ErrorAction Stop -ErrorVariable updateModuleEV
                 } catch {
                     # Log it - To the Reporting backend???
 
@@ -286,36 +192,86 @@
                     Write-Verbose -Message "Updating the module $HealOpsModuleName failed with > $_"
                 }
 
-                # Control if the module was actually updated
-                if ($updateRan) {
-                    # Test for update
-                    $moduleVersionAfterUpdate = Get-module -Name $HealOpsModuleName
+                if ($null -eq $updateModuleEV) {
+                    $updateRan = $true
+                } else {
+                    $updateRan = $false
+                }
 
-                    if ($moduleVersionAfterUpdate.Version -gt $HealOpsModule.Version) {
-                        # Log it
-
-                        # When in verbose mode
-                        Write-Verbose -Message "The module $HealOpsModuleName was bumped to $($moduleVersionAfterUpdate.Version) from $($HealOpsModule.Version)"
-                    } else {
-                        # Log it
-
-                        # When in verbose mode
-                        Write-Verbose -Message "There was no update available on the Package Management backend. The module was therefore not updated. `
-                        Module version before the update > $($HealOpsModule.Version). Module version after trying an update > $($moduleVersionAfterUpdate.Version)"
-                    }
-
-                    # Clear the updateRan variable
-                    Remove-Variable -Name updateRan -Force -Confirm:$false
+                # Control if the module was actually updated after a non-terminating update-module execution
+                if ($updateRan -eq $true) {
+                    Test-ModuleUpdated -ModuleName $requiredModule.Name -ModuleVersionBeforeUpdate $moduleVersionBeforeUpdate
                 }
 
                 # The update cycle ran
                 $updateCycleRan = $true
+            } else {
+                # checkedForUpdates properly defined. Control the date of the last update and hold it up against checkForUpdatesNext
+                $currentDate = get-date
+                $checkForUpdatesNext = $healOpsConfig.checkForUpdatesNext -as [datetime]
+
+                if ($currentDate -gt $checkForUpdatesNext) {
+                    # Get modules required by HealOps - As we are in the HealOps module itself, we know that HealOps is installed ;-)
+                    $HealOpsModule = Get-Module -All -Name $HealOpsModuleName
+
+                    # We should update
+                    foreach ($requiredModule in $HealOpsModule.RequiredModules) {
+                        # Register the current version of the module
+                        $moduleVersionBeforeUpdate = $requiredModule.version
+
+                        try {
+                            # Update
+                            Update-Module $requiredModule.Name -ErrorAction Stop -ErrorVariable updateModuleEV
+                        } catch {
+                            # Log it
+
+                            # When in verbose mode
+                            Write-Verbose -Message "Updating the module $($requiredModule.Name) failed with > $_"
+                        }
+
+                        if ($null -eq $updateModuleEV) {
+                            $updateRan = $true
+                        } else {
+                            $updateRan = $false
+                        }
+
+                        # Control if the module was actually updated after a non-terminating update-module execution
+                        if ($updateRan -eq $true) {
+                            Test-ModuleUpdated -ModuleName $requiredModule.Name -ModuleVersionBeforeUpdate $moduleVersionBeforeUpdate
+                        }
+                    }
+
+                    # Check for updates to HealOps itself.
+                    try {
+                        # Update
+                        Update-Module -Name $HealOpsModuleName -ErrorAction Stop -ErrorVariable updateModuleEV
+                    } catch {
+                        # Log it - To the Reporting backend???
+
+                        # When in verbose mode
+                        Write-Verbose -Message "Updating the module $HealOpsModuleName failed with > $_"
+                    }
+
+                    if ($null -eq $updateModuleEV) {
+                        $updateRan = $true
+                    } else {
+                        $updateRan = $false
+                    }
+
+                    # Control if the module was actually updated after a non-terminating update-module execution
+                    if ($updateRan -eq $true) {
+                        Test-ModuleUpdated -ModuleName $requiredModule.Name -ModuleVersionBeforeUpdate $moduleVersionBeforeUpdate
+                    }
+
+                    # The update cycle ran
+                    $updateCycleRan = $true
+                }
             }
 
             # Check if an update cycle was ran and set data in order to register the fact
             if ($updateCycleRan) {
                 <#
-                    - The update cycle ran. Determine the time for the next update cycle
+                - The update cycle ran. Determine the time for the next update cycle
                 #>
                 # Determine DateTime for checkForUpdatesNext. Using a random plus "M" minutes, in order to NOT overload the Package Management backend with requests at the same time. In this way package request will be more evenly spread out.
                 $checkForUpdatesNext_DateTimeRandom = get-random -Minimum 1 -Maximum 123
@@ -329,8 +285,13 @@
             } else {
                 # The update cycle did not run. It could have failed or the time criteria was not met. Set to the same time of checkForUpdatesNext > in order to have HealOps run an update cycle again.
                 $checkForUpdatesNext = $healOpsConfig.checkForUpdatesNext
+            } else {
+                Write-Verbose -Message "The update cycle did not run. It is not the time for updating."
             }
-        }
+
+            # When in verbose mode
+            Write-Verbose -Message "The value of checkForUpdatesNext > $checkForUpdatesNext"
+        } # End of condition control on the checkForUpdates feature is enabled or not
     }
     Process {
         if ($PSBoundParameters.ContainsKey('TestsFilesRootPath')) {

@@ -14,6 +14,12 @@
     * Find a better way to load the module. Don't need export-modulemember on all functions. Just that there are exposed via the manifest. At least if it makes a difference in relation to this > #Requires -RunAsAdministrator --> in New-HealOpsTask <-- as it throws ==  : The script 'New-HealOpsTask.ps1' cannot be run because it contains a "#requires" statement for running as Administr
 tor. The current Windows PowerShell session is not running as Administrator. Start Windows PowerShell by  using the Ru.....
 
+## Various
+
+    - The name of DS packagement and URI
+        * "checkForUpdates_Repository":  "dsPowerShellModules",
+        * "checkForUpdates_URI":  "http://teamcity.danskespil.dk:8082/nuget/dsPowerShellModules/",
+
 ## Work
 
     * Call-graph over the flow of HealOps, from invocation and the outcomes of that.
@@ -44,7 +50,6 @@ tor. The current Windows PowerShell session is not running as Administrator. Sta
     * Create the New-HealOpsPackageRunner script so that it takes pipeline input. In this case a string to a path....a path obj.???
     * Program function that can > Cache and queue reports on “X” IT service. In case of the reporting backend being down or that it is not possible to reach it.
     * Need to put externally made modules, such as Pester onto the ProGet package management backend we have.
-
 
 ## Think about
 

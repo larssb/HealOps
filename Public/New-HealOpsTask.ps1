@@ -1,21 +1,26 @@
-##Requires -RunAsAdministrator
 function New-HealOpsTask() {
 <#
 .DESCRIPTION
     New-HealOpsTask is used to create either:
         a) a "Scheduled Taks" if OS == Windows or
         b) a "cron" job if OS == Linux or MacOS
+
+    The function determines on its own, the OS it is executed on and thereby whether to create a cron job or a Scheduled Task
 .INPUTS
-    Inputs (if any)
+    <none>
 .OUTPUTS
-    [Boolean]
+    <none>
 .NOTES
     General notes
 .EXAMPLE
-    New-HealOpsTask -
+    New-HealOpsTask -TaskName $TaskName -TaskRepetitionInterval $TaskRepetitionInterval -InvokeHealOpsFile $InvokeHealOpsFile
     Explanation of what the example does
 .PARAMETER TaskName
     The name of the task.
+.PARAMETER TaskRepetitionInterval
+    The interval, in minutes, between repeating the task.
+.PARAMETER InvokeHealOpsFile
+    Specify the path to the file that is used to execute the HealOps package and its code. This file will then be called by the platforms job engine as scheduled.
 #>
 
     # Define parameters
@@ -75,5 +80,9 @@ function New-HealOpsTask() {
     }
 
     # Create the job with the above options
-    New-ScheduledJob -TaskName $TaskName -TaskOptions $jobOptionsSplatting -TaskTriggerOptions $jobTriggerSplatting -TaskPayload "File" -FilePath $InvokeHealOpsFile -verbose
+    try {
+        New-ScheduledJob -TaskName $TaskName -TaskOptions $jobOptionsSplatting -TaskTriggerOptions $jobTriggerSplatting -TaskPayload "File" -FilePath $InvokeHealOpsFile -verbose
+    } catch {
+        throw "Failed to create the HealOps task. The error is > $_"
+    }
 }
