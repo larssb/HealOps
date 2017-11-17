@@ -1,9 +1,7 @@
+#Requires -Modules powershellTooling
 ###############
 #### PREP. ####
 ###############
-# Module import
-Import-Module -name powerShellTooling
-
 # Include: Settings
 #. "$PSScriptRoot/settings.Build.ps1"
 
@@ -42,7 +40,6 @@ task build {
     # Copy folders to buildOutputRoot
     ForEach ($folder in $folderToInclude) {
         Write-Verbose "Folder info: $ModuleRoot$folder"
-
         Copy-item -Recurse -Path $ModuleRoot$folder -Destination $buildOutputRoot/$folder
     }
 
@@ -52,7 +49,7 @@ task build {
     <#
         - Give build information on where to find the cooked package
     #>
-    if((test-powershellRunMode) -eq "interactive") {
+    if((test-powershellRunMode -Interactive) -eq $true) {
         Write-Build Green "The build completed and its output can be found in: $buildOutputRoot"
     }
 }

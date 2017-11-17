@@ -141,10 +141,10 @@
             $commonParms.Add("Verbose",$false)
         }
 
-        if ($healOpsConfig.checkForUpdates -eq "True") {
-            <#
+        <#
             - Check for updates. For the modules that HealOps has a dependency on and for HealOps itself
-            #>
+        #>
+        if ($healOpsConfig.checkForUpdates -eq "True") {
             $HealOpsModuleName = "HealOps"
             $updateCycleRan = $false # Semaphore from which to determine if an update cycle ran or not.
             if ($healOpsConfig.checkForUpdatesNext.length -le 2) {
@@ -285,7 +285,6 @@
             } else {
                 # The update cycle did not run. It could have failed or the time criteria was not met. Set to the same time of checkForUpdatesNext > in order to have HealOps run an update cycle again.
                 $checkForUpdatesNext = $healOpsConfig.checkForUpdatesNext
-            } else {
                 Write-Verbose -Message "The update cycle did not run. It is not the time for updating."
             }
 
