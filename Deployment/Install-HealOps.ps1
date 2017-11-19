@@ -42,18 +42,16 @@
 .OUTPUTS
     Outputs to the terminal/host as it goes.
 .NOTES
-    If not interval is defined for the checkForUpdatesInterval_InDays parameter Install-HealOps will default to 7 a day interval.
+
 .EXAMPLE
     "PATH_TO_THIS_FILE"/Instal-HealOps.ps1 -reportingBackend $reportingBackend -TaskName "MyHealOpsTask" -TaskRepetitionInterval 3 -
     Explanation of what the example does
 .PARAMETER reportingBackend
     Used to specify the software used as the reporting backend. For storing test result metrics.
-.PARAMETER checkForUpdates
-    Whether to enable the check for updates feature or not.
 .PARAMETER checkForUpdatesInterval_InDays
-    The interval in days between checking for updates
+    The interval in days between checking for updates. Specifying this implicitly also enables the check for updates feature.
 .PARAMETER PackageManagementRepository
-    The name of the repository on the Package Management system
+    The name of the repository, registered with Register-PSRepository, where modules used by HealOps are located.
 .PARAMETER TaskName
     The name of the task.
 .PARAMETER TaskRepetitionInterval
@@ -67,12 +65,12 @@
     [OutputType([Void])]
     param(
         [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="Used to specify the software used as the reporting backend. For storing test result metrics.")]
-        [ValidateNotNullOrEmpty()]
         [ValidateSet('OpenTSDB')]
         [String]$reportingBackend,
-        [Parameter(Mandatory=$false, ParameterSetName="Default", HelpMessage="Whether to enable the check for updates feature or not.")]
-        [Switch]$checkForUpdates,
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The name of the repository on the Package Management system.")]
+        [Parameter(Mandatory=$false, ParameterSetName="Default", HelpMessage="The interval in days between checking for updates.")]
+        [ValidateNotNullOrEmpty()]
+        [Int]$checkForUpdatesInterval_InDays,
+        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The name of the repository, registered with Register-PSRepository, where modules used by HealOps are located.")]
         [ValidateNotNullOrEmpty()]
         [String]$PackageManagementRepository,
         [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The name of the task.")]
@@ -83,84 +81,40 @@
         [Int]$TaskRepetitionInterval,
         [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The type of payload the task should execute when triggered.")]
         [ValidateSet('File','ScriptBlock')]
-        [String]$TaskPayload
+        [String]$TaskPayload,
+        [Parameter(Mandatory=$false, ParameterSetName="Default", HelpMessage="Used to specify that the package management backend does not allow anonymous access. This will make the script prompt for credentials.")]
+        [Switch]$AnonymousNotAllowed
     )
 
     DynamicParam {
-        #if($checkForUpdates -eq $true) {
-            # Check for updates functionality switch used. Set the needed parameters to configure the feature
-            <#
-                - checkForUpdatesInterval_InDays param.
-            #>
-            # Configure parameter
-            $attributes = new-object System.Management.Automation.ParameterAttribute
-            $attributes.Mandatory = $false
-            $attributes.HelpMessage = "The interval in days between checking for updates."
-            $ValidateNotNullOrEmptyAttribute = New-Object Management.Automation.ValidateNotNullOrEmptyAttribute
+        <#
+            - General config for the FilePath or Scriptblock parameter relative to the TaskPayload value.
+        #>
+        # Configure parameter
+        $attributes = new-object System.Management.Automation.ParameterAttribute
+        $attributes.Mandatory = $true
+        $ValidateNotNullOrEmptyAttribute = New-Object Management.Automation.ValidateNotNullOrEmptyAttribute
+        [Type]$ParameterType = "String"
 
-            # Define parameter collection
-            $attributeCollection = new-object -Type System.Collections.ObjectModel.Collection[System.Attribute]
-            $attributeCollection.Add($attributes)
-            $attributeCollection.Add($ValidateNotNullOrEmptyAttribute)
+        # Define parameter collection
+        $attributeCollection = new-object -Type System.Collections.ObjectModel.Collection[System.Attribute]
+        $attributeCollection.Add($attributes)
+        $attributeCollection.Add($ValidateNotNullOrEmptyAttribute)
 
-            # Prepare to return & expose the parameter
-            $checkForUpdatesInterval_InDays_ParameterName = "checkForUpdatesInterval_InDays"
-            [Type]$ParameterType = "Int"
-            $checkForUpdatesInterval_InDays_Parameter = New-Object Management.Automation.RuntimeDefinedParameter($checkForUpdatesInterval_InDays_ParameterName, $ParameterType, $AttributeCollection)
-            if ($null -eq $checkForUpdatesInterval_InDays_Parameter.Value) {
-                # No value was provided, fallback to once a week.
-                $checkForUpdatesInterval_InDays_Parameter.Value = 7
-            }
-
-            $paramDictionary = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
-            $paramDictionary.Add($checkForUpdatesInterval_InDays_ParameterName, $checkForUpdatesInterval_InDays_Parameter)
-
-            return $paramDictionary
-        #}
-
+        # Specific config
         if($TaskPayload -eq "File") {
-            # Configure parameter
-            $attributes = new-object System.Management.Automation.ParameterAttribute
-            $attributes.Mandatory = $true
             $attributes.HelpMessage = "The full path to the file that the Windows Scheduled Task should execute when triggered."
-            #$ValidateNotNullOrEmptyAttribute = New-Object Management.Automation.ValidateNotNullOrEmptyAttribute
-
-            # Define parameter collection
-            $attributeCollection = new-object -Type System.Collections.ObjectModel.Collection[System.Attribute]
-            $attributeCollection.Add($attributes)
-            #$attributeCollection.Add($ValidateNotNullOrEmptyAttribute)
-
-            # Prepare to return & expose the parameter
-            $TaskPayloadFilePath_ParameterName = "FilePath"
-            [Type]$ParameterType = "String"
-            $TaskPayloadFilePath_Parameter = New-Object Management.Automation.RuntimeDefinedParameter($TaskPayloadFilePath_ParameterName, $ParameterType, $AttributeCollection)
-
-            $paramDictionary = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
-            $paramDictionary.Add($TaskPayloadFilePath_ParameterName, $TaskPayloadFilePath_Parameter)
-            return $paramDictionary
+            $ParameterName = "FilePath"
         } elseif($TaskPayload -eq "ScriptBlock") {
-            # Configure parameter
-            $attributes = new-object System.Management.Automation.ParameterAttribute
-            $attributes.Mandatory = $true
             $attributes.HelpMessage = "The scriptblock that the scheduled task should execute when triggered."
-            #$ValidateNotNullOrEmptyAttribute = New-Object Management.Automation.ValidateNotNullOrEmptyAttribute
-
-            # Define parameter collection
-            $attributeCollection = new-object -Type System.Collections.ObjectModel.Collection[System.Attribute]
-            $attributeCollection.Add($attributes)
-            #$attributeCollection.Add($ValidateNotNullOrEmptyAttribute)
-
-            # Prepare to return & expose the parameter
-            $TaskPayloadScriptBlock_ParameterName = "ScriptBlock"
-            [Type]$ParameterType = "String"
-            $TaskPayloadScriptBlock_Parameter = New-Object Management.Automation.RuntimeDefinedParameter($TaskPayloadScriptBlock_ParameterName, $ParameterType, $AttributeCollection)
-
-            $paramDictionary = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
-            $paramDictionary.Add($TaskPayloadScriptBlock_ParameterName, $TaskPayloadScriptBlock_Parameter)
-            return $paramDictionary
+            $ParameterName = "ScriptBlock"
         }
 
-
+        # Prepare to return & expose the parameter
+        $Parameter = New-Object Management.Automation.RuntimeDefinedParameter($ParameterName, $ParameterType, $AttributeCollection)
+        $paramDictionary = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
+        $paramDictionary.Add($ParameterName, $Parameter)
+        return $paramDictionary
     }
 
     #############
@@ -168,29 +122,25 @@
     #############
     Begin {
         <#
-            - Sanity tests
-        #>
-
-        <#
             - Define variables and other needed data
         #>
         # The name of the HealOps module.
         $HealOpsModuleName = "HealOps"
+
+        # Prepare install-module parameter splatting
+        $installModuleParms = @{}
+        if ($AnonymousNotAllowed -eq $true) {
+            $installModuleParms.Add("Credential",(Get-credential))
+        }
     }
     Process {
         <#
             - Install HealOps and its required modules.
         #>
-        # Register the repository
-        try {
-            #Register-PSRepository -Name $PackageManagementRepository -SourceLocation $PackageManagementURI -PublishLocation $PackageManagementURI
-        } catch {
-            throw "register-psrepo...failed with > $_"
-        }
-
         # Install HealOps
+        Write-Progress -Activity "Installing HealOps" -CurrentOperation "Installing the HealOps module." -Id 1
         try {
-            Install-Module -Name $HealOpsModuleName -Repository $PackageManagementRepository -ErrorAction Stop -ErrorVariable installModuleEV
+            Install-Module -Name $HealOpsModuleName -Repository $PackageManagementRepository @installModuleParms -ErrorAction Stop -ErrorVariable installModuleEV
         } catch {
             throw "Install-Module...failed with > $_"
         }
@@ -203,7 +153,8 @@
             # Install the modules
             foreach ($requiredModule in $requiredModules) {
                 try {
-                    Install-Module -Name $requiredModule -Repository $PackageManagementRepository -ErrorAction Stop
+                    Write-Progress -Activity "Installing HealOps" -CurrentOperation "Installing the HealOps dependency module $requiredModule." -Id 2
+                    Install-Module -Name $requiredModule -Repository $PackageManagementRepository @installModuleParms -ErrorAction Stop
                 } catch {
                     throw "Failed to install the HealOps required module $requiredModule. It failed with > $_"
                 }
@@ -211,27 +162,31 @@
         }
 
         # Check that HealOps was installed
-        $HealOpsModule = Get-Module -All -Name $HealOpsModuleName
+        $HealOpsModule = Get-Module -ListAvailable -All -Name $HealOpsModuleName
+        $HealOpsModuleBase = (Get-Module -ListAvailable -All -Name $HealOpsModuleName).ModuleBase | Select-Object -Unique
         if ($HealOpsModule.Name -eq $HealOpsModuleName) {
             <#
-            - The HealOps config json file.
+                - The HealOps config json file.
             #>
+            Write-Progress -Activity "Installing HealOps" -CurrentOperation "Defining the HealOps config json file." -Id 3
             $HealOpsConfig = @{}
             $HealOpsConfig.reportingBackend = $reportingBackend
-            $HealOpsConfig.checkForUpdates = $checkForUpdates
-            if($checkForUpdates -eq $true) {
+            if($null -ne $checkForUpdatesInterval_InDays) {
+                $HealOpsConfig.checkForUpdates = "True"
+                $HealOpsConfig.checkForUpdatesInterval_InDays = $checkForUpdatesInterval_InDays
                 $HealOpsConfig.checkForUpdatesNext = "" # Real value provided when HealOps is running and have done its first update cycle pass.
-                $HealOpsConfig.checkForUpdatesInterval_InDays = $psboundparameters.checkForUpdatesInterval_InDays
+            } else {
+                $HealOpsConfig.checkForUpdates = "False"
             }
 
             # Convert to JSON
+            Write-Progress -Activity "Installing HealOps" -CurrentOperation "Writing the HealOps config json file." -Id 4
             $HealOpsConfig_InJSON = ConvertTo-Json -InputObject $HealOpsConfig -Depth 3
             Write-Verbose -Message "HealOpsConfig JSON to write to the HealOpsConfig json file > $HealOpsConfig_InJSON"
 
             # Write the HealOps config json file
-            ## TODO: Figure out the location of the PowerShell modules path. Inspiration can be picked up in the PowerShellGet module on GitHub
             try {
-                Set-Content -Path "C:\Program Files\WindowsPowerShell\Modules\HealOps\Artefacts\HealOpsConfig.json" -Value $HealOpsConfig_InJSON -Force
+                Set-Content -Path $HealOpsModuleBase/Artefacts/HealOpsConfig.json -Value $HealOpsConfig_InJSON -Force
             } catch {
                 throw "Writing the HealOps config json file failed with: $_"
             }
@@ -240,10 +195,11 @@
                 - Task for running HealOps
             #>
             try {
+                Write-Progress -Activity "Installing HealOps" -CurrentOperation "Creating a task to execute HealOps." -Status "With these values > $TaskName, $TaskRepetitionInterval and $TaskPayload" -Id 5
                 if ($psboundparameters.ContainsKey('FilePath')) {
-                    New-HealOpsTask -TaskName $TaskName -TaskRepetitionInterval $TaskRepetitionInterval -TaskPayload "File" -FilePath $FilePath
+                    New-HealOpsTask -TaskName $TaskName -TaskRepetitionInterval $TaskRepetitionInterval -TaskPayload "File" -FilePath $psboundparameters.FilePath
                 } else {
-                    New-HealOpsTask -TaskName $TaskName -TaskRepetitionInterval $TaskRepetitionInterval -TaskPayload "ScriptBlock" -ScriptBlock $ScriptBlock
+                    New-HealOpsTask -TaskName $TaskName -TaskRepetitionInterval $TaskRepetitionInterval -TaskPayload "ScriptBlock" -ScriptBlock $psboundparameters.ScriptBlock
                 }
             } catch {
                 throw $_

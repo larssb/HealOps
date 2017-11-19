@@ -20,6 +20,8 @@ tor. The current Windows PowerShell session is not running as Administrator. Sta
         * "checkForUpdates_Repository":  "dsPowerShellModules",
         * "checkForUpdates_URI":  "http://teamcity.danskespil.dk:8082/nuget/dsPowerShellModules/",
 
+    - Look into https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/new-modulemanifest?view=powershell-5.1
+
 ## Work
 
     * Call-graph over the flow of HealOps, from invocation and the outcomes of that.
