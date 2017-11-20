@@ -149,6 +149,15 @@ The std. is:
         * The reporting system backend used. Possible values are so far (171030)
             * OpenTSDB
 
+## Tasks
+
+    * Windows Scheduled Tasks.
+        * The type of task created is specifically a PowerShell job. Therefore the location of the job will be > \Scheduled Tasks Root\Microsoft\Windows\PowerShell\ScheduledJobs
+        * The job definition will be stored in the context of the user with which you created the job, even though the job is being executed as another user.
+            >> e.g. $jobDef = [Microsoft.PowerShell.ScheduledJob.ScheduledJobDefinition]::LoadFromStore('TestingHealOps', 'C:\Users\%username%\AppData\Local\Microsoft\Windows\PowerShell\ScheduledJobs'); $jobDef.Run()"
+    * Linux/MacOS cron job.
+        *
+
 ## Termonology
 
     * HealOpsPackage > A unit of execution in relative to the testing and repairing of "X" IT Service/Entity.

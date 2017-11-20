@@ -12,6 +12,9 @@
 .EXAMPLE
     Invoke-HealOps -TestFilePath $TestsFile -HealOpsPackageConfigPath $HealOpsPackageConfigPath
     Executes HealOps on a specific *.Tests.ps1 file. Sending in the HealOps package config file wherein HealOps will read configuration and tags.
+.EXAMPLE
+    Invoke-HealOps -TestsFilesRootPath "PATH_TO_THE_TESTS_REPAIRS_FOLDER" -HealOpsPackageConfigPath "PATH_TO_THE_HEALOPSCONFIGPATH"
+    Will execute all the tests files located in the TestsFilesRootPath folder and HealOps will react on the result of executing these
 .PARAMETER TestsFilesRootPath
     The folder that contains the tests to execute.
 .PARAMETER HealOpsPackageConfigPath
@@ -149,7 +152,7 @@
             $updateCycleRan = $false # Semaphore from which to determine if an update cycle ran or not.
             if ($healOpsConfig.checkForUpdatesNext.length -le 2) {
                 <#
-                - checkForUpdatesNext not correctly defined in the HealOps config json file or not defined at all. Assumption > check for updates now.
+                    - checkForUpdatesNext not correctly defined in the HealOps config json file or not defined at all. Assumption > check for updates now.
                 #>
                 Write-Verbose -Message "checkForUpdatesNext not correctly defined in the HealOps config json."
 
@@ -318,24 +321,16 @@
                     }
 
                     # Start a job per test.
-                    Write-Verbose -Message "Executing the test"
-                    $job = Start-Job -Name "HealOps-TestAndRepair-$($testfile.name)" -InitializationScript (
-                        ##################################
-                        # Start-Job InitializationScript #
-                        ##################################
-                        [scriptblock]::Create(
-                            "Set-Location $PSScriptRoot;
-                            . $PSScriptRoot/../Private/Test-EntityState.ps1;
-                            . $PSScriptRoot/../Private/JobHandling/Update-TestRunningStatus.ps1;
-                            . $PSScriptRoot/../Private/Repair-EntityState.ps1;
-                            . $PSScriptRoot/../Private/Submit-EntityStateReport.ps1;
-                            Set-Location $PWD"
-                        )
-                    ) -ScriptBlock {
+                    $job = Start-Job -Name "HealOps-TestAndRepair-$($testfile.name)" -ScriptBlock {
                         #########################
                         # Start-Job ScriptBlock #
                         #########################
-                        param($TestsFilesRootPath,$commonParms,$HealOpsPackageConfig)
+                        param($TestsFilesRootPath,$commonParms,$HealOpsPackageConfig,$PSScriptRoot)
+                        # Import modules
+                        . $PSScriptRoot/../Private/Test-EntityState.ps1
+                        . $PSScriptRoot/../Private/JobHandling/Update-TestRunningStatus.ps1
+                        . $PSScriptRoot/../Private/Repair-EntityState.ps1
+                        . $PSScriptRoot/../Private/Submit-EntityStateReport.ps1
 
                         # Test execution
                         $testResult = Test-EntityState -TestFilePath $using:testfile.FullName
@@ -403,7 +398,7 @@
                                 Write-Verbose -Message "The assertionResult variable was not defined in the *.Tests.ps1 file > $($using:testfile.name) <- this HAS to be done."
                             }
                         }
-                    } -Verbose -ArgumentList $TestsFilesRootPath,$commonParms,$HealOpsPackageConfig
+                    } -Verbose -ArgumentList $TestsFilesRootPath,$commonParms,$HealOpsPackageConfig,$PSScriptRoot
                 }
             } # End of foreach tests file in $TestsFilesRootPath
         } elseif ($PSBoundParameters.ContainsKey('TestsFile')) {

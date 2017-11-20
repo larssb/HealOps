@@ -62,7 +62,7 @@ function Update-TestRunningStatus() {
 
     # Write the file
     try {
-        Set-Content -Path $TestsFilesRootPath/$statusFileName.json -Value $tempTestsCollection_InJSON -Force -Encoding UTF8
+        Set-Content -Path $TestsFilesRootPath/$statusFileName.json -Value $tempTestsCollection_InJSON -Force -Encoding UTF8 -ErrorAction Stop
     } catch {
         # Log it
 

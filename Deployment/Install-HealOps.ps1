@@ -29,6 +29,7 @@
 
 #>
 
+#Requires -RunAsAdministrator
 <#
 .DESCRIPTION
     This is a script function that will install HealOps on "X" system.
@@ -42,7 +43,8 @@
 .OUTPUTS
     Outputs to the terminal/host as it goes.
 .NOTES
-
+    Install-HealOps uses the -Force parameter on the Instal-Modules cmdlet. In order to install side-by-side if an older version is already on the system and a newer is available
+    on the Package Management system.
 .EXAMPLE
     "PATH_TO_THIS_FILE"/Instal-HealOps.ps1 -reportingBackend $reportingBackend -TaskName "MyHealOpsTask" -TaskRepetitionInterval 3 -
     Explanation of what the example does
@@ -58,6 +60,8 @@
     The interval, in minutes, between repeating the task.
 .PARAMETER TaskPayload
     The type of payload to invoke HealOps with.
+.PARAMETER AnonymousNotAllowed
+    Used to specify that the package management backend does not allow anonymous access. This will make the script prompt for credentials.
 #>
 
     # Define parameters
@@ -103,10 +107,10 @@
 
         # Specific config
         if($TaskPayload -eq "File") {
-            $attributes.HelpMessage = "The full path to the file that the Windows Scheduled Task should execute when triggered."
+            $attributes.HelpMessage = "The full path to the file that the task should execute when triggered."
             $ParameterName = "FilePath"
         } elseif($TaskPayload -eq "ScriptBlock") {
-            $attributes.HelpMessage = "The scriptblock that the scheduled task should execute when triggered."
+            $attributes.HelpMessage = "The scriptblock that the task should execute when triggered."
             $ParameterName = "ScriptBlock"
         }
 
@@ -137,10 +141,13 @@
         <#
             - Install HealOps and its required modules.
         #>
+        # If HealOps is already loaded in the current runspace. Remove the module
+        Remove-Module -Name $HealOpsModuleName -Force -ErrorAction SilentlyContinue # Ok to continue silently > if it failed the module was not there to remove and that is what we want.
+
         # Install HealOps
         Write-Progress -Activity "Installing HealOps" -CurrentOperation "Installing the HealOps module." -Id 1
         try {
-            Install-Module -Name $HealOpsModuleName -Repository $PackageManagementRepository @installModuleParms -ErrorAction Stop -ErrorVariable installModuleEV
+            Install-Module -Name $HealOpsModuleName -Repository $PackageManagementRepository -Force @installModuleParms -ErrorAction Stop -ErrorVariable installModuleEV
         } catch {
             throw "Install-Module...failed with > $_"
         }
@@ -152,9 +159,12 @@
 
             # Install the modules
             foreach ($requiredModule in $requiredModules) {
+                # Remove the requiredModule from the current runspace if it is loaded.
+                Remove-Module -Name $requiredModule -Force -ErrorAction SilentlyContinue # Ok to continue silently > if it failed the module was not there to remove and that is what we want.
+
                 try {
                     Write-Progress -Activity "Installing HealOps" -CurrentOperation "Installing the HealOps dependency module $requiredModule." -Id 2
-                    Install-Module -Name $requiredModule -Repository $PackageManagementRepository @installModuleParms -ErrorAction Stop
+                    Install-Module -Name $requiredModule -Repository $PackageManagementRepository -Force @installModuleParms -ErrorAction Stop
                 } catch {
                     throw "Failed to install the HealOps required module $requiredModule. It failed with > $_"
                 }
@@ -190,6 +200,37 @@
             } catch {
                 throw "Writing the HealOps config json file failed with: $_"
             }
+            <#
+                - Create privileged user for the HealOps task
+            #>
+            # Password for the local user
+            $numbers = 1..100
+            $randomNumbers = Get-Random -InputObject $numbers -Count 9
+            $chars = [char[]](0..255) -clike '[A-z]'
+            $randomChars = Get-Random -InputObject $chars -Count 9
+            $charsAndNumbers = $randomNumbers
+            $charsAndNumbers += $randomChars
+            $charsAndNumbersShuffled = $charsAndNumbers | Sort-Object {Get-Random}
+            $password = ConvertTo-SecureString -String ($charsAndNumbersShuffled -join "") -AsPlainText -Force
+
+            # Create the user
+            $HealOpsUsername = "HealOps"
+            try {
+                $HealOpsUser = New-LocalUser -Name $HealOpsUsername -AccountNeverExpires -Description "Used to execute HealOps tests & repairs files." -Password $password -PasswordNeverExpires -UserMayNotChangePassword
+            } catch {
+                throw "Failed to create a batch user for HealOps. The error was > $_"
+            }
+
+            # Create credentials object used when registering the scheduled job.
+            $credential = new-object -typename System.Management.Automation.PSCredential -argumentlist $HealOpsUsername, $password
+
+            # Add the user to the local privileged group. S-1-5-32-544 is the SID for the local 'Administrators' group.
+            # TODO: needs to be specific to MacOS and linux at some point!
+            try {
+                Add-LocalGroupMember -SID S-1-5-32-544 -Member $HealOpsUser
+            } catch {
+                throw "Failed to add the HealOps batch user to the local 'Administrators' group. The error was > $_"
+            }
 
             <#
                 - Task for running HealOps
@@ -197,13 +238,21 @@
             try {
                 Write-Progress -Activity "Installing HealOps" -CurrentOperation "Creating a task to execute HealOps." -Status "With these values > $TaskName, $TaskRepetitionInterval and $TaskPayload" -Id 5
                 if ($psboundparameters.ContainsKey('FilePath')) {
-                    New-HealOpsTask -TaskName $TaskName -TaskRepetitionInterval $TaskRepetitionInterval -TaskPayload "File" -FilePath $psboundparameters.FilePath
+                    New-HealOpsTask -TaskName $TaskName -TaskRepetitionInterval $TaskRepetitionInterval -TaskPayload "File" -FilePath $psboundparameters.FilePath -credential $credential
                 } else {
-                    New-HealOpsTask -TaskName $TaskName -TaskRepetitionInterval $TaskRepetitionInterval -TaskPayload "ScriptBlock" -ScriptBlock $psboundparameters.ScriptBlock
+                    New-HealOpsTask -TaskName $TaskName -TaskRepetitionInterval $TaskRepetitionInterval -TaskPayload "ScriptBlock" -ScriptBlock $psboundparameters.ScriptBlock -credential $credential
                 }
             } catch {
                 throw $_
             }
+
+            <#
+                - Clean-up
+            #>
+            # Remove the password variable from memory
+            Remove-Variable Password -Force
+            Remove-Variable credential -Force
+            [System.GC]::Collect()
         } else {
             throw "The HealOps module does not seem to be installed. So we have to stop."
         }

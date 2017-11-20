@@ -51,7 +51,22 @@ tor. The current Windows PowerShell session is not running as Administrator. Sta
         * A good way to automatize creating Cron jobs.
     * Create the New-HealOpsPackageRunner script so that it takes pipeline input. In this case a string to a path....a path obj.???
     * Program function that can > Cache and queue reports on “X” IT service. In case of the reporting backend being down or that it is not possible to reach it.
-    * Need to put externally made modules, such as Pester onto the ProGet package management backend we have.
+    * RunningAsScheduledTask
+        - ByPass needed
+            --> Set that on the registered job.
+        - Must be a full path in the command in the task -scriptblock object.
+        - PowerShellGet version:
+            --> 1.5.0.0
+            --> Therefore > Install-Module -Name PowerShellGet -Force
+            --> Upload to PackageManagement system
+    * Fix error on Update-TestRunningStatus:
+        * En del af stien 'C:\Users\HealOps\Documents\LABE\gitRepos\HealOpsPackages\Sitecore\TestsAndRepairs\system.resource.disk
+        space.Status.json' blev ikke fundet.
+            + CategoryInfo          : ObjectNotFound: (C:\Users\HealOp...ace.Status.json:String) [Set-Content], DirectoryNotFo
+        undException
+            + FullyQualifiedErrorId : GetContentWriterDirectoryNotFoundError,Microsoft.PowerShell.Commands.SetContentCommand
+            + PSComputerName        : localhost
+        * Set-content -erroraction Stop inside Update-TestRunningStatus! To catch the error.
 
 ## Think about
 
