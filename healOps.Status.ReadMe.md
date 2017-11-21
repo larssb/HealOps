@@ -16,11 +16,15 @@ tor. The current Windows PowerShell session is not running as Administrator. Sta
 
 ## Various
 
-    - The name of DS packagement and URI
+    - The name of the DS package management endpoint and URI
         * "checkForUpdates_Repository":  "dsPowerShellModules",
         * "checkForUpdates_URI":  "http://teamcity.danskespil.dk:8082/nuget/dsPowerShellModules/",
 
     - Look into https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/new-modulemanifest?view=powershell-5.1
+
+    - The name of the DS HealOps package management endpoint and URI
+        * name > dsHealOpsPackages
+        * URI > http://teamcity.danskespil.dk:8082/nuget/dsHealOpsPackages/
 
 ## Work
 
@@ -28,13 +32,14 @@ tor. The current Windows PowerShell session is not running as Administrator. Sta
     * Updated diagrams
         * Sequence for flow would especially be helpful.
     * Reporting
+        * Good enough for RTM.
     * Create Pester tests for HealOps itself, that:
         * Tests the implicit axioms that can be derived from the description and documentation in the HealOps.ReadMe.md file.
     * Create tests for testing *.Tests.ps1 files.
         * Test > that every 'It' block contains a global variable named 'assertionResult'
     * Scheduled tasks helper scripts.
-        * For Windows <-- Working, needs fine-tuning and support for defining job executing user.
         * For Linux/MacOS
+            * Talk with the Linux DevOps about: A good way to automatize creating Cron jobs.
     * Better build scripts of HealOps
         * Code coverage
         * Script Analyzer and so forth
@@ -42,31 +47,20 @@ tor. The current Windows PowerShell session is not running as Administrator. Sta
     * Tooling, meaning code, that can control a Package Management system for updates to a HealOps package.
         * Hardening
             * If a required module is not installed get-module returns nothing, update-module could also react in weird ways. But aren't we sure that modules required by HealOps are instaled, if not HealOps wouldn't work at all. And! It should be a part of the bootstrap/install of HealOps to install required modules.
-    * Tests and Repairs for 'X' systems.
-        e.g.
-        * Citrix prod.
-        *
     * Create a Plaster template for easily creating a HealOpsPackage
-    * Talk with the Linux DevOps about:
-        * A good way to automatize creating Cron jobs.
+        * WIP but update with the latest. 171121. After creating Sitecore HealOps package as a module.
     * Create the New-HealOpsPackageRunner script so that it takes pipeline input. In this case a string to a path....a path obj.???
     * Program function that can > Cache and queue reports on “X” IT service. In case of the reporting backend being down or that it is not possible to reach it.
     * RunningAsScheduledTask
         - ByPass needed
             --> Set that on the registered job.
         - Must be a full path in the command in the task -scriptblock object.
-        - PowerShellGet version:
-            --> 1.5.0.0
-            --> Therefore > Install-Module -Name PowerShellGet -Force
-            --> Upload to PackageManagement system
-    * Fix error on Update-TestRunningStatus:
-        * En del af stien 'C:\Users\HealOps\Documents\LABE\gitRepos\HealOpsPackages\Sitecore\TestsAndRepairs\system.resource.disk
-        space.Status.json' blev ikke fundet.
-            + CategoryInfo          : ObjectNotFound: (C:\Users\HealOp...ace.Status.json:String) [Set-Content], DirectoryNotFo
-        undException
-            + FullyQualifiedErrorId : GetContentWriterDirectoryNotFoundError,Microsoft.PowerShell.Commands.SetContentCommand
-            + PSComputerName        : localhost
-        * Set-content -erroraction Stop inside Update-TestRunningStatus! To catch the error.
+            --> Could likely be solved in the same way as in Update-TestRunningStatus. So that the 1 installing does not have to think about that.
+    * NEED to have it allowed on AD level that the HealOps account is allowed to stay in the local "Administrators" group.
+        * Gives --> 2147943785 event id 101 if not. "Log on as a batch job" issue.
+    * __Ongoing verifications and test__
+        * That the self-update feature works as intended.
+            * For both HealOps itself as well as the HealOps packages.
 
 ## Think about
 

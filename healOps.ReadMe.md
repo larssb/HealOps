@@ -127,6 +127,12 @@ The std. is:
             /opt/opentsdb/opentsdb-${TSDB_VERSION}/build/tsdb tsd --config=/opt/opentsdb/opentsdb-${TSDB_VERSION}/src/opentsdb.conf --port=4242 --staticroot=/opt/opentsdb/opentsdb-${TSDB_VERSION}/build/staticroot --cachedir=/tmp --auto-metric
             `
 
+## Required modules and dependencies
+
+    - Required PowerShell modules
+        * PowerShellGet
+            - Minumum viable version: v1.5.0.0. If not errors like $psgettemp variable missing will pop-up.
+
 ## Setup and configuration of HealOps
 
 1 Create a *.ps1 file
@@ -152,9 +158,10 @@ The std. is:
 ## Tasks
 
     * Windows Scheduled Tasks.
-        * The type of task created is specifically a PowerShell job. Therefore the location of the job will be > \Scheduled Tasks Root\Microsoft\Windows\PowerShell\ScheduledJobs
+        * The type of task created is specifically a PowerShell job. Therefore the location, in "Scheduled Tasks" of the job will be > \Scheduled Tasks Root\Microsoft\Windows\PowerShell\ScheduledJobs
         * The job definition will be stored in the context of the user with which you created the job, even though the job is being executed as another user.
             >> e.g. $jobDef = [Microsoft.PowerShell.ScheduledJob.ScheduledJobDefinition]::LoadFromStore('TestingHealOps', 'C:\Users\%username%\AppData\Local\Microsoft\Windows\PowerShell\ScheduledJobs'); $jobDef.Run()"
+        * Logs and results will be under >
     * Linux/MacOS cron job.
         *
 

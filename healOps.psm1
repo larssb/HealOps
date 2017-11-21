@@ -1,8 +1,6 @@
 # Define the foldernames
 $functionFolders = @('Public', 'Private', 'Classes')
 
-#$VerbosePreference = "Continue"
-
 # Run over each folder and look for files to include/inject into the PSD1 manifest file
 ForEach ($folder in $functionFolders) {
     $folderPath = Join-Path -Path $PSScriptRoot -ChildPath $folder
@@ -19,5 +17,5 @@ ForEach ($folder in $functionFolders) {
 }
 $publicFunctions = (Get-ChildItem -Path "$PSScriptRoot\Public" -Filter '*.ps1' -Recurse).BaseName
 
-# Export the
+# Export the public functions
 Export-ModuleMember -Function $publicFunctions

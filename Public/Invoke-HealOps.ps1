@@ -313,15 +313,23 @@
 
                 # Execute the test if it isn't already running
                 if ($testRunning -eq $false) {
+                    # Support a relative paths for the TestsFilesRootPath parameter
+                    if ( ([System.IO.Path]::IsPathRooted("$TestsFilesRootPath") -eq $false) ) {
+                        # The path is relative. Resolve it to an absolute path. Relative to PWD before start-job runs per job.
+                        [System.IO.Directory]::SetCurrentDirectory($(get-location)) # To set the resolve directory ::GetFullPath() will use. This will SetCurrentDirectory to $PWD. If not done [System.IO.Path] picks up the PowerShell shell's current directory which per default is $HOME & not $PWD
+                        $TestsFilesRootPath = [System.IO.Path]::GetFullPath("$TestsFilesRootPath")
+                        Write-Verbose -Message "Resolved TestsFilesRootPath path > $TestsFilesRootPath"
+                    }
+
                     # Update the test *.Status.json file to reflect that the test is NOW running
                     try {
-                        Update-TestRunningStatus -TestsFilesRootPath $TestsFilesRootPath -TestFileName $testfile.name -TestRunning
+                        Update-TestRunningStatus -TestsFilesRootPath $TestsFilesRootPath -TestFileName $testfile.name -TestRunning @commonParms
                     } catch {
                         throw $_
                     }
 
                     # Start a job per test.
-                    $job = Start-Job -Name "HealOps-TestAndRepair-$($testfile.name)" -ScriptBlock {
+                    $job = Start-Job -Name "HealOps-TestAndRepair-$($testfile.name)" -Verbose -ScriptBlock {
                         #########################
                         # Start-Job ScriptBlock #
                         #########################
@@ -337,7 +345,7 @@
 
                         # Update the test *.Status.json file to reflect that the test is NO longer running
                         try {
-                            Update-TestRunningStatus -TestsFilesRootPath $TestsFilesRootPath -TestFileName $using:testfile.name
+                            Update-TestRunningStatus -TestsFilesRootPath $TestsFilesRootPath -TestFileName $using:testfile.name @commonParms
                         } catch {
                             throw $_
                         }
@@ -357,16 +365,24 @@
                                     Submit-EntityStateReport -reportBackendSystem $($using:healOpsConfig.reportingBackend) -metric $($testResult.metric) -metricValue $($testResult.testdata.FailureMessage)
                                 } catch {
                                     Write-Verbose "Submit-EntityStateReport failed with: $_"
-
+                                    throw $_
                                     # TODO: LOG IT and inform x
                                 }
                             } else {
                                 # Run the *.Tests.ps1 file again to verify that repairing was successful and to get data for reporting to the backend so that a monitored state of "X" IT service/Entity will get back to an okay state in the monitoring system.
                                 $testResult = Test-EntityState -TestFilePath $using:testfile.FullName
 
+                                # Update the test *.Status.json file to reflect that the test is NO longer running
+                                try {
+                                    Update-TestRunningStatus -TestsFilesRootPath $TestsFilesRootPath -TestFileName $using:testfile.name @commonParms
+                                } catch {
+                                    throw $_
+                                }
+
                                 # Test on the result in order to get correct data for the metric value.
                                 if ($testResult.state -eq $true) {
                                     $metricValue = $assertionResult # Uses the global variable set in the *.Tests.ps1 file to capture a numeric value to report to the reporting backend.
+                                    Write-Verbose -Message "assertionResult > $assertionResult"
                                 } else {
                                     $metricValue = $($testResult.testdata.FailureMessage)
                                 }
@@ -378,6 +394,7 @@
                                     Write-Verbose "Submit-EntityStateReport failed with: $_"
 
                                     # TODO: LOG IT and inform x
+                                    throw $_
                                 }
                             }
                         } else {
@@ -392,13 +409,31 @@
                                     Write-Verbose "Submit-EntityStateReport failed with: $_"
 
                                     # TODO: LOG IT and inform x
+                                    throw $_
                                 }
                             } else {
                                 # TODO: Log IT and inform x!
                                 Write-Verbose -Message "The assertionResult variable was not defined in the *.Tests.ps1 file > $($using:testfile.name) <- this HAS to be done."
                             }
                         }
-                    } -Verbose -ArgumentList $TestsFilesRootPath,$commonParms,$HealOpsPackageConfig,$PSScriptRoot
+                    } -ArgumentList $TestsFilesRootPath,$commonParms,$HealOpsPackageConfig,$PSScriptRoot
+
+                    <# Job data retrieval
+                    Wait-Job -Job $job
+
+                    do {
+                        $job = Get-Job -id $job.Id
+                    } until ($job.State -eq "Completed" -or $job.state -eq "Failed")
+
+                    # Snatch the data from the job
+                    $jobData = Receive-Job -Job $job -Keep
+
+                    # Log the job data
+                    try {
+                        Add-Content -Path $PSScriptRoot/"jobData$(Get-Random).log" -Value $jobData -Force -ErrorAction Stop
+                    } catch {
+                        throw "Logging job data failed with > $_"
+                    }#>
                 }
             } # End of foreach tests file in $TestsFilesRootPath
         } elseif ($PSBoundParameters.ContainsKey('TestsFile')) {
@@ -425,9 +460,26 @@
                         # TODO: LOG IT and inform x
                     }
                 } else {
-                    # Run the *.Tests.ps1 file again to verify and get data for reporting to the backend so that a monitored state of "X" IT service/Entity will get back to an okay state in the monitoring system.
+                    # Run the *.Tests.ps1 file again to verify that repairing was successful and to get data for reporting to the backend so that a monitored state of "X" IT service/Entity will get back to an okay state in the monitoring system.
+                    $testResult = Test-EntityState -TestFilePath $TestsFile
 
-                    # THINK THIS THROUGH!
+                    # Test on the result in order to get correct data for the metric value.
+                    if ($testResult.state -eq $true) {
+                        $metricValue = $assertionResult # Uses the global variable set in the *.Tests.ps1 file to capture a numeric value to report to the reporting backend.
+                        Write-Verbose -Message "assertionResult > $assertionResult"
+                    } else {
+                        $metricValue = $($testResult.testdata.FailureMessage)
+                    }
+
+                    # Report the result
+                    try {
+                        Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -metricValue $metricValue
+                    } catch {
+                        Write-Verbose "Submit-EntityStateReport failed with: $_"
+
+                        # TODO: LOG IT and inform x
+                        throw $_
+                    }
                 }
             } else {
                 ######################
@@ -445,6 +497,8 @@
                 } else {
                     # TODO: Log IT and inform x!
                     Write-Verbose -Message "The assertionResult variable was not defined in the *.Tests.ps1 file > $TestFilePath <- this HAS to be done."
+
+                    throw $_
                 }
             }
         }

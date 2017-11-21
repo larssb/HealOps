@@ -54,8 +54,6 @@ function Test-RunningTest() {
         if ($runningStatus -eq "True") {
             # The test is running
             $true
-
-            Write-Verbose -Message "here"
         } else {
             $false
         }
