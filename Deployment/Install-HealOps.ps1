@@ -1,3 +1,4 @@
+#Requires -RunAsAdministrator
 <#PSScriptInfo
 
 .VERSION 0.0.0.4
@@ -29,7 +30,6 @@
 
 #>
 
-#Requires -RunAsAdministrator
 <#
 .DESCRIPTION
     This is a script function that will install HealOps on "X" system.
