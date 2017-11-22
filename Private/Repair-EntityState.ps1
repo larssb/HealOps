@@ -40,11 +40,16 @@ function Repair-EntityState() {
 
     if (Test-Path -Path $repairsFile) {
         # Run the repair
-        if ($PSBoundParameters.ContainsKey('Verbose')) {
-            $repairResult = . $repairsFile -TestData $TestData -Verbose
-        } else {
-            $repairResult = . $repairsFile -TestData $TestData
+        try {
+            if ($PSBoundParameters.ContainsKey('Verbose')) {
+                $repairResult = . $repairsFile -TestData $TestData -Verbose
+            } else {
+                $repairResult = . $repairsFile -TestData $TestData
+            }
+        } catch {
+            throw "Running the repairs in the following repairs file > $repairsFile failed with > $_"
         }
+        $log4netLoggerDebug.debug("The result of the repair is: $repairResult")
         Write-Verbose -Message "The result of the repair is: $repairResult"
 
         # Report on the success of repairing the IT Service/Entity
@@ -57,6 +62,7 @@ function Repair-EntityState() {
         }
     } else {
         # TODO report it, log it == HARDEN
+        $log4netLogger.error("The repairs file $repairsFile could not be found.")
         throw "The repairs file $repairsFile could not be found.";
     }
 }

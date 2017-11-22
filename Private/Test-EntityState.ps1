@@ -33,8 +33,8 @@ function Test-EntityState() {
         # Execute the tests
         $TestOutput = Invoke-Pester $TestFilePath -PassThru -Show None
     } catch {
-        # Log
         Write-Verbose -Message "Test-EntityState failed with: $_"
+        throw "Test-EntityState failed with: $_"
     }
 
     if ($null -ne $TestOutput.TestResult) {
@@ -62,6 +62,6 @@ function Test-EntityState() {
         # Return to caller
         $tempCollection
     } else {
-        throw "The Pester result contains no result data."
+        throw "Test-EntityState failed with: The Pester result contains no result data."
     }
 }

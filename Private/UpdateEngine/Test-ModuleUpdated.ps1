@@ -37,11 +37,14 @@ function Test-ModuleUpdated() {
 
     if ($moduleVersionAfterUpdate.Version -gt $ModuleVersionBeforeUpdate) {
         # Log it
+        $log4netLoggerDebug.debug("The module $ModuleName was bumped to $($moduleVersionAfterUpdate.Version) from $moduleVersionBeforeUpdate")
 
         # When in verbose mode
         Write-Verbose -Message "The module $ModuleName was bumped to $($moduleVersionAfterUpdate.Version) from $moduleVersionBeforeUpdate"
     } else {
         # Log it
+        $log4netLoggerDebug.debug("There was no update available on the Package Management backend. The module $ModuleName was therefore not updated. `
+        Module version before the update > $ModuleVersionBeforeUpdate. Module version after trying an update > $($moduleVersionAfterUpdate.Version)")
 
         # When in verbose mode
         Write-Verbose -Message "There was no update available on the Package Management backend. The module $ModuleName was therefore not updated. `

@@ -18,13 +18,13 @@ tor. The current Windows PowerShell session is not running as Administrator. Sta
 
     - The name of the DS package management endpoint and URI
         * "checkForUpdates_Repository":  "dsPowerShellModules",
-        * "checkForUpdates_URI":  "http://teamcity.danskespil.dk:8082/nuget/dsPowerShellModules/",
+        * URI >  https://proget.danskespil.dk/nuget/dsPowerShellModules/
 
     - Look into https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/new-modulemanifest?view=powershell-5.1
 
     - The name of the DS HealOps package management endpoint and URI
         * name > dsHealOpsPackages
-        * URI > http://teamcity.danskespil.dk:8082/nuget/dsHealOpsPackages/
+        * URI > https://proget.danskespil.dk/nuget/dsHealOpsPackages/
 
 ## Work
 
@@ -61,6 +61,8 @@ tor. The current Windows PowerShell session is not running as Administrator. Sta
     * __Ongoing verifications and test__
         * That the self-update feature works as intended.
             * For both HealOps itself as well as the HealOps packages.
+        !! Issue found. When updating the version number under the modules folder will change. This makes the path in the Scheduled Task invalid. How do we fix that?
+        !! When bootstrapping HealOps...on first run. A Package Management repo./endpoint needs to be registered. If not the exception > ' The variable '$psgetItemInfo' cannot be retrieved because it has not been set. ' is thrown.
 
 ## Think about
 

@@ -44,7 +44,11 @@ function Test-RunningTest() {
         $false
     } else {
         # Read in the *.Status.json file
-        $statusJSONfile = Get-Content -Path $TestsFilesRootPath/$statusFileName.json -Encoding UTF8 | ConvertFrom-Json
+        try {
+            $statusJSONfile = Get-Content -Path $TestsFilesRootPath/$statusFileName.json -Encoding UTF8 | ConvertFrom-Json
+        } catch {
+            throw "Getting the content of the test status json file - $statusFileName.json failed with > $_"
+        }
         Write-Verbose -Message "The status file data > $statusJSONfile"
 
         # Get the runnig status of the test

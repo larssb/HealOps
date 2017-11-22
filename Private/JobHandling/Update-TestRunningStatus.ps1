@@ -64,8 +64,6 @@ function Update-TestRunningStatus() {
     try {
         Set-Content -Path $TestsFilesRootPath/$statusFileName.json -Value $tempTestsCollection_InJSON -Force -Encoding UTF8 -ErrorAction Stop
     } catch {
-        # Log it
-
         throw "Failed to write the status file for the tests file > $TestFileName. Failed with > $_"
     }
 }
