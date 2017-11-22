@@ -73,6 +73,7 @@ tor. The current Windows PowerShell session is not running as Administrator. Sta
             `
             -- We should be able to catch that in some way >> if that exception is thrown >> not set the checkForUpdatesNext property in the HealOpsConfig.json file.
                 > The Fix >>> to register a psrepo. !!! ASK on the PowerShellGet GitHub repo. why this is???????
+    * Think about doing a simple health svc for HealOps. So that you can ask HealOps from the outside if it is a okay...or have HealOps simply report that it is running on each invoke-healops call. Hmmm hm hmmmm!
 
 ## Think about
 

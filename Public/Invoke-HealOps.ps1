@@ -369,7 +369,7 @@
                         #########################
                         # Start-Job ScriptBlock #
                         #########################
-                        param($TestsFilesRootPath,$commonParms,$HealOpsPackageConfig,$PSScriptRoot)
+                        param($TestsFilesRootPath,$commonParms,$HealOpsPackageConfig,$PSScriptRoot,$log4NetLogger,$log4netLoggerDebug)
                         # Import modules
                         . $PSScriptRoot/../Private/Test-EntityState.ps1
                         . $PSScriptRoot/../Private/JobHandling/Update-TestRunningStatus.ps1
@@ -476,7 +476,7 @@
                                 Write-Verbose -Message "The assertionResult variable was not defined in the *.Tests.ps1 file > $($using:testfile.Name) <- this HAS to be done."
                             }
                         }
-                    } -ArgumentList $TestsFilesRootPath,$commonParms,$HealOpsPackageConfig,$PSScriptRoot
+                    } -ArgumentList $TestsFilesRootPath,$commonParms,$HealOpsPackageConfig,$PSScriptRoot,$log4NetLogger,$log4netLoggerDebug
 
                     <# Job data retrieval
                     Wait-Job -Job $job
