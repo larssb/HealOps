@@ -63,6 +63,16 @@ tor. The current Windows PowerShell session is not running as Administrator. Sta
             * For both HealOps itself as well as the HealOps packages.
         !! Issue found. When updating the version number under the modules folder will change. This makes the path in the Scheduled Task invalid. How do we fix that?
         !! When bootstrapping HealOps...on first run. A Package Management repo./endpoint needs to be registered. If not the exception > ' The variable '$psgetItemInfo' cannot be retrieved because it has not been set. ' is thrown.
+            The error: `
+                The variable '$psgetItemInfo' cannot be retrieved because it has not been set.
+                At C:\Program Files\WindowsPowerShell\Modules\PowerShellGet\1.5.0.0\PSModule.psm1:289 char:136
+                + ... odulewhatIfMessage -replace "__OLDVERSION__",$($psgetItemInfo.Version ...
+                +                                                    ~~~~~~~~~~~~~~
+                    + CategoryInfo          : InvalidOperation: (psgetItemInfo:String) [], RuntimeException
+                    + FullyQualifiedErrorId : VariableIsUndefined
+            `
+            -- We should be able to catch that in some way >> if that exception is thrown >> not set the checkForUpdatesNext property in the HealOpsConfig.json file.
+                > The Fix >>> to register a psrepo. !!! ASK on the PowerShellGet GitHub repo. why this is???????
 
 ## Think about
 
