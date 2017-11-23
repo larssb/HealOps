@@ -38,7 +38,10 @@
         [string]$HealOpsPackageConfigPath,
         [Parameter(Mandatory=$true, ParameterSetName="File", HelpMessage="The full path to a specific *.Tests.ps1 file to execute.")]
         [ValidateNotNullOrEmpty()]
-        [String]$TestsFile
+        [String]$TestsFile,
+        [Parameter(Mandatory=$false, ParameterSetName="Path", HelpMessage="Use this switch parameter to force an update of HealOps and its pre-requisites regardless of the values in the HealOps config json file.")]
+        [Parameter(Mandatory=$false, ParameterSetName="File", HelpMessage="Use this switch parameter to force an update of HealOps and its pre-requisites regardless of the values in the HealOps config json file.")]
+        [Switch]$ForceUpdates
     )
 
     #############
@@ -174,7 +177,7 @@
         <#
             - Check for updates. For the modules that HealOps has a dependency on and for HealOps itself
         #>
-        if ($healOpsConfig.checkForUpdates -eq "True") {
+        if ($healOpsConfig.checkForUpdates -eq "True" -or $ForceUpdates -eq $true) {
             $HealOpsModuleName = "HealOps"
             $updateCycleRan = $false # Semaphore from which to determine if an update cycle ran or not.
             if ($healOpsConfig.checkForUpdatesNext.length -le 2) {
@@ -326,7 +329,7 @@
             # When in verbose mode
             Write-Verbose -Message "The value of checkForUpdatesNext > $checkForUpdatesNext"
             $log4netLoggerDebug.debug("The value of checkForUpdatesNext > $checkForUpdatesNext")
-        } # End of condition control on the checkForUpdates feature is enabled or not
+        } # End of condition control on the checkForUpdates feature is enabled or forced
     }
     Process {
         if ($PSBoundParameters.ContainsKey('TestsFilesRootPath')) {
