@@ -53,13 +53,11 @@
         #>
         # Define log4net variables
         $log4NetFilesName = "HealOps.Log4Net"
-        $log4NetLoggerName = "HealOps_Error"
-        $log4NetLoggerNameDebug = "HealOps_Debug"
 
         # Initiate the log4net logger
         $log4netPath = "$PSScriptRoot/../Artefacts"
-        $global:log4netLogger = initialize-log4net -log4NetFilesPath $log4netPath -log4NetFilesName $log4NetFilesName -log4NetLoggerName $log4NetLoggerName
-        $global:log4netLoggerDebug = initialize-log4net -log4NetFilesPath $log4netPath -log4NetFilesName $log4NetFilesName -log4NetLoggerName $log4NetLoggerNameDebug
+        $global:log4netLogger = initialize-log4net -log4NetFilesPath $log4netPath -log4NetFilesName $log4NetFilesName -log4NetLoggerName "HealOps_Error"
+        $global:log4netLoggerDebug = initialize-log4net -log4NetFilesPath $log4netPath -log4NetFilesName $log4NetFilesName -log4NetLoggerName "HealOps_Debug"
 
         # Make the log more viewable.
         $log4netLoggerDebug.debug("--------------------------------------------------")
@@ -372,12 +370,19 @@
                         #########################
                         # Start-Job ScriptBlock #
                         #########################
-                        param($TestsFilesRootPath,$commonParms,$HealOpsPackageConfig,$PSScriptRoot,$log4NetLogger,$log4netLoggerDebug)
+                        param($TestsFilesRootPath,$commonParms,$HealOpsPackageConfig,$PSScriptRoot,$log4netPath)
                         # Import modules
                         . $PSScriptRoot/../Private/Test-EntityState.ps1
                         . $PSScriptRoot/../Private/JobHandling/Update-TestRunningStatus.ps1
                         . $PSScriptRoot/../Private/Repair-EntityState.ps1
                         . $PSScriptRoot/../Private/Submit-EntityStateReport.ps1
+
+                        <#
+							- Configure logging
+						#>
+						# Initiate the log4net logger
+						$global:log4netLogger = initialize-log4net -log4NetFilesPath $log4netPath -log4NetFilesName "HealOps.Jobs.Log4Net" -log4NetLoggerName "HealOps_Error_Job"
+						$global:log4netLoggerDebug = initialize-log4net -log4NetFilesPath $log4netPath -log4NetFilesName "HealOps.Jobs.Log4Net" -log4NetLoggerName "HealOps_Debug_Job"
 
                         try {
                             # Test execution
@@ -479,24 +484,7 @@
                                 Write-Verbose -Message "The assertionResult variable was not defined in the *.Tests.ps1 file > $($using:testfile.Name) <- this HAS to be done."
                             }
                         }
-                    } -ArgumentList $TestsFilesRootPath,$commonParms,$HealOpsPackageConfig,$PSScriptRoot,$log4NetLogger,$log4netLoggerDebug
-
-                    <# Job data retrieval
-                    Wait-Job -Job $job
-
-                    do {
-                        $job = Get-Job -id $job.Id
-                    } until ($job.State -eq "Completed" -or $job.state -eq "Failed")
-
-                    # Snatch the data from the job
-                    $jobData = Receive-Job -Job $job -Keep
-
-                    # Log the job data
-                    try {
-                        Add-Content -Path $PSScriptRoot/"jobData$(Get-Random).log" -Value $jobData -Force -ErrorAction Stop
-                    } catch {
-                        throw "Logging job data failed with > $_"
-                    }#>
+                    } -ArgumentList $TestsFilesRootPath,$commonParms,$HealOpsPackageConfig,$PSScriptRoot,$log4netPath
                 }
             } # End of foreach tests file in $TestsFilesRootPath
         } elseif ($PSBoundParameters.ContainsKey('TestsFile')) {
