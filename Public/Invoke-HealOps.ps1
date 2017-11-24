@@ -52,12 +52,12 @@
             - Config logging
         #>
         # Define log4net variables
-        $log4NetFilesName = "HealOps.Log4Net"
+        $log4NetConfigName = "HealOps.Log4Net"
+        $log4netPath = "$PSScriptRoot/../Artefacts"
 
         # Initiate the log4net logger
-        $log4netPath = "$PSScriptRoot/../Artefacts"
-        $global:log4netLogger = initialize-log4net -log4NetFilesPath $log4netPath -log4NetFilesName $log4NetFilesName -log4NetLoggerName "HealOps_Error"
-        $global:log4netLoggerDebug = initialize-log4net -log4NetFilesPath $log4netPath -log4NetFilesName $log4NetFilesName -log4NetLoggerName "HealOps_Debug"
+        $global:log4netLogger = initialize-log4net -log4NetPath $log4netPath -configFileName $log4NetConfigName -logfileName "HealOps.Main.log" -loggerName "HealOps_Error"
+        $global:log4netLoggerDebug = initialize-log4net -log4NetPath $log4netPath -configFileName $log4NetConfigName -logfileName "HealOps.Main.log" -loggerName "HealOps_Debug"
 
         # Make the log more viewable.
         $log4netLoggerDebug.debug("--------------------------------------------------")
@@ -176,6 +176,20 @@
             - Check for updates. For the modules that HealOps has a dependency on and for HealOps itself
         #>
         if ($healOpsConfig.checkForUpdates -eq "True" -or $ForceUpdates -eq $true) {
+            # Ensure that we have the default PSGallery repository registered, if not PowerShellGet cmdlets might fail. E.g. with the `....$psgetItemInfo variable not set error....`
+            $psgallery = Get-PSRepository -Name PSGallery -ErrorAction SilentlyContinue
+            if ($null -eq $psgallery) {
+                try {
+                    # Register the PSGallery
+                    Register-PSRepository -Name PSGallery -SourceLocation "https://www.powershellgallery.com/api/v2/" -PublishLocation "https://www.powershellgallery.com/api/v2/package/" `
+                    -ScriptSourceLocation "https://www.powershellgallery.com/api/v2/items/psscript/" -ScriptPublishLocation "https://www.powershellgallery.com/api/v2/package/" -InstallationPolicy Untrusted `
+                    -PackageManagementProvider NuGet
+                } catch {
+                    Write-Verbose -Message "Failed to register the PSGallery repository. The update feature might therefore not work. It failed with > $_"
+                    $log4netLogger.error("Failed to register the PSGallery repository. The update feature might therefore not work. It failed with > $_")
+                }
+            }
+
             $HealOpsModuleName = "HealOps"
             $updateCycleRan = $false # Semaphore from which to determine if an update cycle ran or not.
             if ($healOpsConfig.checkForUpdatesNext.length -le 2) {
@@ -370,7 +384,7 @@
                         #########################
                         # Start-Job ScriptBlock #
                         #########################
-                        param($TestsFilesRootPath,$commonParms,$HealOpsPackageConfig,$PSScriptRoot,$log4netPath)
+                        param($TestsFilesRootPath,$commonParms,$HealOpsPackageConfig,$PSScriptRoot,$log4netPath,$log4NetConfigName)
                         # Import modules
                         . $PSScriptRoot/../Private/Test-EntityState.ps1
                         . $PSScriptRoot/../Private/JobHandling/Update-TestRunningStatus.ps1
@@ -380,9 +394,9 @@
                         <#
 							- Configure logging
 						#>
-						# Initiate the log4net logger
-						$global:log4netLogger = initialize-log4net -log4NetFilesPath $log4netPath -log4NetFilesName "HealOps.Jobs.Log4Net" -log4NetLoggerName "HealOps_Error_Job"
-						$global:log4netLoggerDebug = initialize-log4net -log4NetFilesPath $log4netPath -log4NetFilesName "HealOps.Jobs.Log4Net" -log4NetLoggerName "HealOps_Debug_Job"
+                        # Initiate the log4net logger
+                        $global:log4netLogger = initialize-log4net -log4NetPath $log4netPath -configFileName $log4NetConfigName -logfileName "HealOps.Job.$($using:testfile.name)" -loggerName "HealOps_Error"
+                        $global:log4netLoggerDebug = initialize-log4net -log4NetPath $log4netPath -configFileName $log4NetConfigName -logfileName "HealOps.Job.$($using:testfile.name)" -loggerName "HealOps_Debug"
 
                         try {
                             # Test execution
@@ -484,7 +498,7 @@
                                 Write-Verbose -Message "The assertionResult variable was not defined in the *.Tests.ps1 file > $($using:testfile.Name) <- this HAS to be done."
                             }
                         }
-                    } -ArgumentList $TestsFilesRootPath,$commonParms,$HealOpsPackageConfig,$PSScriptRoot,$log4netPath
+                    } -ArgumentList $TestsFilesRootPath,$commonParms,$HealOpsPackageConfig,$PSScriptRoot,$log4netPath,$log4NetConfigName
                 }
             } # End of foreach tests file in $TestsFilesRootPath
         } elseif ($PSBoundParameters.ContainsKey('TestsFile')) {
