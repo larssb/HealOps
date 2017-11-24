@@ -53,7 +53,7 @@ and HealOps status is sent to stakeholders.'
 # ProcessorArchitecture = ''
 
 # Modules that must be imported into the global environment prior to importing this module
-RequiredModules = @(@{ModuleName='Pester';ModuleVersion='4.1.0';},@{ModuleName='powerShellTooling';ModuleVersion='0.0.0.4'},@{ModuleName='PowerShellGet';ModuleVersion='1.5.0.0'})
+RequiredModules = @(@{ModuleName='Pester';ModuleVersion='4.1.0';},@{ModuleName='powerShellTooling';ModuleVersion='0.0.0.5'},@{ModuleName='PowerShellGet';ModuleVersion='1.5.0.0'})
 
 # Assemblies that must be loaded prior to importing this module
 # RequiredAssemblies = @()
