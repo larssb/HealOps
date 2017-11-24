@@ -1,7 +1,7 @@
 #Requires -RunAsAdministrator
 <#PSScriptInfo
 
-.VERSION 0.0.0.5
+.VERSION 0.0.0.6
 
 .GUID bbf74424-f58d-42d1-9d5a-aeba44ccd545
 
@@ -178,9 +178,22 @@
             <#
                 - The HealOps config json file.
             #>
+            # Get Package Management repository info, to register it in the HealOps config json file
+            try {
+                $pmRepo = Get-PSRepository -Name $PackageManagementRepository
+            } catch {
+                throw "Could not get the package management repository specified. The update feature of HealOps might therefore not work. `
+                Please make sure that you specified that this name $PackageManagementRepository is correct and that is has been registered."
+            }
+
             Write-Progress -Activity "Installing HealOps" -CurrentOperation "Defining the HealOps config json file." -Id 3
             $HealOpsConfig = @{}
             $HealOpsConfig.reportingBackend = $reportingBackend
+            $HealOpsConfig.packageManagementRepoName = $pmRepo.Name
+            $HealOpsConfig.packageManagementRepoSrc = $pmRepo.ScriptSourceLocation
+            $HealOpsConfig.packageManagementRepoPub = $pmRepo.PublishLocation
+            $HealOpsConfig.packageManagementRepoScriptSrc = $pmRepo.ScriptSourceLocation
+            $HealOpsConfig.packageManagementRepoScriptPub = $pmRepo.ScriptPublishLocation
             if($null -ne $checkForUpdatesInterval_InDays) {
                 $HealOpsConfig.checkForUpdates = "True"
                 $HealOpsConfig.checkForUpdatesInterval_InDays = $checkForUpdatesInterval_InDays

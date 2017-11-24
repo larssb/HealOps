@@ -176,17 +176,17 @@
             - Check for updates. For the modules that HealOps has a dependency on and for HealOps itself
         #>
         if ($healOpsConfig.checkForUpdates -eq "True" -or $ForceUpdates -eq $true) {
-            # Ensure that we have the default PSGallery repository registered, if not PowerShellGet cmdlets might fail. E.g. with the `....$psgetItemInfo variable not set error....`
-            $psgallery = Get-PSRepository -Name PSGallery -ErrorAction SilentlyContinue
-            if ($null -eq $psgallery) {
+            # Ensure that we have the HealOps Package Management repo. configured. So that updating can work and to avoid the error > `....$psgetItemInfo variable not set....`
+            $pmRepo = Get-PSRepository -Name $healOpsConfig.packageManagementRepoName -ErrorAction SilentlyContinue
+            if ($null -eq $pmRepo) {
                 try {
-                    # Register the PSGallery
-                    Register-PSRepository -Name PSGallery -SourceLocation "https://www.powershellgallery.com/api/v2/" -PublishLocation "https://www.powershellgallery.com/api/v2/package/" `
-                    -ScriptSourceLocation "https://www.powershellgallery.com/api/v2/items/psscript/" -ScriptPublishLocation "https://www.powershellgallery.com/api/v2/package/" -InstallationPolicy Untrusted `
+                    # Register the HealOps Package Management repo.
+                    Register-PSRepository -Name $healOpsConfig.packageManagementRepoName -SourceLocation $healOpsConfig.packageManagementRepoSrc -PublishLocation $healOpsConfig.packageManagementRepoPub `
+                    -ScriptSourceLocation $healOpsConfig.packageManagementRepoScriptSrc -ScriptPublishLocation $healOpsConfig.packageManagementRepoScriptPub -InstallationPolicy Trusted `
                     -PackageManagementProvider NuGet
                 } catch {
-                    Write-Verbose -Message "Failed to register the PSGallery repository. The update feature might therefore not work. It failed with > $_"
-                    $log4netLogger.error("Failed to register the PSGallery repository. The update feature might therefore not work. It failed with > $_")
+                    Write-Verbose -Message "Failed to register the repository named $($healOpsConfig.packageManagementRepoName). The update feature might therefore not work. It failed with > $_"
+                    $log4netLogger.error("Failed to register the repository named $($healOpsConfig.packageManagementRepoName). The update feature might therefore not work. It failed with > $_")
                 }
             }
 

@@ -52,7 +52,7 @@ tor. The current Windows PowerShell session is not running as Administrator. Sta
     * Create the New-HealOpsPackageRunner script so that it takes pipeline input. In this case a string to a path....a path obj.???
     * Program function that can > Cache and queue reports on “X” IT service. In case of the reporting backend being down or that it is not possible to reach it.
     * RunningAsScheduledTask
-        - ByPass needed
+ ¤¤       - ByPass needed
             --> Set that on the registered job.
         - Must be a full path in the command in the task -scriptblock object.
             --> Could likely be solved in the same way as in Update-TestRunningStatus. So that the 1 installing does not have to think about that.
@@ -64,7 +64,7 @@ tor. The current Windows PowerShell session is not running as Administrator. Sta
         !! Issue found. When updating the version number under the modules folder will change. This makes the path in the Scheduled Task invalid. How do we fix that?
         !! When bootstrapping HealOps...on first run. A Package Management repo./endpoint needs to be registered. If not the exception > ' The variable '$psgetItemInfo' cannot be retrieved because it has not been set. ' is thrown.
             The error: `
-                The variable '$psgetItemInfo' cannot be retrieved because it has not been set.
+ ¤¤               The variable '$psgetItemInfo' cannot be retrieved because it has not been set.
                 At C:\Program Files\WindowsPowerShell\Modules\PowerShellGet\1.5.0.0\PSModule.psm1:289 char:136
                 + ... odulewhatIfMessage -replace "__OLDVERSION__",$($psgetItemInfo.Version ...
                 +                                                    ~~~~~~~~~~~~~~
@@ -78,8 +78,8 @@ tor. The current Windows PowerShell session is not running as Administrator. Sta
     * TOMORROW
         * Delete HealOps from norma1a-town1
             -- everything that Install-HealOps do
-        * Fix run PowerShell with -ExecutionPolicy Bypass
-        * Register-PSRepository on first run....to avoid the $psgetItemInfo error above.
+ ¤¤       * Fix run PowerShell with -ExecutionPolicy Bypass
+  ¤¤      * Register-PSRepository on first run....to avoid the $psgetItemInfo error above.
         * Install again
         * Test and see if it works
         * Deploy to town1 and town13 servers
