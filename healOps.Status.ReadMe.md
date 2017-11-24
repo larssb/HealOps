@@ -74,6 +74,28 @@ tor. The current Windows PowerShell session is not running as Administrator. Sta
             -- We should be able to catch that in some way >> if that exception is thrown >> not set the checkForUpdatesNext property in the HealOpsConfig.json file.
                 > The Fix >>> to register a psrepo. !!! ASK on the PowerShellGet GitHub repo. why this is???????
     * Think about doing a simple health svc for HealOps. So that you can ask HealOps from the outside if it is a okay...or have HealOps simply report that it is running on each invoke-healops call. Hmmm hm hmmmm!
+    * Think about how we can make sure that peeps configure the config file in the HealOps packages used on a system.
+        * At least catch it if there is empty properties in the config
+            * Maybe set an "UNKNOWN" value or "NOT_SET"
+    * If HealOps is run in headless mode....provide write-output or write-host messages...same messages as for errors where applicable.
+    * # The update cycle did not run. It could have failed or the time criteria was not met. Set to the same time of checkForUpdatesNext > in order to have HealOps run an update cycle again.
+        * Do not need to update HealOps config json every freaking time.
+    * This error > '$script:PSGetModuleSourcesFilePath' seems to occur because this `
+        $script:PSGetAppLocalPath="$env:LOCALAPPDATA\Microsoft\Windows\PowerShell\PowerShellGet"
+        $script:PSGetModuleSourcesFilePath = Microsoft.PowerShell.Management\Join-Path -Path $script:PSGetAppLocalPath -ChildPath "PSRepositories.xml"
+    ` cannot be resolved by the PowerShellGet module.
+        * Think about a good solution
+    * This error: `
+    PS C:\> Receive-Job -Id 56 -Keep
+The 'Invoke-HealOps' command was found in the module 'HealOps', but the module could not be loaded. For more informatio
+n, run 'Import-Module HealOps'.
+    + CategoryInfo          : InvalidResult: (:) [], RemoteException
+    + FullyQualifiedErrorId : ScheduledJobFailedState
+    `
+        * Can be solved by doing "Import-Module HealOps -Force; Invoke-HealOps....." in the scriptblock to the module.
+    * BUT THE MOFO problem is > that jobs is crashing after no time when started with a PowerShell scheduled job.
+        * Do a test with just one test file....
+        * Fix try/catch and logging for that scenario before getting going.
 
     * TOMORROW
         * Delete HealOps from norma1a-town1

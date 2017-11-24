@@ -23,7 +23,7 @@ function Test-EntityState() {
     param(
         [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="A file containig the Pester tests to run. This should be a full-path to a file.")]
         [ValidateNotNullOrEmpty()]
-        [string[]]$TestFilePath
+        [String]$TestFilePath
     )
 
     #############
@@ -31,7 +31,7 @@ function Test-EntityState() {
     #############
     try {
         # Execute the tests
-        $TestOutput = Invoke-Pester $TestFilePath -PassThru -Show None
+        $TestOutput = Invoke-Pester $TestFilePath -PassThru -Show None -ErrorAction Stop
     } catch {
         Write-Verbose -Message "Test-EntityState failed with: $_"
         throw "Test-EntityState failed with: $_"

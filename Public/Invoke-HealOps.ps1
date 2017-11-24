@@ -76,8 +76,8 @@
                 # Log it
                 $log4netLogger.error("$message")
 
-                # Exit by throwing
-                throw $message
+                # Exit
+                throw $_
             }
         }
 
@@ -89,8 +89,8 @@
                 # Log it
                 $log4netLogger.error("$message")
 
-                # Exit by throwing
-                throw $message
+                # Exit
+                throw $_
             }
         }
 
@@ -102,29 +102,29 @@
             # Log it
             $log4netLogger.error("$message")
 
-            # Exit by throwing
-            throw $message
+            # Exit
+            throw $_
         } else {
             # Check file integrity & get config data
             $healOpsConfig = Get-Content -Path $HealOpsConfigPath -Encoding UTF8 | ConvertFrom-Json
             if ($null -eq $healOpsConfig) {
-                $message = "The HealOpsConfig contains no date. Please generate a proper HealOpsConfig file. See the documentation and generate a proper one."
+                $message = "The HealOpsConfig contains no data. Please generate a proper HealOpsConfig file. See the documentation."
                 Write-Verbose -Message $message
 
                 # Log it
                 $log4netLogger.error("$message")
 
-                # Exit by throwing
-                throw $message
+                # Exit
+                throw $_
             } elseif(-not ($healOpsConfig.reportingBackend.Length -gt 1)) {
-                $message = "The HealOpsConfig file is not valid. Please generate a proper HealOpsConfig file. See the documentation and generate a proper one."
+                $message = "The HealOps config file is invalid. Please generate a proper HealOpsConfig file. See the documentation."
                 Write-Verbose -Message $message
 
                 # Log it
                 $log4netLogger.error("$message")
 
-                # Exit by throwing
-                throw $message
+                # Exit
+                throw $_
             }
         }
 
@@ -135,20 +135,20 @@
             # Log it
             $log4netLogger.error("$message")
 
-            # Exit by throwing
-            throw $message
+            # Exit
+            throw $_
         } else {
             # Check file integrity & get config data
             $global:HealOpsPackageConfig = Get-Content -Path $HealOpsPackageConfigPath -Encoding UTF8 | ConvertFrom-Json
             if ($null -eq $HealOpsPackageConfig) {
-                $message = "The HealOps package config contains no date. Please provide a proper HealOps package config file."
+                $message = "The HealOps package config contains no data. Please provide a proper HealOps package config file."
                 Write-Verbose -Message $message
 
                 # Log it
                 $log4netLogger.error("$message")
 
-                # Exit by throwing
-                throw $message
+                # Exit
+                throw $_
             } elseif($null -eq $HealOpsPackageConfig[0]) {
                 $message = "The HealOps package config file is not valid. Please provide a proper one."
                 Write-Verbose -Message $message
@@ -156,8 +156,8 @@
                 # Log it
                 $log4netLogger.error("$message")
 
-                # Exit by throwing
-                throw $message
+                # Exit
+                throw $_
             }
         }
 
@@ -369,16 +369,7 @@
                         $log4netLoggerDebug.debug("Resolved TestsFilesRootPath path > $TestsFilesRootPath")
                         Write-Verbose -Message "Resolved TestsFilesRootPath path > $TestsFilesRootPath"
                     }
-
-                    # Update the test *.Status.json file to reflect that the test is NOW running
-                    try {
-                        Update-TestRunningStatus -TestsFilesRootPath $TestsFilesRootPath -TestFileName $testfile.name -TestRunning @commonParms
-                    } catch {
-                        # Log it
-                        $log4netLogger.error("MODE: TestsFilesRootPath | Update-TestRunningStatus failed with: $_")
-                        throw $_
-                    }
-
+try {
                     # Start a job per test.
                     $job = Start-Job -Name "HealOps-TestAndRepair-$($testfile.name)" -Verbose -ScriptBlock {
                         #########################
@@ -390,44 +381,56 @@
                         . $PSScriptRoot/../Private/JobHandling/Update-TestRunningStatus.ps1
                         . $PSScriptRoot/../Private/Repair-EntityState.ps1
                         . $PSScriptRoot/../Private/Submit-EntityStateReport.ps1
+try {
+                        Set-ExecutionPolicy -ExecutionPolicy ByPass -Force -Scope Process
+} catch {
+    $log4netLogger.error("execution pol. > $_")
+}
 
                         <#
-							- Configure logging
+                        - Configure logging
 						#>
                         # Initiate the log4net logger
                         $global:log4netLogger = initialize-log4net -log4NetPath $log4netPath -configFileName $log4NetConfigName -logfileName "HealOps.Job.$($using:testfile.name)" -loggerName "HealOps_Error"
                         $global:log4netLoggerDebug = initialize-log4net -log4NetPath $log4netPath -configFileName $log4NetConfigName -logfileName "HealOps.Job.$($using:testfile.name)" -loggerName "HealOps_Debug"
 
+                        # Update the test *.Status.json file to reflect that the test is NOW running
                         try {
-                            # Test execution
-                            $testResult = Test-EntityState -TestFilePath $using:testfile.FullName
+                            Update-TestRunningStatus -TestsFilesRootPath $TestsFilesRootPath -TestFileName $($using:testfile.name) -TestRunning @commonParms -ErrorAction Stop
                         } catch {
                             # Log it
-                            $log4netLogger.error("MODE: TestsFilesRootPath | Test-EntityState failed with: $_")
-                            throw $_
+                            $log4netLogger.error("MODE: TestsFilesRootPath | In Job | Update-TestRunningStatus failed with: $_")
+                            #throw "MODE: TestsFilesRootPath | In Job | Update-TestRunningStatus failed with: $_"
+                        }
+
+                        try {
+                            # Test execution
+                            $testResult = Test-EntityState -TestFilePath $($using:testfile.FullName) -ErrorAction Stop
+                        } catch {
+                            # Log it
+                            $log4netLogger.error("MODE: TestsFilesRootPath | In Job | Test-EntityState failed with: $_")
                         }
 
                         # Update the test *.Status.json file to reflect that the test is NO longer running
                         try {
-                            Update-TestRunningStatus -TestsFilesRootPath $TestsFilesRootPath -TestFileName $using:testfile.name @commonParms
+                            Update-TestRunningStatus -TestsFilesRootPath $TestsFilesRootPath -TestFileName $($using:testfile.name) @commonParms -ErrorAction Stop
                         } catch {
                             # Log it
                             $log4netLogger.error("MODE: TestsFilesRootPath | In Job | Update-TestRunningStatus failed with: $_")
-                            throw $_
                         }
 
                         if ($testResult.state -eq $false) {
                             ###################
                             # The test failed #
                             ###################
-                            Write-Verbose -Message "Trying to repair the 'Failed' test/s."
+                            Write-Verbose -Message "Trying to repair the 'Failed' test/s in --> $($using:testfile.name)"
+                            $log4netLoggerDebug.debug("Trying to repair the 'Failed' test/s in --> $($using:testfile.name)")
                             try {
                                 # Invoke repairs matching the failed test
                                 $resultOfRepair = Repair-EntityState -TestFilePath $using:testfile.FullName -TestData $testResult.testdata @commonParms
                             } catch {
                                 # Log it
-                                $log4netLogger.error("MODE: TestsFilesRootPath | Repair-EntityState failed with: $_")
-                                throw $_
+                                $log4netLogger.error("MODE: TestsFilesRootPath | In Job | Repair-EntityState failed with: $_")
                             }
 
                             if ($resultOfRepair -eq $false) {
@@ -436,9 +439,8 @@
                                     Submit-EntityStateReport -reportBackendSystem $($using:healOpsConfig.reportingBackend) -metric $($testResult.metric) -metricValue $($testResult.testdata.FailureMessage)
                                 } catch {
                                     # TODO: LOG IT and inform x
-                                    $log4netLogger.error("MODE: TestsFilesRootPath | Submit-EntityStateReport failed with: $_")
+                                    $log4netLogger.error("MODE: TestsFilesRootPath | In Job | Submit-EntityStateReport failed with: $_")
                                     Write-Verbose "Submit-EntityStateReport failed with: $_"
-                                    throw $_
                                 }
                             } else {
                                 try {
@@ -446,17 +448,15 @@
                                     $testResult = Test-EntityState -TestFilePath $using:testfile.FullName
                                 } catch {
                                     # Log it
-                                    $log4netLogger.error("MODE: TestsFilesRootPath | Test-EntityState failed with: $_")
-                                    throw $_
+                                    $log4netLogger.error("MODE: TestsFilesRootPath | In Job | Test-EntityState failed with: $_")
                                 }
 
                                 # Update the test *.Status.json file to reflect that the test is NO longer running
                                 try {
-                                    Update-TestRunningStatus -TestsFilesRootPath $TestsFilesRootPath -TestFileName $using:testfile.name @commonParms
+                                    Update-TestRunningStatus -TestsFilesRootPath $TestsFilesRootPath -TestFileName $($using:testfile.name) @commonParms -ErrorAction Stop
                                 } catch {
                                     # Log it
                                     $log4netLogger.error("MODE: TestsFilesRootPath | In Job | Update-TestRunningStatus failed with: $_")
-                                    throw $_
                                 }
 
                                 # Test on the result in order to get correct data for the metric value.
@@ -473,9 +473,8 @@
                                     Submit-EntityStateReport -reportBackendSystem $($using:healOpsConfig.reportingBackend) -metric $($testResult.metric) -metricValue $metricValue
                                 } catch {
                                     # TODO: LOG IT and inform x
-                                    $log4netLogger.error("MODE: TestsFilesRootPath | Submit-EntityStateReport failed with: $_")
+                                    $log4netLogger.error("MODE: TestsFilesRootPath | In Job | Submit-EntityStateReport failed with: $_")
                                     Write-Verbose "Submit-EntityStateReport failed with: $_"
-                                    throw $_
                                 }
                             }
                         } else {
@@ -488,9 +487,8 @@
                                     Submit-EntityStateReport -reportBackendSystem $($using:healOpsConfig.reportingBackend) -metric $($testResult.metric) -metricValue $assertionResult
                                 } catch {
                                     # TODO: LOG IT and inform x
-                                    $log4netLogger.error("MODE: TestsFilesRootPath | Submit-EntityStateReport failed with: $_")
+                                    $log4netLogger.error("MODE: TestsFilesRootPath | In Job | Submit-EntityStateReport failed with: $_")
                                     Write-Verbose "Submit-EntityStateReport failed with: $_"
-                                    throw $_
                                 }
                             } else {
                                 # TODO: Log IT and inform x!
@@ -499,6 +497,9 @@
                             }
                         }
                     } -ArgumentList $TestsFilesRootPath,$commonParms,$HealOpsPackageConfig,$PSScriptRoot,$log4netPath,$log4NetConfigName
+} catch {
+    $log4netLogger.error("start-job failed with > $_")
+}
                 }
             } # End of foreach tests file in $TestsFilesRootPath
         } elseif ($PSBoundParameters.ContainsKey('TestsFile')) {
@@ -600,7 +601,6 @@
         } catch {
             # Log it
             $log4netLogger.error("Failed to write the HealOps config json file. Failed with > $_")
-            throw "Failed to write the HealOps config json file. Failed with > $_"
         }
     }
 }

@@ -58,12 +58,14 @@ function Update-TestRunningStatus() {
     #>
     # Convert to JSON
     $tempTestsCollection_InJSON = ConvertTo-Json -InputObject $tempTestsCollection -Depth 3
-    Write-Verbose -Message "Status JSON to write to the $TestFileName status file > $tempTestsCollection_InJSON"
+    Write-Verbose -Message "Status JSON to write to the $statusFileName status file > $tempTestsCollection_InJSON"
+    $log4netLoggerDebug.debug("Status JSON to write to the $statusFileName status file > $tempTestsCollection_InJSON")
 
     # Write the file
     try {
         Set-Content -Path $TestsFilesRootPath/$statusFileName.json -Value $tempTestsCollection_InJSON -Force -Encoding UTF8 -ErrorAction Stop
     } catch {
+        $log4netLoggerDebug.error("Inside Update-TestRunningStatus - Set-Content failed with > $_")
         throw "Failed to write the status file for the tests file > $TestFileName. Failed with > $_"
     }
 }
