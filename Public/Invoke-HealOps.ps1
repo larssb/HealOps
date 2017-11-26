@@ -177,16 +177,16 @@
         #>
         if ($healOpsConfig.checkForUpdates -eq "True" -or $ForceUpdates -eq $true) {
             # Ensure that we have the HealOps Package Management repo. configured. So that updating can work and to avoid the error > `....$psgetItemInfo variable not set....`
-            $pmRepo = Get-PSRepository -Name $healOpsConfig.packageManagementRepoName -ErrorAction SilentlyContinue
+            $pmRepo = Get-PackageSource -Name $healOpsConfig.packageManagementRepoName -ErrorAction SilentlyContinue
             if ($null -eq $pmRepo) {
                 try {
                     # Register the HealOps Package Management repo.
-                    Register-PSRepository -Name $healOpsConfig.packageManagementRepoName -SourceLocation $healOpsConfig.packageManagementRepoSrc -PublishLocation $healOpsConfig.packageManagementRepoPub `
-                    -ScriptSourceLocation $healOpsConfig.packageManagementRepoScriptSrc -ScriptPublishLocation $healOpsConfig.packageManagementRepoScriptPub -InstallationPolicy Trusted `
-                    -PackageManagementProvider NuGet -ErrorAction Stop
+                    Register-PackageSource -Name $healOpsConfig.packageManagementRepoName -Location $healOpsConfig.packageManagementRepoSrc -PublishLocation $healOpsConfig.packageManagementRepoPub `
+                    -ScriptSourceLocation $healOpsConfig.packageManagementRepoScriptSrc -ScriptPublishLocation $healOpsConfig.packageManagementRepoScriptPub -Trusted `
+                    -ProviderName PowerShellGet -ErrorAction Stop
                 } catch {
                     Write-Verbose -Message "Failed to register the repository named $($healOpsConfig.packageManagementRepoName). The update feature might therefore not work. It failed with > $_"
-                    $log4netLogger.error("Failed to register the repository named $($healOpsConfig.packageManagementRepoName). The update feature might therefore not work. It failed with > $_")
+                    $log4netLogger.error("Failed to register the repository named $($healOpsConfig.packageManagementRepoName). The update feature might therefore not work. It failed with > $_.")
                 }
             } else {
                 $log4netLoggerDebug.debug("The repository named $($healOpsConfig.packageManagementRepoName) is registered.")
@@ -503,11 +503,10 @@ try {
             # Test execution
             Write-Verbose -Message "Executing the test"
             try {
-                $testResult = Test-EntityState -TestFilePath $TestsFile
+                $testResult = Test-EntityState -TestFilePath $TestsFile -ErrorAction Stop
             } catch {
                 # Log it
                 $log4netLogger.error("MODE: TestsFile | Test-EntityState failed with: $_")
-                throw $_
             }
 
             if ($testResult.state -eq $false) {
@@ -518,17 +517,16 @@ try {
 
                 try {
                     # Invoke repairs matching the failed test
-                    $resultOfRepair = Repair-EntityState -TestFilePath $TestsFile -TestData $testResult.testdata @commonParms
+                    $resultOfRepair = Repair-EntityState -TestFilePath $TestsFile -TestData $testResult.testdata -ErrorAction Stop @commonParms
                 } catch {
                     # Log it
                     $log4netLogger.error("MODE: TestsFile | Repair-EntityState failed with: $_")
-                    throw $_
                 }
 
                 if ($resultOfRepair -eq $false) {
                     # Report the state of the service to the backend report system. Which should then further trigger an alarm to the on-call personnel.
                     try {
-                        Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -metricValue $($testResult.testdata.FailureMessage)
+                        Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -metricValue $($testResult.testdata.FailureMessage) -ErrorAction Stop
                     } catch {
                         # TODO: LOG IT and inform x
                         $log4netLogger.error("MODE: TestsFile | Submit-EntityStateReport failed with: $_")
@@ -537,11 +535,10 @@ try {
                 } else {
                     try {
                         # Run the *.Tests.ps1 file again to verify that repairing was successful and to get data for reporting to the backend so that a monitored state of "X" IT service/Entity will get back to an okay state in the monitoring system.
-                        $testResult = Test-EntityState -TestFilePath $TestsFile
+                        $testResult = Test-EntityState -TestFilePath $TestsFile -ErrorAction Stop
                     } catch {
                         # Log it
                         $log4netLogger.error("MODE: TestsFile | Test-EntityState failed with: $_")
-                        throw $_
                     }
 
                     # Test on the result in order to get correct data for the metric value.
@@ -555,12 +552,11 @@ try {
 
                     # Report the result
                     try {
-                        Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -metricValue $metricValue
+                        Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -metricValue $metricValue -ErrorAction Stop
                     } catch {
                         # TODO: LOG IT and inform x
                         $log4netLogger.error("MODE: TestsFile | Submit-EntityStateReport failed with: $_")
                         Write-Verbose "Submit-EntityStateReport failed with: $_"
-                        throw $_
                     }
                 }
             } else {
@@ -570,7 +566,7 @@ try {
                 if ((Get-Variable -Name assertionResult)) {
                     # Report the state of the service to the backend report system.
                     try {
-                        Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -metricValue $assertionResult
+                        Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -metricValue $assertionResult -ErrorAction Stop
                     } catch {
                         # TODO: LOG IT and inform x
                         $log4netLogger.error("MODE: TestsFile | Submit-EntityStateReport failed with: $_")
@@ -580,7 +576,6 @@ try {
                     # TODO: Log IT and inform x!
                     $log4netLogger.error("The assertionResult variable was NOT defined in the *.Tests.ps1 file > $TestFilePath <- this HAS to be done.")
                     Write-Verbose -Message "The assertionResult variable was NOT defined in the *.Tests.ps1 file > $TestFilePath <- this HAS to be done."
-                    throw $_
                 }
             }
         }

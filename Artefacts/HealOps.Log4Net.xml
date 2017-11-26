@@ -4,7 +4,7 @@
         <appendToFile value="true"/>
         <rollingStyle value="Date"/>
         <datePattern value="yyyyMMdd"/>
-        <maxSizeRollBackups value="30"/>
+        <maxSizeRollBackups value="15"/>
 
         <layout type="log4net.Layout.PatternLayout">
             <conversionPattern value="[%date{yy-MM-dd HH:mm:ss}] [Time since execution start (in ms): %timestamp] [%level] - %message%newline"/>

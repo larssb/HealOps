@@ -102,6 +102,12 @@ n, run 'Import-Module HealOps'.
         * Ask why somewhere!
     * Looks like PowerShellGet does not support headless mode.
         * Soon as I remove that from the required modules I do not get the invoke-healops cmdlet was not found error.
+    * Error in self-update feature...we do not compare on update date....Fix this!
+    * Install-HealOps
+        * Job for eact tests file
+        * Random start
+        * Repeat unique for each
+        * Config in HealOps package json file.
 
 
 TWO ISSUES NOW
@@ -116,6 +122,8 @@ TWO ISSUES NOW
                 INSTEAD OF
                 --> repetition per created scheduled job
             * Would also simplify the code.
+    * Tried with Packagemanagement, seems like it has the same issues. Asked in their repo. on Github. Waiting for an answer.
+        * !!!!!!!!!!!!! FDAD#R=)#(R=)(R=) --> Alternatively, look into if it is possible to fetch from a PackageManagent repo via invoke-webrequest.....and so on
 
     * TOMORROW
         * Delete HealOps from norma1a-town1
