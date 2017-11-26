@@ -31,10 +31,14 @@ function Test-EntityState() {
     #############
     try {
         # Execute the tests
+        $currentErrorActionPreference = $ErrorActionPreference
+        $ErrorActionPreference = "Stop"
         $TestOutput = Invoke-Pester $TestFilePath -PassThru -Show None -ErrorAction Stop
     } catch {
         Write-Verbose -Message "Test-EntityState failed with: $_"
         throw "Test-EntityState failed with: $_"
+    } finally {
+        $ErrorActionPreference = $currentErrorActionPreference
     }
 
     if ($null -ne $TestOutput.TestResult) {

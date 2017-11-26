@@ -96,6 +96,26 @@ n, run 'Import-Module HealOps'.
     * BUT THE MOFO problem is > that jobs is crashing after no time when started with a PowerShell scheduled job.
         * Do a test with just one test file....
         * Fix try/catch and logging for that scenario before getting going.
+    * When there is two versions of PowerShellGet if fucks up in headless mode. So --> have to remove any versions below the 1 required by HealOps.
+        * That version is likely not installed with PowerShellGet....remove the folder by deleting it
+            * Check on this with > uninstall-module .... catch error
+        * Ask why somewhere!
+    * Looks like PowerShellGet does not support headless mode.
+        * Soon as I remove that from the required modules I do not get the invoke-healops cmdlet was not found error.
+
+
+TWO ISSUES NOW
+    * Self-update feature
+    * Using Start-job with/inside PowerShell scheduled jobs....is it supported and is it a good idea anyway.
+        * Multiple instances....and 1 5min. job could run and run and the others will just be kickstarted.
+        * But why not just have 1 scheduled job per tests file? Could be creatd with the install-healops script. And you could have people define the repeat interval in the
+        HealOpsPackage config json file.
+            * Because setting the repetition interval to one size fit for all is it good anyways? Not likely. Because:
+                --> 5min everything started all tests invoked
+                --> wait 5min try again
+                INSTEAD OF
+                --> repetition per created scheduled job
+            * Would also simplify the code.
 
     * TOMORROW
         * Delete HealOps from norma1a-town1

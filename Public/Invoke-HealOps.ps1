@@ -183,11 +183,13 @@
                     # Register the HealOps Package Management repo.
                     Register-PSRepository -Name $healOpsConfig.packageManagementRepoName -SourceLocation $healOpsConfig.packageManagementRepoSrc -PublishLocation $healOpsConfig.packageManagementRepoPub `
                     -ScriptSourceLocation $healOpsConfig.packageManagementRepoScriptSrc -ScriptPublishLocation $healOpsConfig.packageManagementRepoScriptPub -InstallationPolicy Trusted `
-                    -PackageManagementProvider NuGet
+                    -PackageManagementProvider NuGet -ErrorAction Stop
                 } catch {
                     Write-Verbose -Message "Failed to register the repository named $($healOpsConfig.packageManagementRepoName). The update feature might therefore not work. It failed with > $_"
                     $log4netLogger.error("Failed to register the repository named $($healOpsConfig.packageManagementRepoName). The update feature might therefore not work. It failed with > $_")
                 }
+            } else {
+                $log4netLoggerDebug.debug("The repository named $($healOpsConfig.packageManagementRepoName) is registered.")
             }
 
             $HealOpsModuleName = "HealOps"
@@ -381,14 +383,9 @@ try {
                         . $PSScriptRoot/../Private/JobHandling/Update-TestRunningStatus.ps1
                         . $PSScriptRoot/../Private/Repair-EntityState.ps1
                         . $PSScriptRoot/../Private/Submit-EntityStateReport.ps1
-try {
-                        Set-ExecutionPolicy -ExecutionPolicy ByPass -Force -Scope Process
-} catch {
-    $log4netLogger.error("execution pol. > $_")
-}
 
                         <#
-                        - Configure logging
+                            - Configure logging
 						#>
                         # Initiate the log4net logger
                         $global:log4netLogger = initialize-log4net -log4NetPath $log4netPath -configFileName $log4NetConfigName -logfileName "HealOps.Job.$($using:testfile.name)" -loggerName "HealOps_Error"
