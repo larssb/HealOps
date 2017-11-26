@@ -124,6 +124,9 @@ TWO ISSUES NOW
             * Would also simplify the code.
     * Tried with Packagemanagement, seems like it has the same issues. Asked in their repo. on Github. Waiting for an answer.
         * !!!!!!!!!!!!! FDAD#R=)#(R=)(R=) --> Alternatively, look into if it is possible to fetch from a PackageManagent repo via invoke-webrequest.....and so on
+        ALTERNATIVES:
+            * https://github.com/joel74/POSH-ProGet-API
+            *
 
     * TOMORROW
         * Delete HealOps from norma1a-town1
