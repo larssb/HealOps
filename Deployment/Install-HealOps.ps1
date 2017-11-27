@@ -189,6 +189,11 @@
             Write-Progress -Activity "Installing HealOps" -CurrentOperation "Defining the HealOps config json file." -Id 3
             $HealOpsConfig = @{}
             $HealOpsConfig.reportingBackend = $reportingBackend
+
+            !!! PackageManagementURI
+            !!! FeedName
+            !!! PackageManagementAPIKey
+
             $HealOpsConfig.packageManagementRepoName = $pmRepo.Name
             $HealOpsConfig.packageManagementRepoSrc = $pmRepo.ScriptSourceLocation
             $HealOpsConfig.packageManagementRepoPub = $pmRepo.PublishLocation

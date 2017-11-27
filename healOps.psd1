@@ -4,7 +4,7 @@
 RootModule = 'HealOps'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.10'
+ModuleVersion = '0.0.0.11'
 
 # ID used to uniquely identify this module
 GUID = 'a7de9802-3086-4612-a31f-8da988c2eca0'
@@ -25,7 +25,6 @@ Description = 'A self-healing monitoring system. Uses Pester tests (TDD) to dete
 RequiredModules = @(
     @{ModuleName='Pester';ModuleVersion='4.1.0'}
     @{ModuleName='powerShellTooling';ModuleVersion='0.0.0.5'}
-    @{ModuleName='PowerShellGet';ModuleVersion='1.5.0.0'}
 )
 
 # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.

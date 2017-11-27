@@ -13,7 +13,7 @@ function Test-ModuleUpdated() {
     Explanation of what the example does
 .PARAMETER ModuleName
     The name of the PowerShell module to test whether it was updated.
-.PARAMETER ModuleVersionBeforeUpdate
+.PARAMETER CurrentModuleVersion
     The version of the module prior to executing update-module.
 #>
 
@@ -26,28 +26,28 @@ function Test-ModuleUpdated() {
         $ModuleName,
         [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The version of the module prior to executing update-module.")]
         [ValidateNotNullOrEmpty()]
-        $ModuleVersionBeforeUpdate
+        $CurrentModuleVersion
     )
 
     #############
     # Execution #
     #############
     # Control if the module was actually updated
-    $moduleVersionAfterUpdate = Get-module -Name $ModuleName
+    $moduleVersionAfterUpdate = (Get-Module -ListAvailable $ModuleName | Sort-Object -Property Version -Descending)[0]
 
-    if ($moduleVersionAfterUpdate.Version -gt $ModuleVersionBeforeUpdate) {
+    if ($moduleVersionAfterUpdate.Version -gt $CurrentModuleVersion) {
         # Log it
-        $log4netLoggerDebug.debug("The module $ModuleName was bumped to $($moduleVersionAfterUpdate.Version) from $moduleVersionBeforeUpdate")
+        $log4netLoggerDebug.debug("The module $ModuleName was bumped to $($moduleVersionAfterUpdate.Version) from $CurrentModuleVersion")
 
         # When in verbose mode
-        Write-Verbose -Message "The module $ModuleName was bumped to $($moduleVersionAfterUpdate.Version) from $moduleVersionBeforeUpdate"
+        Write-Verbose -Message "The module $ModuleName was bumped to $($moduleVersionAfterUpdate.Version) from $CurrentModuleVersion"
     } else {
         # Log it
         $log4netLoggerDebug.debug("There was no update available on the Package Management backend. The module $ModuleName was therefore not updated. `
-        Module version before the update > $ModuleVersionBeforeUpdate. Module version after trying an update > $($moduleVersionAfterUpdate.Version)")
+        Module version before the update > $CurrentModuleVersion. Module version after trying an update > $($moduleVersionAfterUpdate.Version)")
 
         # When in verbose mode
         Write-Verbose -Message "There was no update available on the Package Management backend. The module $ModuleName was therefore not updated. `
-        Module version before the update > $ModuleVersionBeforeUpdate. Module version after trying an update > $($moduleVersionAfterUpdate.Version)"
+        Module version before the update > $CurrentModuleVersion. Module version after trying an update > $($moduleVersionAfterUpdate.Version)"
     }
 }

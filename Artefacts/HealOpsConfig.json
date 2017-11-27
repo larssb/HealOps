@@ -2,5 +2,8 @@
     "reportingBackend":  "OpenTSDB",
     "checkForUpdates":  "True",
     "checkForUpdatesInterval_InDays":  3,
-    "checkForUpdatesNext":  ""
+    "checkForUpdatesNext":  "",
+    "PackageManagementURI":  "https://proget.danskespil.dk",
+    "FeedName":  "HealOps",
+    "PackageManagementAPIKey":  ""
 }

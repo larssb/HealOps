@@ -6,6 +6,7 @@
 #. "$PSScriptRoot/settings.Build.ps1"
 
 # Include: build utils
+Import-Module -Name powerShellTooling -Force
 . "$PSScriptRoot/utils.Build.ps1"
 
 <#

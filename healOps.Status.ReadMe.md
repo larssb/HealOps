@@ -129,13 +129,15 @@ TWO ISSUES NOW
             *
 
     * TOMORROW
-        * Delete HealOps from norma1a-town1
+        * Think about deleting old version of an updated module. Cannot be done in the same session that updated
+            Måske noget kontrol på $MyInvocation --> if latest version --> remove older than this. If not latest do nothing as we likely just updated.
+                ** Hvis ovenstående er vejen. Ud i selvstændig funktion.
+        * Test self-update feature færdig lokalt.
+        * Test self-update feature i headless mode når der er kommet styr på ovenstående
+        * Update install-healops så det matcher ændringer til self-update feature
+        * Delete HealOps from Froome2a town1
             -- everything that Install-HealOps do
- ¤¤       * Fix run PowerShell with -ExecutionPolicy Bypass
-  ¤¤      * Register-PSRepository on first run....to avoid the $psgetItemInfo error above.
-        * Install again
-        * Test and see if it works
-        * Deploy to town1 and town13 servers
+        * Fix run PowerShell with -ExecutionPolicy Bypass hvis nødvendigt...
 
 ## Think about
 
