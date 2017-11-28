@@ -1,4 +1,3 @@
-#Requires -Modules powershellTooling
 ###############
 #### PREP. ####
 ###############
@@ -6,7 +5,6 @@
 #. "$PSScriptRoot/settings.Build.ps1"
 
 # Include: build utils
-Import-Module -Name powerShellTooling -Force
 . "$PSScriptRoot/utils.Build.ps1"
 
 <#
@@ -29,6 +27,8 @@ if(-not (Test-Path -Path $buildOutputRoot)) {
     }
 }
 
+# Determine run mode
+$runmode = [Environment]::UserInteractive
 ###############
 #### TASKS ####
 ###############
@@ -50,7 +50,7 @@ task build {
     <#
         - Give build information on where to find the cooked package
     #>
-    if((test-powershellRunMode -Interactive) -eq $true) {
+    if($runmode -eq $true) {
         Write-Build Green "The build completed and its output can be found in: $buildOutputRoot"
     }
 }
