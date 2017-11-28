@@ -1,7 +1,7 @@
 #Requires -RunAsAdministrator
 <#PSScriptInfo
 
-.VERSION 0.0.0.7
+.VERSION 0.0.0.8
 
 .GUID bbf74424-f58d-42d1-9d5a-aeba44ccd545
 
