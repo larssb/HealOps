@@ -1,14 +1,15 @@
 ﻿function Invoke-HealOps() {
 <#
 .DESCRIPTION
-    Invoke-HealOps is the function you call to initiate a HealOps package. Thereby testing "X" IT service/Entity.
-    Where "X" can be n+m.
+    Invoke-HealOps is the function you call to initiate the *.Tests.ps1 and *.Repairs.ps1 files in "X" HealOps package.
+        - The Pester tests in the *.Test.ps1 file will executed
+        - If the component being tested is in a filed state it will be tried remediated via a *.Tests.ps1 corresponding *.Repairs.ps1 file.
 .INPUTS
     <none>
 .OUTPUTS
     <none>
 .NOTES
-    General notes
+    <none>
 .EXAMPLE
     Invoke-HealOps -TestsFile $TestsFile -HealOpsPackageConfigPath $HealOpsPackageConfigPath
     Executes HealOps on a specific *.Tests.ps1 file. Sending in the HealOps package config file wherein HealOps will read configuration and tags.

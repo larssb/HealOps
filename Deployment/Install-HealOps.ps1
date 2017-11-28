@@ -1,5 +1,4 @@
 #Requires -RunAsAdministrator
-#Requires -Modules PSScheduledJob
 <#PSScriptInfo
 
 .VERSION 0.0.0.7
@@ -252,8 +251,8 @@
         }
 
         # Check that HealOps is available
-        $HealOpsModule = Get-Module -ListAvailable -Name $HealOpsModuleName
-        $HealOpsModuleBase = $HealOpsModule.ModuleBase | Select-Object -Unique
+        $HealOpsModule = (Get-Module -ListAvailable -Name $HealOpsModuleName | Sort-Object -Property Version -Descending)[0]
+        $HealOpsModuleBase = $HealOpsModule.ModuleBase
         if ($HealOpsModule.Name -eq $HealOpsModuleName) {
             <#
                 - The HealOps config json file.
@@ -279,7 +278,7 @@
 
             # Write the HealOps config json file
             try {
-                Set-Content -Path $HealOpsModuleBase/Artefacts/HealOpsConfig.json -Value $HealOpsConfig_InJSON -Force -ErrorAction Stop
+                Set-Content -Path "$HealOpsModuleBase/Artefacts/HealOpsConfig.json" -Value $HealOpsConfig_InJSON -Force -ErrorAction Stop
             } catch {
                 throw "Writing the HealOps config json file failed with: $_"
             }
