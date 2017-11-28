@@ -10,7 +10,7 @@
 .NOTES
     General notes
 .EXAMPLE
-    Invoke-HealOps -TestFilePath $TestsFile -HealOpsPackageConfigPath $HealOpsPackageConfigPath
+    Invoke-HealOps -TestsFile $TestsFile -HealOpsPackageConfigPath $HealOpsPackageConfigPath
     Executes HealOps on a specific *.Tests.ps1 file. Sending in the HealOps package config file wherein HealOps will read configuration and tags.
 .PARAMETER HealOpsPackageConfigPath
     The path to a JSON file containing settings and tag value data for reporting. Relative to a specific HealOpsPackage.

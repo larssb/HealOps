@@ -73,6 +73,8 @@ tor. The current Windows PowerShell session is not running as Administrator. Sta
             `
             -- We should be able to catch that in some way >> if that exception is thrown >> not set the checkForUpdatesNext property in the HealOpsConfig.json file.
                 > The Fix >>> to register a psrepo. !!! ASK on the PowerShellGet GitHub repo. why this is???????
+        * Will it be an issue that an update could be started by several jobs at the same time?
+            * Hmm as long as the jobs do not start at the same we should be okay.
     * Think about doing a simple health svc for HealOps. So that you can ask HealOps from the outside if it is a okay...or have HealOps simply report that it is running on each invoke-healops call. Hmmm hm hmmmm!
     * Think about how we can make sure that peeps configure the config file in the HealOps packages used on a system.
         * At least catch it if there is empty properties in the config
@@ -102,13 +104,15 @@ n, run 'Import-Module HealOps'.
         * Ask why somewhere!
     * Looks like PowerShellGet does not support headless mode.
         * Soon as I remove that from the required modules I do not get the invoke-healops cmdlet was not found error.
-    * Error in self-update feature...we do not compare on update date....Fix this!
     * Install-HealOps
         * Job for eact tests file
         * Random start
         * Repeat unique for each
         * Config in HealOps package json file.
-
+    * CATCH errors on submit-entitystatereport....
+        * Have fallback so that it can be caught that reporting does not work. E.g. something that reports:
+            * Node = (we already get that when HealOps run)
+            * to metric x.y.z that > we look at in Grafana
 
 TWO ISSUES NOW
     * Self-update feature
@@ -132,9 +136,7 @@ TWO ISSUES NOW
         * Think about deleting old version of an updated module. Cannot be done in the same session that updated
             Måske noget kontrol på $MyInvocation --> if latest version --> remove older than this. If not latest do nothing as we likely just updated.
                 ** Hvis ovenstående er vejen. Ud i selvstændig funktion.
-        * Test self-update feature færdig lokalt.
         * Test self-update feature i headless mode når der er kommet styr på ovenstående
-        * Update install-healops så det matcher ændringer til self-update feature
         * Delete HealOps from Froome2a town1
             -- everything that Install-HealOps do
         * Fix run PowerShell with -ExecutionPolicy Bypass hvis nødvendigt...

@@ -66,6 +66,9 @@ function Install-AvailableUpdate() {
                 $log4netLogger.error("Failed to extract the nuget package. The extraction failed with > $_")
             }
 
+            # Return
+            $true
+<#
             if (Test-Path -Path $moduleRoot/$Version) {
                 try {
                     # Remove older versions of the module
@@ -82,7 +85,7 @@ function Install-AvailableUpdate() {
             } else {
                 # Return
                 $false
-            }
+            }#>
         } else {
             $log4netLogger.error("The nuget package could not be found. Was it downloaded successfully?")
 

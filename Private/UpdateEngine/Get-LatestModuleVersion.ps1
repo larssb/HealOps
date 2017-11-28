@@ -48,7 +48,7 @@ function Get-LatestModuleVersion() {
     Process {
         # Retrieve the ID for the feed
         try {
-            $Request = Invoke-WebRequest -Uri "$API_BaseURI/Feeds_GetFeed?API_Key=$APIKey&Feed_Name=$FeedName" -UseBasicParsing
+            $Request = Invoke-WebRequest -Uri "$API_BaseURI/Feeds_GetFeed?API_Key=$APIKey&Feed_Name=$FeedName" -UseBasicParsing -ErrorAction Stop
         } catch {
             $log4netLogger.error("Requesting the ID of the feed $FeedName on package management backend $PackageManagementURI failed with > $_")
         }
@@ -57,7 +57,7 @@ function Get-LatestModuleVersion() {
         # Retrieve the package and version requested
         $URI = "$API_BaseURI/NuGetPackages_GetLatest?API_Key=$APIKey&Feed_Id=" + $Feed.Feed_Id + "&PackageIds_Psv=$ModuleName"
         try {
-            $Request = Invoke-WebRequest -Uri $URI -UseBasicParsing
+            $Request = Invoke-WebRequest -Uri $URI -UseBasicParsing -ErrorAction Stop
         } catch {
             $log4netLogger.error("Retrieving the package and version on the package management backend $PackageManagementURI failed with > $_")
         }
