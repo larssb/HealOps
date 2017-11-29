@@ -49,8 +49,9 @@
         $log4netPath = "$PSScriptRoot/../Artefacts"
 
         # Initiate the log4net logger
-        $global:log4netLogger = initialize-log4net -log4NetPath $log4netPath -configFileName $log4NetConfigName -logfileName "HealOps.Main" -loggerName "HealOps_Error"
-        $global:log4netLoggerDebug = initialize-log4net -log4NetPath $log4netPath -configFileName $log4NetConfigName -logfileName "HealOps.Main" -loggerName "HealOps_Debug"
+        $TestsFileRootName = (Split-Path -Path $TestsFile -Leaf) -replace ".ps1",""
+        $global:log4netLogger = initialize-log4net -log4NetPath $log4netPath -configFileName $log4NetConfigName -logfileName "HealOps.Main.$TestsFileRootName" -loggerName "HealOps_Error"
+        $global:log4netLoggerDebug = initialize-log4net -log4NetPath $log4netPath -configFileName $log4NetConfigName -logfileName "HealOps.Main.$TestsFileRootName" -loggerName "HealOps_Debug"
 
         # Make the log more viewable.
         $log4netLoggerDebug.debug("--------------------------------------------------")

@@ -413,6 +413,7 @@
             write-host "....HealOps was installed...." -ForegroundColor Green
             write-host " - DO REMEMBER TO SET environment specific values in the HealOps packages you specified." -ForegroundColor Red
             write-host " - They where > $HealOpsPackages" -ForegroundColor Green
+            write-host " - And are installed in the following PowerShell module root > $ProgramFilesModulesPath." -ForegroundColor Green
             write-host "========================================================================================" -ForegroundColor DarkYellow
         } else {
             throw "The HealOps module does not seem to be installed. So we have to stop."

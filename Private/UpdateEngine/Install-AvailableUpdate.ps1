@@ -19,6 +19,8 @@ function Install-AvailableUpdate() {
     The name of the Feed to get the latest version of the module specified in the ModuleName parameter.
 .PARAMETER Version
     The version of the module to download, named as specified with the ModuleName parameter.
+.PARAMETER ModuleBase
+    The root folder to install the module in.
 #>
 
     # Define parameters
@@ -36,7 +38,10 @@ function Install-AvailableUpdate() {
         [String]$FeedName,
         [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The version of the module to download, named as specified with the ModuleName parameter.")]
         [ValidateNotNullOrEmpty()]
-        [String]$Version
+        [String]$Version,
+        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The root folder to install the module in.")]
+        [ValidateNotNullOrEmpty()]
+        [String]$ModuleBase
     )
 
     #############
@@ -56,23 +61,30 @@ function Install-AvailableUpdate() {
 
         if (Test-Path -Path $PSScriptRoot/Temp/$ModuleName.zip) {
             # Get the module
-            $Module = (Get-Module -ListAvailable $ModuleName | Sort-Object -Property Version -Descending)[0]
-            $moduleRoot = Split-Path -Path $module.ModuleBase
+            #$Module = (Get-Module -ListAvailable $ModuleName | Sort-Object -Property Version -Descending)[0]
+            #$moduleRoot = Split-Path -Path $module.ModuleBase
 
             # Extract the package
             try {
-                Expand-Archive $PSScriptRoot/Temp/$ModuleName.zip -DestinationPath $moduleRoot/$Version -Force -ErrorAction Stop -ErrorVariable extractEV
+                Expand-Archive $PSScriptRoot/Temp/$ModuleName.zip -DestinationPath $ModuleBase/$Version -Force -ErrorAction Stop -ErrorVariable extractEV
+                $expandArchiveResult = $true
             } catch {
                 $log4netLogger.error("Failed to extract the nuget package. The extraction failed with > $_")
+                $expandArchiveResult = $false
             }
 
-            # Return
-            $true
+            if ( (Test-Path -Path $ModuleBase/$Version) -and ($expandArchiveResult -eq $true)) {
+                # Return
+                $true
+            } else {
+                # Return
+                $false
+            }
 <#
-            if (Test-Path -Path $moduleRoot/$Version) {
+            if (Test-Path -Path $ModuleBase/$Version) {
                 try {
                     # Remove older versions of the module
-                    Remove-Item -Path $moduleRoot -Exclude $Version -Recurse -Force -ErrorAction Stop
+                    Remove-Item -Path $ModuleBase -Exclude $Version -Recurse -Force -ErrorAction Stop
 
                     # Return
                     $true
