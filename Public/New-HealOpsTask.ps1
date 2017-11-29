@@ -115,8 +115,9 @@ function New-HealOpsTask() {
                 - The task will be repeated with the incoming minute interval.
                 - It will keep repeating forever.
         #>
+        $kickOffJobDateTimeRandom = get-random -Minimum 2 -Maximum 6
         $jobTriggerSplatting = @{
-            At = (Get-date).AddMinutes(5);
+            At = (Get-date).AddMinutes(1).AddMinutes(($kickOffJobDateTimeRandom)).ToString();
             RepetitionInterval = (New-TimeSpan -Minutes $TaskRepetitionInterval);
             RepeatIndefinitely = $true;
             Once = $true;

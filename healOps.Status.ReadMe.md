@@ -114,32 +114,15 @@ n, run 'Import-Module HealOps'.
             * Node = (we already get that when HealOps run)
             * to metric x.y.z that > we look at in Grafana
 
-TWO ISSUES NOW
-    * Self-update feature
-    * Using Start-job with/inside PowerShell scheduled jobs....is it supported and is it a good idea anyway.
-        * Multiple instances....and 1 5min. job could run and run and the others will just be kickstarted.
-        * But why not just have 1 scheduled job per tests file? Could be creatd with the install-healops script. And you could have people define the repeat interval in the
-        HealOpsPackage config json file.
-            * Because setting the repetition interval to one size fit for all is it good anyways? Not likely. Because:
-                --> 5min everything started all tests invoked
-                --> wait 5min try again
-                INSTEAD OF
-                --> repetition per created scheduled job
-            * Would also simplify the code.
-    * Tried with Packagemanagement, seems like it has the same issues. Asked in their repo. on Github. Waiting for an answer.
-        * !!!!!!!!!!!!! FDAD#R=)#(R=)(R=) --> Alternatively, look into if it is possible to fetch from a PackageManagent repo via invoke-webrequest.....and so on
-        ALTERNATIVES:
-            * https://github.com/joel74/POSH-ProGet-API
-            *
-
     * TOMORROW
         * Think about deleting old version of an updated module. Cannot be done in the same session that updated
             Måske noget kontrol på $MyInvocation --> if latest version --> remove older than this. If not latest do nothing as we likely just updated.
                 ** Hvis ovenstående er vejen. Ud i selvstændig funktion.
-        * Test self-update feature i headless mode når der er kommet styr på ovenstående
         * Delete HealOps from Froome2a town1
             -- everything that Install-HealOps do
         * Fix run PowerShell with -ExecutionPolicy Bypass hvis nødvendigt...
+        * Test on froome2a-town1
+            * Self-update in headless mode?!?!?!?!?!
 
 ## Think about
 
