@@ -1,13 +1,13 @@
 function Register-UpdateCycle() {
 <#
 .DESCRIPTION
-    Long description
+    Registers the fact that an update cycle ran.
 .INPUTS
     Inputs (if any)
 .OUTPUTS
     [Boolean] relative to the result of registering the update to a config file.
 .NOTES
-    General notes
+    <none>
 .EXAMPLE
     Register-UpdateCycle -Config $Config
     Tries to register that an update cycle was run.

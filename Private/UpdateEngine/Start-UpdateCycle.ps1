@@ -121,7 +121,7 @@ function Start-UpdateCycle() {
             }
         } else {
             # Register that an update cycle was ran. But register to the current version of the main module as it was not updated.
-            $registerResult = Register-UpdateCycle -Config $Config -Version $moduleVersionBeforeUpdate.Version -ModuleBase $MainModuleRoot
+            $registerResult = Register-UpdateCycle -Config $Config -Version $moduleVersionBeforeUpdate -ModuleBase $MainModuleRoot
             if ($registerResult -eq $false) {
                 $log4netLogger.error("Failed to register that an update cycle ran. CASE > The main module was NOT updated.")
             }
