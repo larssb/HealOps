@@ -60,10 +60,6 @@ function Install-AvailableUpdate() {
         }
 
         if (Test-Path -Path $PSScriptRoot/Temp/$ModuleName.zip) {
-            # Get the module
-            #$Module = (Get-Module -ListAvailable $ModuleName | Sort-Object -Property Version -Descending)[0]
-            #$moduleRoot = Split-Path -Path $module.ModuleBase
-
             # Extract the package
             try {
                 Expand-Archive $PSScriptRoot/Temp/$ModuleName.zip -DestinationPath $ModuleBase/$Version -Force -ErrorAction Stop -ErrorVariable extractEV
@@ -80,24 +76,6 @@ function Install-AvailableUpdate() {
                 # Return
                 $false
             }
-<#
-            if (Test-Path -Path $ModuleBase/$Version) {
-                try {
-                    # Remove older versions of the module
-                    Remove-Item -Path $ModuleBase -Exclude $Version -Recurse -Force -ErrorAction Stop
-
-                    # Return
-                    $true
-                } catch {
-                    $log4netLogger.error("Failed to remove older versions of the updated module. It failed with > $_")
-
-                    # Return
-                    $false
-                }
-            } else {
-                # Return
-                $false
-            }#>
         } else {
             $log4netLogger.error("The nuget package could not be found. Was it downloaded successfully?")
 

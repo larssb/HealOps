@@ -1,10 +1,9 @@
 @{
-
 # Script module or binary module file associated with this manifest.
 RootModule = 'HealOps'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.15'
+ModuleVersion = '0.0.0.17'
 
 # ID used to uniquely identify this module
 GUID = 'a7de9802-3086-4612-a31f-8da988c2eca0'
@@ -63,5 +62,4 @@ PrivateData = @{
     } # End of PSData hashtable
 
 } # End of PrivateData hashtable
-
 }

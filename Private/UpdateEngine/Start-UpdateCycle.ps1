@@ -46,12 +46,16 @@ function Start-UpdateCycle() {
                 $log4netLogger.error("Failed to create the temp download folder. The failure was > $_")
             }
         }
+
+        # Get the main module. The newest version of it, if several is installed
+        $MainModule = (Get-Module -ListAvailable $ModuleName | Sort-Object -Property Version -Descending)[0]
+        $MainModuleRoot = Split-Path -Path $MainModule.ModuleBase
     }
     Process {
         <#
             - The dependencies of the module
         #>
-        foreach ($requiredModule in $Module.RequiredModules) {
+        foreach ($requiredModule in $MainModule.RequiredModules) {
             # Register the current version of the module
             $moduleVersionBeforeUpdate = $requiredModule.version
 
@@ -60,11 +64,11 @@ function Start-UpdateCycle() {
 
             if ($null -ne $availableUpdateResult.Version) {
                 # Get the module. The newest version of it, if several is installed
-                $Module = (Get-Module -ListAvailable $requiredModule.Name | Sort-Object -Property Version -Descending)[0]
-                $moduleRoot = Split-Path -Path $module.ModuleBase
+                $requiredModule = (Get-Module -ListAvailable $requiredModule.Name | Sort-Object -Property Version -Descending)[0]
+                $requiredModuleRoot = Split-Path -Path $requiredModule.ModuleBase
 
                 # Update the module
-                $installResult = Install-AvailableUpdate -ModuleName $requiredModule.Name -ModuleBase $moduleRoot -PackageManagementURI $config.PackageManagementURI -FeedName $Config.FeedName -Version $availableUpdateResult.Version
+                $installResult = Install-AvailableUpdate -ModuleName $requiredModule.Name -ModuleBase $requiredModuleRoot -PackageManagementURI $config.PackageManagementURI -FeedName $Config.FeedName -Version $availableUpdateResult.Version
 
                 if ($installResult -eq $true) {
                     # Control if the module was actually updated after a non-failing Install-AvailableUpdate execution and log it
@@ -79,25 +83,21 @@ function Start-UpdateCycle() {
             - The main module
         #>
         # Register the current version of the module
-        $moduleVersionBeforeUpdate = $Module.version
+        $moduleVersionBeforeUpdate = $MainModule.Version
 
         # Check the Package Management backend for an available update to the current dependency module
-        $availableUpdateResult = Get-AvailableUpdate -ModuleName $Module.Name -CurrentModuleVersion $moduleVersionBeforeUpdate -Config $Config
+        $availableUpdateResult = Get-AvailableUpdate -ModuleName $MainModule.Name -CurrentModuleVersion $moduleVersionBeforeUpdate -Config $Config
 
         if ($null -ne $availableUpdateResult.Version) {
-            # Get the module. The newest version of it, if several is installed
-            $Module = (Get-Module -ListAvailable $ModuleName | Sort-Object -Property Version -Descending)[0]
-            $MainModuleRoot = Split-Path -Path $module.ModuleBase
-
             # Update the module
-            $installResultMainModule = Install-AvailableUpdate -ModuleName $Module.Name -ModuleBase $MainModuleRoot -PackageManagementURI $config.PackageManagementURI -FeedName $Config.FeedName -Version $availableUpdateResult.Version
+            $installResultMainModule = Install-AvailableUpdate -ModuleName $MainModule.Name -ModuleBase $MainModuleRoot -PackageManagementURI $config.PackageManagementURI -FeedName $Config.FeedName -Version $availableUpdateResult.Version
 
             if ($installResultMainModule -eq $true) {
                 # Control if the module was actually updated after a non-failing Install-AvailableUpdate execution and log it
-                Test-ModuleUpdated -ModuleName $Module.Name -CurrentModuleVersion $moduleVersionBeforeUpdate
+                Test-ModuleUpdated -ModuleName $MainModule.Name -CurrentModuleVersion $moduleVersionBeforeUpdate
             }
         } else {
-            $log4netLoggerDebug.debug("There was no newer version of the module: $($Module.Name) - on the Package Management backend.")
+            $log4netLoggerDebug.debug("There was no newer version of the module: $($MainModule.Name) - on the Package Management backend.")
         }
     }
     End {
@@ -120,7 +120,7 @@ function Start-UpdateCycle() {
                 $log4netLogger.error("Failed to register that an update cycle ran.")
             }
         } else {
-            $log4netLoggerDebug.debug("The main HealOps module was not updated. See other entries in the logs for possible reasons. Where one reason of course could be that there was no update.")
+            $log4netLoggerDebug.debug("The main module was not updated. See other entries in the logs for possible reasons. Where one reason of course could be that there was no update.")
         }
     }
 }
