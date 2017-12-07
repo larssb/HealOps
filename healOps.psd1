@@ -3,7 +3,7 @@
 RootModule = 'HealOps'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.20'
+ModuleVersion = '0.0.0.21'
 
 # ID used to uniquely identify this module
 GUID = 'a7de9802-3086-4612-a31f-8da988c2eca0'
@@ -30,7 +30,7 @@ RequiredModules = @(
 FunctionsToExport = @(
     'Invoke-HealOps'
     'New-HealOpsPackageRunner'
-    'New-HealOpsTask'
+    'New-HealOpsInvoker'
 )
 
 # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.

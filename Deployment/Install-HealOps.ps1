@@ -62,6 +62,8 @@
     Used to specify that the package management backend does not allow anonymous access. This will make the script prompt for credentials.
 .PARAMETER HealOpsPackages
     An Array containing the names of the HealOps packages to install on the system.
+.PARAMETER JobType
+    The type of job to use for invoking HealOps.
 #>
 
     # Define parameters
@@ -87,7 +89,10 @@
         [Switch]$AnonymousNotAllowed,
         [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="An Array containing the names of the HealOps packages to install on the system.")]
         [ValidateNotNullOrEmpty()]
-        [Array]$HealOpsPackages
+        [Array]$HealOpsPackages,
+        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The type of job to use for invoking HealOps.")]
+        [ValidateSet('WinPSJob','WinScTask','LinCronJob')]
+        [String]$JobType
     )
 
     #############
@@ -358,24 +363,130 @@
                                 -- 1 task per *.Tests.ps1 file in the TestsAndRepairs folder given.
                         #>
                         $HealOpsPackageModuleBase = Split-Path -Path (Get-Module -ListAvailable -Name $HealOpsPackage).ModuleBase | Select-Object -Unique
-                        $HealOpsModuleRootBase = "$HealOpsPackageModuleBase/$latestModuleVersion"
+                        $HealOpsPackageModuleRootBase = "$HealOpsPackageModuleBase/$latestModuleVersion"
 
                         # Get the *.Tests.ps1 files in the provided directory
-                        $TestsFiles = Get-ChildItem -Path $HealOpsModuleRootBase/TestsAndRepairs -Recurse -Force -Include "*.Tests.ps1"
+                        $TestsFiles = Get-ChildItem -Path $HealOpsPackageModuleRootBase/TestsAndRepairs -Recurse -Force -Include "*.Tests.ps1"
                         foreach ($testFile in $TestsFiles) {
-                            [Array]$HealOpsPackageConfig = Get-Content -Path $HealOpsModuleRootBase/Config/*.json -Encoding UTF8 | ConvertFrom-Json
+                            [Array]$HealOpsPackageConfig = Get-Content -Path $HealOpsPackageModuleRootBase/Config/*.json -Encoding UTF8 | ConvertFrom-Json
                             $TestsFileName = Split-Path -Path $testFile -Leaf
                             $fileExt = [System.IO.Path]::GetExtension($TestsFileName)
                             $fileNoExt = $TestsFileName -replace $fileExt,""
                             $TestsFileJobInterval = $HealOpsPackageConfig.$fileNoExt.jobInterval
                             Write-Verbose -Message "The job repetition interval will be > $TestsFileJobInterval"
-                            $HealOpsPackageConfigPath = Get-ChildItem -Path $HealOpsModuleRootBase/Config -Include "*.json" -Force -File -Recurse
+
+                            ################
+                            # JOB CREATION #
+                            ################
+                            $HealOpsPackageConfigPath = Get-ChildItem -Path $HealOpsPackageModuleRootBase/Config -Include "*.json" -Force -File -Recurse
                             [String]$ScriptBlockString = "Invoke-HealOps -TestsFile '$testFile' -HealOpsPackageConfigPath '$($HealOpsPackageConfigPath.FullName)'"
-                            try {
-                                Write-Progress -Activity "Installing HealOps" -CurrentOperation "Creating a task to execute HealOps. For the *.Tests.ps1 file > $testFile" -Status "With the following task repetition interval > $TestsFileJobInterval" -Id 5
-                                New-HealOpsTask -TaskName $fileNoExt -TaskRepetitionInterval $TestsFileJobInterval -TaskPayload "ScriptBlock" -ScriptBlock $ScriptBlockString -credential $credential
-                            } catch {
-                                throw $_
+                            Write-Progress -Activity "Installing HealOps" -CurrentOperation "Creating a task to execute HealOps. For the *.Tests.ps1 file > $testFile" -Status "With the following task repetition interval > $TestsFileJobInterval" -Id 5
+                            switch ($JobType) {
+                                #
+                                "WinPSJob" {
+                                    <#
+                                        The settings explained:
+                                        - Be shown in the Windows Task Scheduler
+                                        - Start if the computer is on batteries
+                                        - Continue if the computer is on batteries
+                                        - If the job is tried started manually and it is already executing, the new manually triggered job will queued
+                                    #>
+                                    $Options = @{
+                                        StartIfOnBattery = $true;
+                                        MultipleInstancePolicy = "Queue";
+                                        RunElevated = $true;
+                                        ContinueIfGoingOnBattery = $true;
+                                    }
+
+                                    <#
+                                        The settings explained:
+                                        - The trigger will schedule the job to run the first time at current date and time + 5min.
+                                        - The task will be repeated with the incoming minute interval.
+                                        - It will keep repeating forever.
+                                    #>
+                                    $kickOffJobDateTimeRandom = get-random -Minimum 2 -Maximum 6
+                                    $Trigger = @{
+                                        At = (Get-date).AddMinutes(1).AddMinutes(($kickOffJobDateTimeRandom)).ToString();
+                                        RepetitionInterval = (New-TimeSpan -Minutes $TaskRepetitionInterval);
+                                        RepeatIndefinitely = $true;
+                                        Once = $true;
+                                    }
+                                    try {
+                                        New-ScheduledJob -TaskName $TaskName -TaskOptions $Options -TaskTriggerOptions $Trigger -TaskPayload "ScriptBlock" -ScriptBlock $ScriptBlockString -credential $credential -verbose
+                                    } catch {
+                                        throw $_
+                                    }
+                                }
+                                #
+                                "WinScTask" {
+                                    # Control if we can use the PowerShell module 'ScheduledTasks' to create the task.
+                                    if ($null -ne (Get-Module -Name ScheduledTasks -ListAvailable) ) {
+                                        <#
+                                            The settings explained:
+                                            -
+                                        #>
+                                        $Options = @{
+                                            Username = $HealOpsUsername
+                                            Password = $password
+                                        }
+
+                                        <#
+                                        The settings explained:
+                                            -
+                                        #>
+                                        $Trigger = @{
+                                            RepetitionInterval = 1
+                                        }
+
+                                        try {
+                                            #
+                                            Add-ScheduledTask -TaskName $TaskName -TaskOptions $Options -TaskTrigger $Trigger -Method "ScheduledTasks"
+                                        } catch {
+                                            throw "New-ScheduledTask failed with > $_"
+                                        }
+                                    } else {
+                                        # Use the classic schtasks cmd.
+                                        <#
+                                            The settings explained:
+                                            -
+                                        #>
+                                        $executeFileFullPath = "$HealOpsPackageModuleRootBase/TestsAndRepairs/execute.$TestsFileName"
+                                        $Options = @{
+                                            Username = $HealOpsUsername
+                                            Password = $password
+                                            ToRun = "`"powershell.exe -NoLogo -NonInteractive -WindowStyle Hidden -File `"`"$executeFileFullPath`"`"`""
+                                        }
+
+                                        <#
+                                            The settings explained:
+                                            -
+                                        #>
+                                        $Trigger = @{
+                                            RepetitionInterval = 1
+                                        }
+
+                                        # Create a CMD file for the scheduled task to execute. In order to avoid the limitation of the /TR parameter on the schtasks cmd. It cannot be longer than 261 chars.
+                                        try {
+                                            Set-Content -Path "$executeFileFullPath" -Value "$ScriptBlockString" -Force -NoNewline -ErrorAction Stop
+                                        } catch {
+                                            Write-Output "Failed to set content in the script for the scheduled task to execute. The task could there not be created for the Tests file > $TestsFileName > You'll have to create a task manually for this test."
+                                        }
+
+                                        if (Test-Path -Path "$executeFileFullPath") {
+                                            try {
+                                                # Create the task with the schtasks cmd.
+                                                Add-ScheduledTask -TaskName $TaskName -TaskOptions $Options -TaskTrigger $Trigger -Method "schtasks"
+                                            } catch {
+                                                throw $_
+                                            }
+                                        }
+                                    }
+                                }
+                                #
+                                "LinCronJob" {
+
+                                }
+                                Default {}
                             }
                         }
                     } else {

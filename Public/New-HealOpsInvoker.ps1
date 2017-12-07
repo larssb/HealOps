@@ -29,6 +29,8 @@ function New-HealOpsTask() {
     String representing the cmdline that HealOps should invoke. E.g. > Invoke-HealOps -TestsFilesRootPath "PATH_TO_THE_FOLDER_CONTAINING_TESTS_FILES" -HealOpsPackageConfigPath "PATH_TO_THE_FOLDER_CONTAINING_HealOpsConfig.json"
 .PARAMETER credential
     The credential of the user that should execute the HealOps task.
+.PARAMETER JobType
+    The type of job to use for invoking HealOps.
 #>
 
     # Define parameters
@@ -46,7 +48,10 @@ function New-HealOpsTask() {
         [String]$TaskPayload,
         [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The credentials of the user that should execute the HealOps task.")]
         [ValidateNotNullOrEmpty()]
-        [System.Management.Automation.PSCredential]$credential
+        [System.Management.Automation.PSCredential]$credential,
+        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The type of job to use for invoking HealOps.")]
+        [ValidateSet('WinPSJob','WinScTask','LinCronJob')]
+        [String]$JobType
     )
 
     DynamicParam {
@@ -84,12 +89,7 @@ function New-HealOpsTask() {
     # Execution #
     #############
     Begin{}
-    Process{
-        <# Validate that the file exists at the specied path
-        if ((Test-Path -Path $InvokeHealOpsFile)) {
-
-        }#>
-
+    Process {
         # Determine the operating system
         <#if () {
 
@@ -97,10 +97,10 @@ function New-HealOpsTask() {
 
         <#
             The settings explained:
-                - Be shown in the Windows Task Scheduler
-                - Start if the computer is on batteries
-                - Continue if the computer is on batteries
-                - If the job is tried started manually and it is already executing, the new manually triggered job will queued
+            - Be shown in the Windows Task Scheduler
+            - Start if the computer is on batteries
+            - Continue if the computer is on batteries
+            - If the job is tried started manually and it is already executing, the new manually triggered job will queued
         #>
         $jobOptionsSplatting = @{
             StartIfOnBattery = $true;
@@ -111,9 +111,9 @@ function New-HealOpsTask() {
 
         <#
             The settings explained:
-                - The trigger will schedule the job to run the first time at current date and time + 5min.
-                - The task will be repeated with the incoming minute interval.
-                - It will keep repeating forever.
+            - The trigger will schedule the job to run the first time at current date and time + 5min.
+            - The task will be repeated with the incoming minute interval.
+            - It will keep repeating forever.
         #>
         $kickOffJobDateTimeRandom = get-random -Minimum 2 -Maximum 6
         $jobTriggerSplatting = @{
@@ -123,17 +123,31 @@ function New-HealOpsTask() {
             Once = $true;
         }
 
-        <#
-            - Create the job with the above options
-        #>
-        try {
-            if ($psboundparameters.ContainsKey('FilePath')) {
-                New-ScheduledJob -TaskName $TaskName -TaskOptions $jobOptionsSplatting -TaskTriggerOptions $jobTriggerSplatting -TaskPayload "File" -FilePath $psboundparameters.FilePath -credential $credential -verbose
-            } else {
-                New-ScheduledJob -TaskName $TaskName -TaskOptions $jobOptionsSplatting -TaskTriggerOptions $jobTriggerSplatting -TaskPayload "ScriptBlock" -ScriptBlock $psboundparameters.ScriptBlock -credential $credential -verbose
+        switch ($JobType) {
+            "WinPSJob" {
+                try {
+                    if ($psboundparameters.ContainsKey('FilePath')) {
+                        New-ScheduledJob -TaskName $TaskName -TaskOptions $jobOptionsSplatting -TaskTriggerOptions $jobTriggerSplatting -TaskPayload "File" -FilePath $psboundparameters.FilePath -credential $credential -verbose
+                    } else {
+                        New-ScheduledJob -TaskName $TaskName -TaskOptions $jobOptionsSplatting -TaskTriggerOptions $jobTriggerSplatting -TaskPayload "ScriptBlock" -ScriptBlock $psboundparameters.ScriptBlock -credential $credential -verbose
+                    }
+                } catch {
+                    throw $_
+                }
             }
-        } catch {
-            throw $_
+            "WinScTask" {
+                #
+                try {
+                    Add-ScheduledTask -TaskName $TaskName
+
+                } catch {
+                    throw $_
+                }
+            }
+            "LinCronJob" {
+                Write-Output "Linux cron job feature has not been added yet."
+                break
+            }
         }
     }
     End{}
