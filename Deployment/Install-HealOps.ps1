@@ -426,7 +426,7 @@
                                             AllowStartIfOnBatteries = $true
                                             DontStopIfGoingOnBatteries = $true
                                             DontStopOnIdleEnd = $true
-                                            MultipleInstancePolicy = "Queue"
+                                            MultipleInstances = "Queue"
                                             Password = $password
                                             PowerShellExeCommand = "$ScriptBlockString"
                                             RunLevel = "Highest"
