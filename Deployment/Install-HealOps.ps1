@@ -1,7 +1,7 @@
 #Requires -RunAsAdministrator
 <#PSScriptInfo
 
-.VERSION 0.0.0.10
+.VERSION 0.0.0.11
 
 .GUID bbf74424-f58d-42d1-9d5a-aeba44ccd545
 
@@ -412,7 +412,7 @@
                                         Once = $true;
                                     }
                                     try {
-                                        New-ScheduledJob -TaskName $TaskName -TaskOptions $Options -TaskTriggerOptions $Trigger -TaskPayload "ScriptBlock" -ScriptBlock $ScriptBlockString -credential $credential -verbose
+                                        New-ScheduledJob -TaskName $fileNoExt -TaskOptions $Options -TaskTriggerOptions $Trigger -TaskPayload "ScriptBlock" -ScriptBlock $ScriptBlockString -credential $credential -verbose
                                     } catch {
                                         throw $_
                                     }
@@ -451,7 +451,7 @@
 
                                         # Create the task via the PowerShell ScheduledTasks module.
                                         try {
-                                            Add-ScheduledTask -TaskName $TaskName -TaskOptions $Options -TaskTrigger $Trigger -Method "ScheduledTasks"
+                                            Add-ScheduledTask -TaskName $fileNoExt -TaskOptions $Options -TaskTrigger $Trigger -Method "ScheduledTasks"
                                         } catch {
                                             throw "Creating the scheduled task via the ScheduledTasks PowerShell module failed with > $_"
                                         }
@@ -486,7 +486,7 @@
                                         if (Test-Path -Path "$executeFileFullPath") {
                                             try {
                                                 # Create the task with the schtasks cmd.
-                                                Add-ScheduledTask -TaskName $TaskName -TaskOptions $Options -TaskTrigger $Trigger -Method "schtasks"
+                                                Add-ScheduledTask -TaskName $fileNoExt -TaskOptions $Options -TaskTrigger $Trigger -Method "schtasks"
                                             } catch {
                                                 throw $_
                                             }
