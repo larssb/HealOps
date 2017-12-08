@@ -23,7 +23,7 @@ Description = 'A self-healing monitoring system. Uses Pester tests (TDD) to dete
 # Modules that must be imported into the global environment prior to importing this module
 RequiredModules = @(
     @{ModuleName='Pester';ModuleVersion='4.1.0'}
-    @{ModuleName='powerShellTooling';ModuleVersion='0.0.0.5'}
+    @{ModuleName='powerShellTooling';ModuleVersion='0.0.0.6'}
 )
 
 # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.

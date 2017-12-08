@@ -382,7 +382,7 @@
                             [String]$ScriptBlockString = "Invoke-HealOps -TestsFile '$testFile' -HealOpsPackageConfigPath '$($HealOpsPackageConfigPath.FullName)'"
                             Write-Progress -Activity "Installing HealOps" -CurrentOperation "Creating a task to execute HealOps. For the *.Tests.ps1 file > $testFile" -Status "With the following task repetition interval > $TestsFileJobInterval" -Id 5
                             switch ($JobType) {
-                                #
+                                # PowerShell Scheduled Job - WINDOWS
                                 "WinPSJob" {
                                     <#
                                         The settings explained:
@@ -407,7 +407,7 @@
                                     $kickOffJobDateTimeRandom = get-random -Minimum 2 -Maximum 6
                                     $Trigger = @{
                                         At = (Get-date).AddMinutes(1).AddMinutes(($kickOffJobDateTimeRandom)).ToString();
-                                        RepetitionInterval = (New-TimeSpan -Minutes $TaskRepetitionInterval);
+                                        RepetitionInterval = (New-TimeSpan -Minutes $TestsFileJobInterval);
                                         RepeatIndefinitely = $true;
                                         Once = $true;
                                     }
@@ -417,38 +417,49 @@
                                         throw $_
                                     }
                                 }
-                                #
+                                # Scheduled Task - WINDOWS
                                 "WinScTask" {
                                     # Control if we can use the PowerShell module 'ScheduledTasks' to create the task.
                                     if ($null -ne (Get-Module -Name ScheduledTasks -ListAvailable) ) {
-                                        <#
-                                            The settings explained:
-                                            -
-                                        #>
+                                        # The options for the task to be registered.
                                         $Options = @{
-                                            Username = $HealOpsUsername
+                                            AllowStartIfOnBatteries = $true
+                                            DontStopIfGoingOnBatteries = $true
+                                            DontStopOnIdleEnd = $true
+                                            MultipleInstancePolicy = "Queue"
                                             Password = $password
+                                            PowerShellExeCommand = "$ScriptBlockString"
+                                            RunLevel = "Highest"
+                                            StartWhenAvailable = $true
+                                            User = $HealOpsUsername
                                         }
 
                                         <#
-                                        The settings explained:
-                                            -
+                                            Task trigger. The settings explained:
+                                                - RepetitionInterval: How often the task will be repeated.
+                                                - RepetitionDuration: For how long the task will keep on repeating. As programmed it will keep on going for over 9000 days.
                                         #>
+                                        $kickOffJobDateTimeRandom = get-random -Minimum 2 -Maximum 6
+                                        $currentDate = ([DateTime]::Now)
+                                        $taskRunDration = $currentDate.AddYears(25) - $currentDate
                                         $Trigger = @{
-                                            RepetitionInterval = 1
+                                            At = (Get-date).AddMinutes(1).AddMinutes(($kickOffJobDateTimeRandom)).ToString()
+                                            RepetitionInterval = (New-TimeSpan -Minutes $TestsFileJobInterval)
+                                            RepetitionDuration  = $taskRunDration
+                                            Once = $true
                                         }
 
+                                        # Create the task via the PowerShell ScheduledTasks module.
                                         try {
-                                            #
                                             Add-ScheduledTask -TaskName $TaskName -TaskOptions $Options -TaskTrigger $Trigger -Method "ScheduledTasks"
                                         } catch {
-                                            throw "New-ScheduledTask failed with > $_"
+                                            throw "Creating the scheduled task via the ScheduledTasks PowerShell module failed with > $_"
                                         }
                                     } else {
                                         # Use the classic schtasks cmd.
                                         <#
                                             The settings explained:
-                                            -
+                                            - ToRun: The value to hand to the /TR parameter of the schtasks cmd. Everything after powershell.exe will be taken as parameters.
                                         #>
                                         $executeFileFullPath = "$HealOpsPackageModuleRootBase/TestsAndRepairs/execute.$TestsFileName"
                                         $Options = @{
@@ -459,10 +470,10 @@
 
                                         <#
                                             The settings explained:
-                                            -
+                                            - RepetitionInterval: How often the task will be repeated.
                                         #>
                                         $Trigger = @{
-                                            RepetitionInterval = 1
+                                            RepetitionInterval = $TestsFileJobInterval
                                         }
 
                                         # Create a CMD file for the scheduled task to execute. In order to avoid the limitation of the /TR parameter on the schtasks cmd. It cannot be longer than 261 chars.
@@ -482,7 +493,7 @@
                                         }
                                     }
                                 }
-                                #
+                                # Cron job - LINUX
                                 "LinCronJob" {
 
                                 }
