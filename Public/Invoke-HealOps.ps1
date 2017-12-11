@@ -34,6 +34,7 @@
             [ValidateNotNullOrEmpty()]
             [String]$TestsFile,
             [Parameter(Mandatory=$false, ParameterSetName="File", HelpMessage="Use this switch parameter to force an update of HealOps and its pre-requisites regardless of the values in the HealOps config json file.")]
+            [Parameter(Mandatory=$false, ParameterSetName="UpdateOnly", HelpMessage="Use this switch parameter to force an update of HealOps and its pre-requisites regardless of the values in the HealOps config json file.")]
             [Switch]$ForceUpdates
         )
 
