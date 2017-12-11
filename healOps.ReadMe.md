@@ -70,6 +70,8 @@ Rules of thumb and design of the *.Repairs.ps1 file
             $requestResult.StatusCode | Should Be 200;
         }
         `
+    1a. If this variable has not been set it will be set to the numeric value -1. To indicate this and to distinguish between the two global variables passedTestResult and failedTestResult (read about that one below).
+
 2 An global variable named ' failedTestResult ' has to be used for cases of state failed. This global variable is used to report to the backend the failed state of "X" IT Service/Entity
 
         - It has to fulfill:
@@ -85,6 +87,7 @@ Rules of thumb and design of the *.Repairs.ps1 file
             $requestResult.StatusCode | Should Be 200;
         }
         `
+    2a. If this variable has not been set it will be set to the numeric value -2. To indicate this and to distinguish between the two global variables passedTestResult and failedTestResult.
 
 ## Reporting
 

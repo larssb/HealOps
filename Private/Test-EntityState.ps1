@@ -57,7 +57,7 @@ function Test-EntityState() {
                     $log4netLoggerDebug.debug("failedTestResult value > $failedTestResult set in *.Tests.ps1 file > $TestFilePath")
                     Write-Verbose -Message "failedTestResult > $failedTestResult"
                 } else {
-                    $testFailedValue = -1 # Value indicating that the global variable failedTestResult was not set correctly in the *.Tests.ps1 file.
+                    $testFailedValue = -2 # Value indicating that the global variable failedTestResult was not set correctly in the *.Tests.ps1 file.
 
                     # TODO: Log IT and inform x!
                     $log4netLogger.error("The failedTestResult variable was NOT defined in the *.Tests.ps1 file > $TestFilePath <- this HAS to be done.")

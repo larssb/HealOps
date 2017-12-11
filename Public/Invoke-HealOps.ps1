@@ -235,6 +235,7 @@
                             Write-Verbose -Message "passedTestResult > $passedTestResult"
                         } else {
                             # TODO: Log IT and inform x!
+                            $metricValue = -1 # Value indicating that the global variable passedTestResult was not set correctly in the *.Tests.ps1 file.
                             $log4netLogger.error("The passedTestResult variable was NOT defined in the *.Tests.ps1 file > $TestsFile <- this HAS to be done.")
                             Write-Verbose -Message "The passedTestResult variable was NOT defined in the *.Tests.ps1 file > $TestsFile <- this HAS to be done."
                         }
@@ -256,18 +257,23 @@
                 # The test succeeded #
                 ######################
                 if ((Get-Variable -Name passedTestResult)) {
-                    # Report the state of the service to the backend report system.
-                    try {
-                        Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -metricValue $passedTestResult -ErrorAction Stop
-                    } catch {
-                        # TODO: LOG IT and inform x
-                        $log4netLogger.error("Submit-EntityStateReport failed with: $_")
-                        Write-Verbose "Submit-EntityStateReport failed with: $_"
-                    }
+                    $metricValue = $passedTestResult # Uses the global variable set in the *.Tests.ps1 file to capture a numeric value to report to the reporting backend.
+                    $log4netLoggerDebug.debug("passedTestResult value > $passedTestResult set in *.Tests.ps1 file > $TestsFile)")
+                    Write-Verbose -Message "passedTestResult > $passedTestResult"
                 } else {
                     # TODO: Log IT and inform x!
+                    $metricValue = -1 # Value indicating that the global variable passedTestResult was not set correctly in the *.Tests.ps1 file.
                     $log4netLogger.error("The passedTestResult variable was NOT defined in the *.Tests.ps1 file > $TestsFile <- this HAS to be done.")
                     Write-Verbose -Message "The passedTestResult variable was NOT defined in the *.Tests.ps1 file > $TestsFile <- this HAS to be done."
+                }
+
+                # Report the state of the service to the backend report system.
+                try {
+                    Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -metricValue $metricValue -ErrorAction Stop
+                } catch {
+                    # TODO: LOG IT and inform x
+                    $log4netLogger.error("Submit-EntityStateReport failed with: $_")
+                    Write-Verbose "Submit-EntityStateReport failed with: $_"
                 }
             }
         }
