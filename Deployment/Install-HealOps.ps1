@@ -1,7 +1,7 @@
 #Requires -RunAsAdministrator
 <#PSScriptInfo
 
-.VERSION 0.0.0.11
+.VERSION 0.0.0.12
 
 .GUID bbf74424-f58d-42d1-9d5a-aeba44ccd545
 
@@ -299,6 +299,7 @@
             $charsAndNumbers += $randomChars
             $charsAndNumbersShuffled = $charsAndNumbers | Sort-Object {Get-Random}
             $password = ConvertTo-SecureString -String ($charsAndNumbersShuffled -join "") -AsPlainText -Force
+            $clearTextPassword = ($charsAndNumbersShuffled -join "")
 
             # Create the user
             $HealOpsUsername = "HealOps"
@@ -427,7 +428,7 @@
                                             DontStopIfGoingOnBatteries = $true
                                             DontStopOnIdleEnd = $true
                                             MultipleInstances = "Queue"
-                                            Password = $password
+                                            Password = $clearTextPassword
                                             PowerShellExeCommand = "$ScriptBlockString"
                                             RunLevel = "Highest"
                                             StartWhenAvailable = $true
@@ -517,6 +518,7 @@
             # Remove the password variable from memory
             Remove-Variable Password -Force
             Remove-Variable credential -Force
+            Remove-Variable clearTextPassword -Force
             [System.GC]::Collect()
 
             # Remove the contents of the download temp dir.

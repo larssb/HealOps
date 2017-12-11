@@ -53,18 +53,35 @@ Rules of thumb and design of the *.Repairs.ps1 file
         CODE_TO_REMEDATE_FAILED_IT_SERVICE_/_ENTITY
     `
 
-3 An global variable named ' assertionResult ' has to be used for cases of state okay. This global variable is used to report to the backend that the okay state of "X" IT Service/Entity
+### The *.Tests.ps1 file
+
+1 An global variable named ' passedTestResult ' has to be used for cases of state okay. This global variable is used to report to the backend the okay state of "X" IT Service/Entity
 
         - It has to fulfill:
 
-            * Name > assertionResult
+            * Name > passedTestResult
             * Be global
 
         - E.g. (from inside *.Tests.ps1 Describe block)
         `
         It "return.http.200" {
             # Assert
-            $global:assertionResult = $requestResult.StatusCode
+            $global:passedTestResult = $requestResult.StatusCode
+            $requestResult.StatusCode | Should Be 200;
+        }
+        `
+2 An global variable named ' failedTestResult ' has to be used for cases of state failed. This global variable is used to report to the backend the failed state of "X" IT Service/Entity
+
+        - It has to fulfill:
+
+            * Name > failedTestResult
+            * Be global
+
+        - E.g. (from inside *.Tests.ps1 Describe block)
+        `
+        It "return.http.200" {
+            # Assert
+            $global:failedTestResult = $requestResult.StatusCode
             $requestResult.StatusCode | Should Be 200;
         }
         `
@@ -104,11 +121,14 @@ The std. is:
     * A global variable should be used to report the value to be used for the metric value. This global variable will be read by HealOps when reporting.
     This value needs to be a numerical type.
     * This global variable should be defined for each 'It' block in a Pester *.Tests.ps1 file.
-    * The name of the global variable can only be == 'assertionResult' (without the quotes)
+    * The name of the global variable can only be == 'passedTestResult' (without the quotes)
 
 #### On state test failed
 
-    *
+    * A global variable should be used to report the value you want to report in case of a failed state. This global variable will be read by HealOps when reporting.
+    This value needs to be a numerical type.
+    * This global variable should be defined for each 'It' block in a Pester *.Tests.ps1 file.
+    * The name of the global variable can only be == 'failedTestResult' (without the quotes)
 
 #### Report software specific documentation
 
@@ -165,7 +185,7 @@ The std. is:
     * Linux/MacOS cron job.
         *
 
-## Termonology
+## Terminology
 
     * HealOpsPackage > A unit of execution in relative to the testing and repairing of "X" IT Service/Entity.
 
@@ -199,13 +219,15 @@ The std. is:
             # TODO: LOG IT
             #$exception = $_
 
+            $failedTestResult = $requestResult.StatusCode
+
             # FIGURE OUT THE CAUSE AND THROW HTTP STATUS NUM.
             throw 401
         }
 
         It "return.http.200" {
             # Assert
-            $global:assertionResult = $requestResult.StatusCode
+            $global:passedTestResult = $requestResult.StatusCode
             $requestResult.StatusCode | Should Be 200;
         }
     }
