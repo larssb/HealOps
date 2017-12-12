@@ -41,7 +41,7 @@ function Start-UpdateCycle() {
         $tempDirPath = "$PSScriptRoot/Temp"
         if (-not (Test-Path -Path $tempDirPath)) {
             try {
-                New-Item -Path $PSScriptRoot -Name "Temp" -ItemType Directory -Force -ErrorAction Stop
+                New-Item -Path $PSScriptRoot -Name "Temp" -ItemType Directory -Force -ErrorAction Stopv | Out-Null
             } catch {
                 $log4netLogger.error("Failed to create the temp download folder. The failure was > $_")
             }
