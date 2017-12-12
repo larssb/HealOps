@@ -50,7 +50,7 @@
             $log4netPath = "$PSScriptRoot/../Artefacts"
 
             # Initiate the log4net logger
-            if($PSBoundParameters.ContainsKey('TestsFile')) {
+            if($PSCmdlet.ParameterSetName -eq "File") {
                 $logfileName_GeneratedPart = (Split-Path -Path $TestsFile -Leaf) -replace ".ps1",""
             } else {
                 $logfileName_GeneratedPart = "ForceUpdates"
@@ -67,7 +67,7 @@
             <#
                 - Sanity tests
             #>
-            if($PSBoundParameters.ContainsKey('TestsFile')) {
+            if($PSCmdlet.ParameterSetName -eq "File") {
                 if(-not (Test-Path -Path $TestsFile)) {
                     $message = "The file > $TestsFile cannot be found. Please provide a *.Tests.ps1 file that exists."
                     Write-Verbose -Message $message
@@ -114,7 +114,7 @@
                 }
             }
 
-            if ($PSBoundParameters.ContainsKey('HealOpsPackageConfigPath')) {
+            if ($PSCmdlet.ParameterSetName -eq "File") {
                 if(-not (Test-Path -Path $HealOpsPackageConfigPath)) {
                     $message = "The file > $HealOpsPackageConfigPath cannot be found. Please provide a HealOps package config file that exists."
                     Write-Verbose -Message $message
@@ -180,64 +180,89 @@
             }
         }
         Process {
-            # Test execution
-            Write-Verbose -Message "Executing the test"
-            try {
-                $testResult = Test-EntityState -TestFilePath $TestsFile -ErrorAction Stop
-            } catch {
-                # Log it
-                $log4netLogger.error("Test-EntityState failed with: $_")
-            }
-
-            if ($testResult.state -eq $false) {
-                ###################
-                # The test failed #
-                ###################
-                Write-Verbose -Message "Trying to repair the 'Failed' test/s."
-
+            if ($PSCmdlet.ParameterSetName -eq "File") {
+                # Test execution
+                Write-Verbose -Message "Executing the test"
                 try {
-                    # Invoke repairs matching the failed test
-                    $resultOfRepair = Repair-EntityState -TestFilePath $TestsFile -TestData $testResult.testdata -ErrorAction Stop @commonParms
+                    $testResult = Test-EntityState -TestFilePath $TestsFile -ErrorAction Stop
                 } catch {
                     # Log it
-                    $log4netLogger.error("Repair-EntityState failed with: $_")
+                    $log4netLogger.error("Test-EntityState failed with: $_")
                 }
 
-                if ($resultOfRepair -eq $false) {
-                    # Report the state of the service to the backend report system. Which should then further trigger an alarm to the on-call personnel.
+                if ($testResult.state -eq $false) {
+                    ###################
+                    # The test failed #
+                    ###################
+                    Write-Verbose -Message "Trying to repair the 'Failed' test/s."
+
                     try {
-                        Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -metricValue $($testResult.testdata.FailureMessage) -ErrorAction Stop
-                    } catch {
-                        # TODO: LOG IT and inform x
-                        $log4netLogger.error("Submit-EntityStateReport failed with: $_")
-                        Write-Verbose "Submit-EntityStateReport failed with: $_"
-                    }
-                } else {
-                    try {
-                        # Run the *.Tests.ps1 file again to verify that repairing was successful and to get data for reporting to the backend so that a monitored state of "X" IT service/Entity will get back to an okay state in the monitoring system.
-                        $testResult = Test-EntityState -TestFilePath $TestsFile -ErrorAction Stop
+                        # Invoke repairs matching the failed test
+                        $resultOfRepair = Repair-EntityState -TestFilePath $TestsFile -TestData $testResult.testdata -ErrorAction Stop @commonParms
                     } catch {
                         # Log it
-                        $log4netLogger.error("Test-EntityState failed with: $_")
+                        $log4netLogger.error("Repair-EntityState failed with: $_")
                     }
 
-                    # Test on the result in order to get correct data for the metric value.
-                    if ($testResult.state -eq $true) {
-                        if ((Get-Variable -Name passedTestResult -ErrorAction SilentlyContinue)) {
-                            $metricValue = $passedTestResult # Uses the global variable set in the *.Tests.ps1 file to capture a numeric value to report to the reporting backend.
-                            $log4netLoggerDebug.debug("passedTestResult value > $passedTestResult set in *.Tests.ps1 file > $TestsFile)")
-                            Write-Verbose -Message "passedTestResult > $passedTestResult"
-                        } else {
-                            # TODO: Log IT and inform x!
-                            $metricValue = -1 # Value indicating that the global variable passedTestResult was not set correctly in the *.Tests.ps1 file.
-                            $log4netLogger.error("The passedTestResult variable was NOT defined in the *.Tests.ps1 file > $TestsFile <- this HAS to be done.")
-                            Write-Verbose -Message "The passedTestResult variable was NOT defined in the *.Tests.ps1 file > $TestsFile <- this HAS to be done."
+                    if ($resultOfRepair -eq $false) {
+                        # Report the state of the service to the backend report system. Which should then further trigger an alarm to the on-call personnel.
+                        try {
+                            Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -metricValue $($testResult.testdata.FailureMessage) -ErrorAction Stop
+                        } catch {
+                            # TODO: LOG IT and inform x
+                            $log4netLogger.error("Submit-EntityStateReport failed with: $_")
+                            Write-Verbose "Submit-EntityStateReport failed with: $_"
                         }
                     } else {
-                        $metricValue = $($testResult.testdata.FailureMessage)
+                        try {
+                            # Run the *.Tests.ps1 file again to verify that repairing was successful and to get data for reporting to the backend so that a monitored state of "X" IT service/Entity will get back to an okay state in the monitoring system.
+                            $testResult = Test-EntityState -TestFilePath $TestsFile -ErrorAction Stop
+                        } catch {
+                            # Log it
+                            $log4netLogger.error("Test-EntityState failed with: $_")
+                        }
+
+                        # Test on the result in order to get correct data for the metric value.
+                        if ($testResult.state -eq $true) {
+                            if ((Get-Variable -Name passedTestResult -ErrorAction SilentlyContinue)) {
+                                $metricValue = $passedTestResult # Uses the global variable set in the *.Tests.ps1 file to capture a numeric value to report to the reporting backend.
+                                $log4netLoggerDebug.debug("passedTestResult value > $passedTestResult set in *.Tests.ps1 file > $TestsFile)")
+                                Write-Verbose -Message "passedTestResult > $passedTestResult"
+                            } else {
+                                # TODO: Log IT and inform x!
+                                $metricValue = -1 # Value indicating that the global variable passedTestResult was not set correctly in the *.Tests.ps1 file.
+                                $log4netLogger.error("The passedTestResult variable was NOT defined in the *.Tests.ps1 file > $TestsFile <- this HAS to be done.")
+                                Write-Verbose -Message "The passedTestResult variable was NOT defined in the *.Tests.ps1 file > $TestsFile <- this HAS to be done."
+                            }
+                        } else {
+                            $metricValue = $($testResult.testdata.FailureMessage)
+                        }
+
+                        # Report the result
+                        try {
+                            Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -metricValue $metricValue -ErrorAction Stop
+                        } catch {
+                            # TODO: LOG IT and inform x
+                            $log4netLogger.error("Submit-EntityStateReport failed with: $_")
+                            Write-Verbose "Submit-EntityStateReport failed with: $_"
+                        }
+                    }
+                } else {
+                    ######################
+                    # The test succeeded #
+                    ######################
+                    if ((Get-Variable -Name passedTestResult -ErrorAction SilentlyContinue)) {
+                        $metricValue = $passedTestResult # Uses the global variable set in the *.Tests.ps1 file to capture a numeric value to report to the reporting backend.
+                        $log4netLoggerDebug.debug("passedTestResult value > $passedTestResult set in *.Tests.ps1 file > $TestsFile)")
+                        Write-Verbose -Message "passedTestResult > $passedTestResult"
+                    } else {
+                        # TODO: Log IT and inform x!
+                        $metricValue = -1 # Value indicating that the global variable passedTestResult was not set correctly in the *.Tests.ps1 file.
+                        $log4netLogger.error("The passedTestResult variable was NOT defined in the *.Tests.ps1 file > $TestsFile <- this HAS to be done.")
+                        Write-Verbose -Message "The passedTestResult variable was NOT defined in the *.Tests.ps1 file > $TestsFile <- this HAS to be done."
                     }
 
-                    # Report the result
+                    # Report the state of the service to the backend report system.
                     try {
                         Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -metricValue $metricValue -ErrorAction Stop
                     } catch {
@@ -246,30 +271,7 @@
                         Write-Verbose "Submit-EntityStateReport failed with: $_"
                     }
                 }
-            } else {
-                ######################
-                # The test succeeded #
-                ######################
-                if ((Get-Variable -Name passedTestResult -ErrorAction SilentlyContinue)) {
-                    $metricValue = $passedTestResult # Uses the global variable set in the *.Tests.ps1 file to capture a numeric value to report to the reporting backend.
-                    $log4netLoggerDebug.debug("passedTestResult value > $passedTestResult set in *.Tests.ps1 file > $TestsFile)")
-                    Write-Verbose -Message "passedTestResult > $passedTestResult"
-                } else {
-                    # TODO: Log IT and inform x!
-                    $metricValue = -1 # Value indicating that the global variable passedTestResult was not set correctly in the *.Tests.ps1 file.
-                    $log4netLogger.error("The passedTestResult variable was NOT defined in the *.Tests.ps1 file > $TestsFile <- this HAS to be done.")
-                    Write-Verbose -Message "The passedTestResult variable was NOT defined in the *.Tests.ps1 file > $TestsFile <- this HAS to be done."
-                }
-
-                # Report the state of the service to the backend report system.
-                try {
-                    Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -metricValue $metricValue -ErrorAction Stop
-                } catch {
-                    # TODO: LOG IT and inform x
-                    $log4netLogger.error("Submit-EntityStateReport failed with: $_")
-                    Write-Verbose "Submit-EntityStateReport failed with: $_"
-                }
-            }
-        }
+            } # End of conditional check on ParameterSetName -eq "File"
+        } # End of Process {} declaration
         End {}
     }
