@@ -12,7 +12,7 @@
 #>
 $ModuleRoot = "$BuildRoot/../"
 $ModuleName = (Get-Item -Path $ModuleRoot* -Include *.psm1).BaseName
-$buildOutputRoot = "$BuildRoot/BuildOutput/$ModuleName/"
+$buildOutputRoot = "$BuildRoot/BuildOutput/$ModuleName"
 
 # Handle the buildroot folder
 if(-not (Test-Path -Path $buildOutputRoot)) {
@@ -37,6 +37,12 @@ $runmode = [Environment]::UserInteractive
 #>
 $folderToInclude = @('Artefacts','docs','Private','Public')
 
+<#
+    - The below task will be the default build task in the Invoke-Build New-VSCodeTask.ps1 script generated VS Code tasks.json file.
+    Simply because it is the first declared task in this build file.
+#>
+task BuildPublish build, publish
+
 task build {
     # Copy folders to buildOutputRoot
     ForEach ($folder in $folderToInclude) {
@@ -53,4 +59,9 @@ task build {
     if($runmode -eq $true) {
         Write-Build Green "The build completed and its output can be found in: $buildOutputRoot"
     }
+}
+
+task publish {
+    # Publish the module
+    Publish-Module -Name $buildOutputRoot -Repository HealOps -NuGetApiKey "" -ErrorAction Stop
 }
