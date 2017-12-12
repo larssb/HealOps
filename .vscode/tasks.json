@@ -28,19 +28,13 @@
   },
   "tasks": [
     {
-      "label": "BuildPublish",
+      "label": "build",
       "type": "shell",
       "problemMatcher": [ "$msCompile" ],
       "group": {
         "kind": "build",
         "isDefault": true
       },
-      "command": "Invoke-Build -Task BuildPublish -File './Build/HealOps.Build.ps1'"
-    },
-    {
-      "label": "build",
-      "type": "shell",
-      "problemMatcher": [ "$msCompile" ],
       "command": "Invoke-Build -Task build -File './Build/HealOps.Build.ps1'"
     },
     {
@@ -48,6 +42,12 @@
       "type": "shell",
       "problemMatcher": [ "$msCompile" ],
       "command": "Invoke-Build -Task publish -File './Build/HealOps.Build.ps1'"
+    },
+    {
+      "label": "BuildPublish",
+      "type": "shell",
+      "problemMatcher": [ "$msCompile" ],
+      "command": "Invoke-Build -Task BuildPublish -File './Build/HealOps.Build.ps1'"
     },
     {
       "label": "?",
