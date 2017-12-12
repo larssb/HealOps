@@ -50,9 +50,13 @@
             $log4netPath = "$PSScriptRoot/../Artefacts"
 
             # Initiate the log4net logger
-            $TestsFileRootName = (Split-Path -Path $TestsFile -Leaf) -replace ".ps1",""
-            $global:log4netLogger = initialize-log4net -log4NetPath $log4netPath -configFileName $log4NetConfigName -logfileName "HealOps.Main.$TestsFileRootName" -loggerName "HealOps_Error"
-            $global:log4netLoggerDebug = initialize-log4net -log4NetPath $log4netPath -configFileName $log4NetConfigName -logfileName "HealOps.Main.$TestsFileRootName" -loggerName "HealOps_Debug"
+            if($PSBoundParameters.ContainsKey('TestsFile')) {
+                $logfileName_GeneratedPart = (Split-Path -Path $TestsFile -Leaf) -replace ".ps1",""
+            } else {
+                $logfileName_GeneratedPart = "ForceUpdates"
+            }
+            $global:log4netLogger = initialize-log4net -log4NetPath $log4netPath -configFileName $log4NetConfigName -logfileName "HealOps.Main.$logfileName_GeneratedPart" -loggerName "HealOps_Error"
+            $global:log4netLoggerDebug = initialize-log4net -log4NetPath $log4netPath -configFileName $log4NetConfigName -logfileName "HealOps.Main.$logfileName_GeneratedPart" -loggerName "HealOps_Debug"
 
             # Make the log more viewable.
             $log4netLoggerDebug.debug("--------------------------------------------------")
@@ -63,19 +67,6 @@
             <#
                 - Sanity tests
             #>
-            if($PSBoundParameters.ContainsKey('TestsFilesRootPath')) {
-                if (-not (Test-Path -Path $TestsFilesRootPath)) {
-                    $message = "The path > $TestsFilesRootPath is invalid. Please provide an existing folder."
-                    Write-Verbose -Message $message
-
-                    # Log it
-                    $log4netLogger.error("$message")
-
-                    # Exit
-                    throw $_
-                }
-            }
-
             if($PSBoundParameters.ContainsKey('TestsFile')) {
                 if(-not (Test-Path -Path $TestsFile)) {
                     $message = "The file > $TestsFile cannot be found. Please provide a *.Tests.ps1 file that exists."
@@ -123,20 +114,9 @@
                 }
             }
 
-            if(-not (Test-Path -Path $HealOpsPackageConfigPath)) {
-                $message = "The file > $HealOpsPackageConfigPath cannot be found. Please provide a HealOps package config file that exists."
-                Write-Verbose -Message $message
-
-                # Log it
-                $log4netLogger.error("$message")
-
-                # Exit
-                throw $_
-            } else {
-                # Check file integrity & get config data
-                $global:HealOpsPackageConfig = Get-Content -Path $HealOpsPackageConfigPath -Encoding UTF8 | ConvertFrom-Json
-                if ($null -eq $HealOpsPackageConfig) {
-                    $message = "The HealOps package config contains no data. Please provide a proper HealOps package config file."
+            if ($PSBoundParameters.ContainsKey('HealOpsPackageConfigPath')) {
+                if(-not (Test-Path -Path $HealOpsPackageConfigPath)) {
+                    $message = "The file > $HealOpsPackageConfigPath cannot be found. Please provide a HealOps package config file that exists."
                     Write-Verbose -Message $message
 
                     # Log it
@@ -144,15 +124,28 @@
 
                     # Exit
                     throw $_
-                } elseif($null -eq $HealOpsPackageConfig[0]) {
-                    $message = "The HealOps package config file is not valid. Please provide a proper one."
-                    Write-Verbose -Message $message
+                } else {
+                    # Check file integrity & get config data
+                    $global:HealOpsPackageConfig = Get-Content -Path $HealOpsPackageConfigPath -Encoding UTF8 | ConvertFrom-Json
+                    if ($null -eq $HealOpsPackageConfig) {
+                        $message = "The HealOps package config contains no data. Please provide a proper HealOps package config file."
+                        Write-Verbose -Message $message
 
-                    # Log it
-                    $log4netLogger.error("$message")
+                        # Log it
+                        $log4netLogger.error("$message")
 
-                    # Exit
-                    throw $_
+                        # Exit
+                        throw $_
+                    } elseif($null -eq $HealOpsPackageConfig[0]) {
+                        $message = "The HealOps package config file is not valid. Please provide a proper one."
+                        Write-Verbose -Message $message
+
+                        # Log it
+                        $log4netLogger.error("$message")
+
+                        # Exit
+                        throw $_
+                    }
                 }
             }
 
@@ -230,7 +223,7 @@
 
                     # Test on the result in order to get correct data for the metric value.
                     if ($testResult.state -eq $true) {
-                        if ((Get-Variable -Name passedTestResult)) {
+                        if ((Get-Variable -Name passedTestResult -ErrorAction SilentlyContinue)) {
                             $metricValue = $passedTestResult # Uses the global variable set in the *.Tests.ps1 file to capture a numeric value to report to the reporting backend.
                             $log4netLoggerDebug.debug("passedTestResult value > $passedTestResult set in *.Tests.ps1 file > $TestsFile)")
                             Write-Verbose -Message "passedTestResult > $passedTestResult"
@@ -257,7 +250,7 @@
                 ######################
                 # The test succeeded #
                 ######################
-                if ((Get-Variable -Name passedTestResult)) {
+                if ((Get-Variable -Name passedTestResult -ErrorAction SilentlyContinue)) {
                     $metricValue = $passedTestResult # Uses the global variable set in the *.Tests.ps1 file to capture a numeric value to report to the reporting backend.
                     $log4netLoggerDebug.debug("passedTestResult value > $passedTestResult set in *.Tests.ps1 file > $TestsFile)")
                     Write-Verbose -Message "passedTestResult > $passedTestResult"

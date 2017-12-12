@@ -1,7 +1,7 @@
 #Requires -RunAsAdministrator
 <#PSScriptInfo
 
-.VERSION 0.0.0.12
+.VERSION 0.0.0.13
 
 .GUID bbf74424-f58d-42d1-9d5a-aeba44ccd545
 
@@ -46,8 +46,12 @@
     Install-HealOps uses the -Force parameter on the Instal-Modules cmdlet. In order to install side-by-side if an older version is already on the system and a newer is available
     on the Package Management system.
 .EXAMPLE
-    "PATH_TO_THIS_FILE"/Instal-HealOps.ps1 -reportingBackend $reportingBackend "MyHealOpsTask" -TaskRepetitionInterval 3 -
-    Explanation of what the example does
+    "PATH_TO_THIS_FILE"/Instal-HealOps.ps1 -reportingBackend 'OpenTSDB' -checkForUpdatesInterval_InDays 3 -PackageManagementURI https://proget.danskespil.dk -FeedName HealOps `
+    -APIKey "API_KEY" -HealOpsPackages Citrix.HealOpsPackage -JobType WinScTask
+
+    >> Executes Installs HealOps on the node where it is executed. Sets the reporting backend to use OpenTSDB. Updates will be checked for every third day. The PackageManagement system `
+    is accessed via https://proget.danskespil.dk. The feed on the Package Management system is named HealOps. The HealOps packages that will be installed is named Citrix.HealOpsPackage `
+    The type of the job that will invoke HealOps will be a Windows Scheduled Task.
 .PARAMETER reportingBackend
     Used to specify the software used as the reporting backend. For storing test result metrics.
 .PARAMETER checkForUpdatesInterval_InDays

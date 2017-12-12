@@ -52,7 +52,7 @@ function Test-EntityState() {
 
                 # Retrieve the failed test value to report to the backend (should always be numeric to support TSDB's)
                 $log4netLoggerDebug.debug("The failuremessage in the Pester output is > $($TestOutput.TestResult.FailureMessage)")
-                if ((Get-Variable -Name failedTestResult)) {
+                if ((Get-Variable -Name failedTestResult -ErrorAction SilentlyContinue)) {
                     $testFailedValue = $failedTestResult # Uses the global variable set in the *.Tests.ps1 file to capture a numeric value to report to the reporting backend.
                     $log4netLoggerDebug.debug("failedTestResult value > $failedTestResult set in *.Tests.ps1 file > $TestFilePath")
                     Write-Verbose -Message "failedTestResult > $failedTestResult"
