@@ -55,14 +55,25 @@
             } else {
                 $logfileName_GeneratedPart = "ForceUpdates"
             }
-            $global:log4netLogger = initialize-log4net -log4NetPath $log4netPath -configFileName $log4NetConfigName -logfileName "HealOps.Main.$logfileName_GeneratedPart" -loggerName "HealOps_Error"
-            $global:log4netLoggerDebug = initialize-log4net -log4NetPath $log4netPath -configFileName $log4NetConfigName -logfileName "HealOps.Main.$logfileName_GeneratedPart" -loggerName "HealOps_Debug"
+            $global:log4netLogger = initialize-log4net -log4NetPath $log4netPath -configFileName $log4NetConfigName -logfileName "HealOps.$logfileName_GeneratedPart" -loggerName "HealOps_Error"
+            $global:log4netLoggerDebug = initialize-log4net -log4NetPath $log4netPath -configFileName $log4NetConfigName -logfileName "HealOps.$logfileName_GeneratedPart" -loggerName "HealOps_Debug"
 
             # Make the log more viewable.
             $log4netLoggerDebug.debug("--------------------------------------------------")
             $log4netLoggerDebug.debug("------------- HealOps logging started ------------")
             $log4netLoggerDebug.debug("------------- $((get-date).ToString()) -----------")
             $log4netLoggerDebug.debug("--------------------------------------------------")
+
+            <#
+                - CONSTANTS
+            #>
+            if ($PSCmdlet.ParameterSetName -eq "File") {
+                # Constant for reporting on Repair status of "X" component og an IT service.
+                New-Variable -Name repairSuccessValue -Value 1 -Option Constant -Description "Represent truthy in relation to the result of repairing 'X' component of an IT service" `
+                -Visibility Private -Scope Script
+                New-Variable -Name repairFailedValue -Value 0 -Option Constant -Description "Represent falsy in relation to the result of repairing 'X' component of an IT service" `
+                -Visibility Private -Scope Script
+            }
 
             <#
                 - Sanity tests
@@ -207,7 +218,11 @@
                     if ($resultOfRepair -eq $false) {
                         # Report the state of the service to the backend report system. Which should then further trigger an alarm to the on-call personnel.
                         try {
+                            # Report the value of the failing component
                             Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -metricValue $($testResult.testdata.FailureMessage) -ErrorAction Stop
+
+                            # Report that the repair failed on the component
+                            Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -RepairMetricValue $repairFailedValue -ErrorAction Stop
                         } catch {
                             # TODO: LOG IT and inform x
                             $log4netLogger.error("Submit-EntityStateReport failed with: $_")
@@ -226,7 +241,7 @@
                         if ($testResult.state -eq $true) {
                             if ((Get-Variable -Name passedTestResult -ErrorAction SilentlyContinue)) {
                                 $metricValue = $passedTestResult # Uses the global variable set in the *.Tests.ps1 file to capture a numeric value to report to the reporting backend.
-                                $log4netLoggerDebug.debug("passedTestResult value > $passedTestResult set in *.Tests.ps1 file > $TestsFile)")
+                                $log4netLoggerDebug.debug("passedTestResult value > $passedTestResult set in *.Tests.ps1 file > $TestsFile")
                                 Write-Verbose -Message "passedTestResult > $passedTestResult"
                             } else {
                                 # TODO: Log IT and inform x!
@@ -240,7 +255,11 @@
 
                         # Report the result
                         try {
+                            # Report the value of the okay component after repairing it
                             Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -metricValue $metricValue -ErrorAction Stop
+
+                            # Report that the repair succeeded on the component
+                            Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -RepairMetricValue $repairSuccessValue -ErrorAction Stop
                         } catch {
                             # TODO: LOG IT and inform x
                             $log4netLogger.error("Submit-EntityStateReport failed with: $_")
@@ -253,7 +272,7 @@
                     ######################
                     if ((Get-Variable -Name passedTestResult -ErrorAction SilentlyContinue)) {
                         $metricValue = $passedTestResult # Uses the global variable set in the *.Tests.ps1 file to capture a numeric value to report to the reporting backend.
-                        $log4netLoggerDebug.debug("passedTestResult value > $passedTestResult set in *.Tests.ps1 file > $TestsFile)")
+                        $log4netLoggerDebug.debug("passedTestResult value > $passedTestResult set in *.Tests.ps1 file > $TestsFile")
                         Write-Verbose -Message "passedTestResult > $passedTestResult"
                     } else {
                         # TODO: Log IT and inform x!
@@ -264,6 +283,7 @@
 
                     # Report the state of the service to the backend report system.
                     try {
+                        # Report the value of the okay component
                         Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -metricValue $metricValue -ErrorAction Stop
                     } catch {
                         # TODO: LOG IT and inform x
