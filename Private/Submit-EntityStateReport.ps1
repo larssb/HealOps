@@ -60,8 +60,8 @@ function Submit-EntityStateReport() {
     if ($PSCmdlet.ParameterSetName -eq "Repair") {
         [int]$Value = $RepairMetricValue
 
-        # Set the metric name to use for repairs on the component being reported on.
-        $metric = ("$metric.Repair")
+        # Component tag
+        $tags.Add("component",$metric)
 
         # Add repair status tag.
         if ($RepairMetricValue -eq 1) {
@@ -69,6 +69,9 @@ function Submit-EntityStateReport() {
         } else {
             $tags.Add("Status","RepairFailed")
         }
+
+        # Set the metric name to use for repairs on the component being reported on.
+        $metric = ("HealOps.Repair")
     } else {
         [int]$Value = $metricValue
     }
