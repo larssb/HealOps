@@ -3,7 +3,7 @@
 RootModule = 'HealOps'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.30'
+ModuleVersion = '0.0.0.31'
 
 # ID used to uniquely identify this module
 GUID = 'a7de9802-3086-4612-a31f-8da988c2eca0'

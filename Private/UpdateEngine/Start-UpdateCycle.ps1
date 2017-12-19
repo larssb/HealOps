@@ -48,34 +48,36 @@ function Start-UpdateCycle() {
         }
 
         # Get the main module. The newest version of it, if several is installed
-        $MainModule = (Get-Module -ListAvailable $ModuleName | Sort-Object -Property Version -Descending)[0]
+        $MainModule = Get-LatestModuleVersionLocally -ModuleName $ModuleName
         $MainModuleRoot = Split-Path -Path $MainModule.ModuleBase
     }
     Process {
         <#
-            - The dependencies of the module
+            - The dependencies of the module - if any
         #>
-        foreach ($requiredModule in $MainModule.RequiredModules) {
-            # Register the current version of the module
-            $moduleVersionBeforeUpdate = $requiredModule.version
+        if ($MainModule.RequiredModules.Count -ge 1) {
+            foreach ($requiredModule in $MainModule.RequiredModules) {
+                # Register the current version of the module
+                $moduleVersionBeforeUpdate = $requiredModule.version
 
-            # Check the Package Management backend for an available update to the current dependency module
-            $availableUpdateResult = Get-AvailableUpdate -ModuleName $requiredModule.Name -CurrentModuleVersion $moduleVersionBeforeUpdate -Config $Config
+                # Check the Package Management backend for an available update to the current dependency module
+                $availableUpdateResult = Get-AvailableUpdate -ModuleName $requiredModule.Name -CurrentModuleVersion $moduleVersionBeforeUpdate -Config $Config
 
-            if ($null -ne $availableUpdateResult.Version) {
-                # Get the module. The newest version of it, if several is installed
-                $requiredModule = (Get-Module -ListAvailable $requiredModule.Name | Sort-Object -Property Version -Descending)[0]
-                $requiredModuleRoot = Split-Path -Path $requiredModule.ModuleBase
+                if ($null -ne $availableUpdateResult.Version) {
+                    # Get the module. The newest version of it, if several is installed
+                    $requiredModule = Get-LatestModuleVersionLocally -ModuleName $requiredModule.Name
+                    $requiredModuleRoot = Split-Path -Path $requiredModule.ModuleBase
 
-                # Update the module
-                $installResult = Install-AvailableUpdate -ModuleName $requiredModule.Name -ModuleBase $requiredModuleRoot -PackageManagementURI $config.PackageManagementURI -FeedName $Config.FeedName -Version $availableUpdateResult.Version
+                    # Update the module
+                    $installResult = Install-AvailableUpdate -ModuleName $requiredModule.Name -ModuleBase $requiredModuleRoot -PackageManagementURI $config.PackageManagementURI -FeedName $Config.FeedName -Version $availableUpdateResult.Version
 
-                if ($installResult -eq $true) {
-                    # Control if the module was actually updated after a non-failing Install-AvailableUpdate execution and log it
-                    Test-ModuleUpdated -ModuleName $requiredModule.Name -CurrentModuleVersion $moduleVersionBeforeUpdate
+                    if ($installResult -eq $true) {
+                        # Control if the module was actually updated after a non-failing Install-AvailableUpdate execution and log it
+                        Test-ModuleUpdated -ModuleName $requiredModule.Name -CurrentModuleVersion $moduleVersionBeforeUpdate
+                    }
+                } else {
+                    $log4netLoggerDebug.debug("There was no newer version of the module: $($requiredModule.Name) - on the Package Management backend.")
                 }
-            } else {
-                $log4netLoggerDebug.debug("There was no newer version of the module: $($requiredModule.Name) - on the Package Management backend.")
             }
         }
 
