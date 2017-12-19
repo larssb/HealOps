@@ -410,10 +410,10 @@
                                     #>
                                     $kickOffJobDateTimeRandom = get-random -Minimum 2 -Maximum 6
                                     $Trigger = @{
-                                        At = (Get-date).AddMinutes(1).AddMinutes(($kickOffJobDateTimeRandom)).ToString();
-                                        RepetitionInterval = (New-TimeSpan -Minutes $TestsFileJobInterval);
-                                        RepeatIndefinitely = $true;
-                                        Once = $true;
+                                        At = (Get-date).AddMinutes(1).AddMinutes(($kickOffJobDateTimeRandom))
+                                        RepetitionInterval = (New-TimeSpan -Minutes $TestsFileJobInterval)
+                                        RepeatIndefinitely = $true
+                                        Once = $true
                                     }
                                     try {
                                         New-ScheduledJob -TaskName $fileNoExt -TaskOptions $Options -TaskTriggerOptions $Trigger -TaskPayload "ScriptBlock" -ScriptBlock $ScriptBlockString -credential $credential -verbose
@@ -447,7 +447,7 @@
                                         $currentDate = ([DateTime]::Now)
                                         $taskRunDration = $currentDate.AddYears(25) - $currentDate
                                         $Trigger = @{
-                                            At = (Get-date).AddMinutes(1).AddMinutes(($kickOffJobDateTimeRandom)).ToString()
+                                            At = (Get-date).AddMinutes(1).AddMinutes(($kickOffJobDateTimeRandom))
                                             RepetitionInterval = (New-TimeSpan -Minutes $TestsFileJobInterval)
                                             RepetitionDuration  = $taskRunDration
                                             Once = $true
