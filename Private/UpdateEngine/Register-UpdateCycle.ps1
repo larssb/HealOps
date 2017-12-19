@@ -1,7 +1,7 @@
 function Register-UpdateCycle() {
 <#
 .DESCRIPTION
-    Registers the fact that an update cycle ran.
+    Registers the fact that an HealOps update cycle ran.
 .INPUTS
     Inputs (if any)
 .OUTPUTS
@@ -16,7 +16,7 @@ function Register-UpdateCycle() {
 .PARAMETER ModuleBase
     The root folder to install the module in.
 .PARAMETER Version
-    The version of the module to download, named as specified with the ModuleName parameter.
+    The version of the HealOps module to register an update cycle for.
 #>
 
     # Define parameters
@@ -29,7 +29,7 @@ function Register-UpdateCycle() {
         [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The root folder to install the module in.")]
         [ValidateNotNullOrEmpty()]
         [String]$ModuleBase,
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The version of the module to download, named as specified with the ModuleName parameter.")]
+        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The version of the HealOps module to register an update cycle for.")]
         [ValidateNotNullOrEmpty()]
         [String]$Version
     )
@@ -68,7 +68,7 @@ function Register-UpdateCycle() {
         $true
     } catch {
         # Log it
-        $log4netLogger.error("Failed to write the HealOps config json file. Failed with > $_")
+        $log4netLogger.error("Failed to write the config json file for the module > $ModuleBase. Failed with > $_")
 
         # Return
         $false

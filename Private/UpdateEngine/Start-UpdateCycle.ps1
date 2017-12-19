@@ -25,7 +25,7 @@ function Start-UpdateCycle() {
         [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The name of the PowerShell module to update.")]
         [ValidateNotNullOrEmpty()]
         [String]$ModuleName,
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The config file holding package management repository info. Of the PSCustomObject type")]
+        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The HealOps (main module) config file. That holds package management repository info. A PSCustomObject type")]
         [ValidateNotNullOrEmpty()]
         [PSCustomObject]$Config
     )
@@ -115,19 +115,21 @@ function Start-UpdateCycle() {
             }
         }
 
-        if($installResultMainModule -eq $true) {
-            # Register that the main module was updated.
-            $registerResult = Register-UpdateCycle -Config $Config -Version $availableUpdateResult.Version -ModuleBase $MainModuleRoot
-            if ($registerResult -eq $false) {
-                $log4netLogger.error("Failed to register that an update cycle ran. CASE > The main module was updated.")
+        # Run registration of a update cycle if the main module was tried updated (else it was a HealOps package being updated)
+        if ($ModuleName -eq "HealOps") {
+            if($installResultMainModule -eq $true) {
+                # Register that the main module was updated.
+                $registerResult = Register-UpdateCycle -Config $Config -Version $availableUpdateResult.Version -ModuleBase $MainModuleRoot
+                if ($registerResult -eq $false) {
+                    $log4netLogger.error("Failed to register that an update cycle ran. CASE > The main module was updated.")
+                }
+            } else {
+                # Register that an update cycle was ran. But register to the current version of the main module as it was not updated.
+                $registerResult = Register-UpdateCycle -Config $Config -Version $moduleVersionBeforeUpdate -ModuleBase $MainModuleRoot
+                if ($registerResult -eq $false) {
+                    $log4netLogger.error("Failed to register that an update cycle ran. CASE > The main module was NOT updated.")
+                }
             }
-        } else {
-            # Register that an update cycle was ran. But register to the current version of the main module as it was not updated.
-            $registerResult = Register-UpdateCycle -Config $Config -Version $moduleVersionBeforeUpdate -ModuleBase $MainModuleRoot
-            if ($registerResult -eq $false) {
-                $log4netLogger.error("Failed to register that an update cycle ran. CASE > The main module was NOT updated.")
-            }
-            $log4netLoggerDebug.debug("The main module was not updated. See other entries in the logs for possible reasons. Where one reason of course could be that there was no update.")
         }
     }
 }
