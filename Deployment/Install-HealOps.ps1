@@ -43,8 +43,7 @@
 .OUTPUTS
     Outputs to the terminal/host as it goes.
 .NOTES
-    Install-HealOps uses the -Force parameter on the Instal-Modules cmdlet. In order to install side-by-side if an older version is already on the system and a newer is available
-    on the Package Management system.
+    <none>
 .EXAMPLE
     "PATH_TO_THIS_FILE"/Instal-HealOps.ps1 -reportingBackend 'OpenTSDB' -checkForUpdatesInterval_InDays 3 -PackageManagementURI https://proget.danskespil.dk -FeedName HealOps `
     -APIKey "API_KEY" -HealOpsPackages Citrix.HealOpsPackage -JobType WinScTask
@@ -384,7 +383,7 @@
                             # JOB CREATION #
                             ################
                             $HealOpsPackageConfigPath = Get-ChildItem -Path $HealOpsPackageModuleRootBase/Config -Include "*.json" -Force -File -Recurse
-                            [String]$ScriptBlockString = "Invoke-HealOps -TestsFile '$testFile' -HealOpsPackageConfigPath '$($HealOpsPackageConfigPath.FullName)'"
+                            [String]$ScriptBlockString = "Invoke-HealOps -TestsFileName '$fileNoExt' -HealOpsPackageName '$HealOpsPackage'"
                             Write-Progress -Activity "Installing HealOps" -CurrentOperation "Creating a task to execute HealOps. For the *.Tests.ps1 file > $testFile" -Status "With the following task repetition interval > $TestsFileJobInterval" -Id 5
                             switch ($JobType) {
                                 # PowerShell Scheduled Job - WINDOWS
