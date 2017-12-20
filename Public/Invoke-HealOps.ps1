@@ -240,20 +240,6 @@
                         # Iterate over each HealOps package installed on the system and call Start-UpdateCycle
                         foreach ($installedHealOpsPackage in $FilteredInstalledHealOpsPackages) {
                             Start-UpdateCycle -ModuleName $installedHealOpsPackage.Name -Config $healOpsConfig
-
-                            # Get the version of the updated HealOps package.
-                            try {
-                                $updatedHealOpsPackage = Get-LatestModuleVersionLocally -ModuleName $latestHealOpsPackage.Name
-                            } catch {
-                                # Log it
-                                $log4netLogger.error("$_")
-                            }
-
-                            if ($null -ne $updatedHealOpsPackage -and $updatedHealOpsPackage.version -gt $latestHealOpsPackage.version) {
-                                # Copy the config from the current HealOps package to the updated 1
-                                $ModuleRoot = Split-Path -Path $latestHealOpsPackage.ModuleBase
-                                Copy-HealOpsPackageConfig -HealOpsPackageConfig $HealOpsPackageConfig -HealOpsPackageModuleRoot $ModuleRoot -NewVersion $updatedHealOpsPackage.version.ToString() -HealOpsPackageName $updatedHealOpsPackage.Name
-                            }
                         }
                     } else {
                         $log4netLoggerDebug.debug("No HealOps packages found on the system. Searched on > '*HealOpsPackage*'")
@@ -261,20 +247,6 @@
                 } else {
                     # Run an update cycle on the HealOps package that the TestsFile is a memberOf
                     Start-UpdateCycle -ModuleName $latestHealOpsPackage.Name -Config $healOpsConfig
-
-                    # Get the version of the updated HealOps package.
-                    try {
-                        $updatedHealOpsPackage = Get-LatestModuleVersionLocally -ModuleName $latestHealOpsPackage.Name
-                    } catch {
-                        # Log it
-                        $log4netLogger.error("$_")
-                    }
-
-                    if ($null -ne $updatedHealOpsPackage -and $updatedHealOpsPackage.version -gt $latestHealOpsPackage.version) {
-                        # Copy the config from the current HealOps package to the updated 1
-                        $ModuleRoot = Split-Path -Path $latestHealOpsPackage.ModuleBase
-                        Copy-HealOpsPackageConfig -HealOpsPackageConfig $HealOpsPackageConfig -HealOpsPackageModuleRoot $ModuleRoot -NewVersion $updatedHealOpsPackage.version.ToString() -HealOpsPackageName $updatedHealOpsPackage.Name
-                    }
                 }
 
                 # Debug info - register that forceupdate was used.
