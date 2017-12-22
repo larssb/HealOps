@@ -103,6 +103,39 @@
     #############
     Begin {
         <#
+            - Determine system agnostic values
+        #>
+        $script:IsInbox = $PSHOME.EndsWith('\WindowsPowerShell\v1.0', [System.StringComparison]::OrdinalIgnoreCase)
+        if($script:IsInbox) {
+            $script:ProgramFilesPSPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramFiles -ChildPath "WindowsPowerShell"
+        } else {
+            $script:ProgramFilesPSPath = $PSHome
+        }
+        $script:ProgramFilesModulesPath = Microsoft.PowerShell.Management\Join-Path -Path $script:ProgramFilesPSPath -ChildPath "Modules"
+
+        # Control the systems system level PSModule path.
+        $currentPSModulePath = [Environment]::GetEnvironmentVariable("PSModulePath", "Machine")
+
+        if(-not ($currentPSModulePath.contains($ProgramFilesModulesPath) ) ) {
+            # Define the new PSModulePath to add to the system level PSModule path
+            $newPSModulePath = $currentPSModulePath+’;’+$ProgramFilesModulesPath
+
+            # Add the defined PSModulePath to the system level PSModulepath for future PowerShell sessions
+            #### TRY / CATCH HERE
+            [Environment]::SetEnvironmentVariable("PSModulePath", $newPSModulePath, "Machine")
+
+            # Add the specified PSModulePath to the current session path for this to work right now
+            $env:PSModulePath += ";$newPSModulePath"
+        }
+
+        # PowerShell below 5 is not module versioning compatible. Reflect this.
+        if($PSVersionTable.PSVersion.ToString() -gt 4) {
+            [Boolean]$psVersionAbove4 = $true
+        } else {
+            [Boolean]$psVersionAbove4 = $false
+        }
+
+        <#
             - Define variables and other needed data
         #>
         # The name of the HealOps module.
@@ -120,20 +153,9 @@
             try {
                 New-Item -Path $PSScriptRoot -Name "Temp" -ItemType Directory -Force -ErrorAction Stop
             } catch {
-                throw "Faield to create the temp folder used for storing downloaded files. It failed with > $_. The script cannot continue."
+                throw "Failed to create the temp folder used for storing downloaded files. It failed with > $_. The script cannot continue."
             }
         }
-
-        <#
-            - Determine system agnostic values
-        #>
-        $script:IsInbox = $PSHOME.EndsWith('\WindowsPowerShell\v1.0', [System.StringComparison]::OrdinalIgnoreCase)
-        if($script:IsInbox) {
-            $script:ProgramFilesPSPath = Microsoft.PowerShell.Management\Join-Path -Path $env:ProgramFiles -ChildPath "WindowsPowerShell"
-        } else {
-            $script:ProgramFilesPSPath = $PSHome
-        }
-        $script:ProgramFilesModulesPath = Microsoft.PowerShell.Management\Join-Path -Path $script:ProgramFilesPSPath -ChildPath "Modules"
 
         <#
             - Helper modules
@@ -160,7 +182,33 @@
             Write-Output($PackageVersion.Version_Text)
         }
 
-        function Install-AvailableUpdate($PackageManagementURI,$ModuleName,$Version,$FeedName,$ProgramFilesModulesPath) {
+        function Get-ExtractModulePath ($modulename,$psVersionAbove4) {
+            # Define the path to extract to
+            if($psVersionAbove4) {
+                $extractModulePath = "$ProgramFilesModulesPath/$modulename/$Version"
+            } else {
+                # No version value in the path def.
+                $extractModulePath = "$ProgramFilesModulesPath/$modulename"
+
+                # Remove the module folder if it is already present - PS v4 and below
+                if(-not $psVersionAbove4) {
+                    if(Test-Path -Path $extractModulePath) {
+                        try {
+                            Remove-Item -Path $extractModulePath -Force -Recurse -ErrorAction Stop
+                        } catch {
+                            Write-Output "Cannot continue...."
+                            throw "Failed to remove the already existing module folder, for the module named $ModuleName (prep. for installing the module on a system with a PowerShell version `
+                            that do not support module versioning). It failed with > $_"
+                        }
+                    }
+                }
+            }
+
+            # Return
+            [String]$extractModulePath
+        }
+
+        function Install-AvailableUpdate($PackageManagementURI,$ModuleName,$Version,$FeedName,$extractModulePath) {
             # Download the module
             try {
                 Invoke-WebRequest -Uri "$PackageManagementURI/nuget/$FeedName/package/$ModuleName/$Version" -UseBasicParsing -OutFile $PSScriptRoot/Temp/$ModuleName.zip -ErrorAction Stop
@@ -172,12 +220,20 @@
             if (Test-Path -Path $PSScriptRoot/Temp/$ModuleName.zip) {
                 # Extract the package
                 try {
-                    Expand-Archive $PSScriptRoot/Temp/$ModuleName.zip -DestinationPath $ProgramFilesModulesPath/$ModuleName/$Version -Force -ErrorAction Stop
+                    if(Get-Command -Name Expand-Archive -ErrorAction SilentlyContinue) {
+                        Expand-Archive $PSScriptRoot/Temp/$ModuleName.zip -DestinationPath $extractModulePath -Force -ErrorAction Stop
+                    } else {
+                        # Add the .NET compression class to the current session
+                        Add-Type -Assembly System.IO.Compression.FileSystem
+
+                        # Extract the zip file
+                        [System.IO.Compression.ZipFile]::ExtractToDirectory("$PSScriptRoot/Temp/$ModuleName.zip", "$extractModulePath")
+                    }
                 } catch {
                    throw "Failed to extract the nuget package. The extraction failed with > $_"
                 }
             } else {
-                throw "The nuget package could not be found. Was it downloaded successfully? The script cannot continue. Did the download fail?"
+                throw "The nuget package could not be found. Was it downloaded successfully? The script cannot continue."
             }
         }
     }
@@ -195,7 +251,7 @@
             throw "Could not get the latest version of the module $HealOpsModuleName. It failed with > $_"
         }
 
-        # Control the local system to confirm if the module is already installed
+        # Control the local system to confirm if the latest version of the module is already installed.
         $moduleAlreadyThere = (Get-Module -ListAvailable -Name $HealOpsModuleName)
         if ($null -ne $moduleAlreadyThere) {
             $newestModuleAlreadyThere = ($moduleAlreadyThere | Sort-Object -Property Version -Descending)[0]
@@ -209,17 +265,23 @@
             # Install HealOps
             if ($null -ne $latestModuleVersion -or $latestModuleVersion.length -ge 1) {
                 Write-Progress -Activity "Installing HealOps" -CurrentOperation "Installing the HealOps module." -Id 1
-                Install-AvailableUpdate -PackageManagementURI $PackageManagementURI -ModuleName $HealOpsModuleName -Version $latestModuleVersion -FeedName $FeedName -ProgramFilesModulesPath $ProgramFilesModulesPath
+                $extractModulePath = Get-ExtractModulePath -modulename $HealOpsModuleName -psVersionAbove4 $psVersionAbove4
+                Install-AvailableUpdate -PackageManagementURI $PackageManagementURI -ModuleName $HealOpsModuleName -Version $latestModuleVersion -FeedName $FeedName -extractModulePath $extractModulePath
             }
         } else {
             Write-Verbose -Message "There was no reason to upgrade as the locally installed module > $HealOpsModuleName is either newer or at the same version as the one on the Package Management system."
         }
 
-        # Installation of HealOps required modules
-        if ( (Test-Path -Path $ProgramFilesModulesPath/$HealOpsModuleName/$latestModuleVersion) -or (Test-Path -Path $ProgramFilesModulesPath/$HealOpsModuleName/$newestModuleAlreadyThere.Version) ) {
-            # Get the required modules from the newest available HealOps module
-            $requiredModules = (Get-Module -ListAvailable -Name $HealOpsModuleName | Sort-Object -Property Version -Descending)[0].RequiredModules
+        # Get the required modules from the newest available HealOps module
+        $installedHealOpsModules = Get-Module -ListAvailable -Name $HealOpsModuleName -ErrorAction SilentlyContinue
+        if($null -ne $installedHealOpsModules) {
+            $requiredModules = ($installedHealOpsModules | Sort-Object -Property Version -Descending)[0].RequiredModules
+        } else {
+            throw "HealOps seems not to be installed. The Install-HealOps script cannot continue."
+        }
 
+        # Installation of HealOps required modules
+        if ($null -ne $requiredModules) {
             # Install the modules
             foreach ($requiredModule in $requiredModules) {
                 # Remove the requiredModule from the current runspace if it is loaded.
@@ -246,7 +308,8 @@
                 if ($reasonToUpdate -eq $true) {
                     try {
                         Write-Progress -Activity "Installing HealOps" -CurrentOperation "Installing the HealOps dependency module $requiredModule." -Id 2
-                        Install-AvailableUpdate -PackageManagementURI $PackageManagementURI -ModuleName $requiredModule.Name -Version $latestRequiredModuleVersion -FeedName $FeedName -ProgramFilesModulesPath $ProgramFilesModulesPath
+                        $extractModulePath = Get-ExtractModulePath -modulename $requiredModule.Name -psVersionAbove4 $psVersionAbove4
+                        Install-AvailableUpdate -PackageManagementURI $PackageManagementURI -ModuleName $requiredModule.Name -Version $latestRequiredModuleVersion -FeedName $FeedName -extractModulePath $extractModulePath
                     } catch {
                         throw "Failed to install the HealOps required module $requiredModule. It failed with > $_"
                     }
@@ -254,8 +317,6 @@
                     Write-Verbose -Message "There was no reason to upgrade as the locally instaled module > $($requiredModule.Name) is either newer or at the same version as the one on the Package Management system."
                 }
             }
-        } else {
-            throw "HealOps seems not to be successfully installed. The path $ProgramFilesModulesPath/$HealOpsModuleName/$latestModuleVersion or $ProgramFilesModulesPath/$HealOpsModuleName/$($newestModuleAlreadyThere.Version) could not be verified."
         }
 
         # Check that HealOps is available
@@ -271,7 +332,7 @@
             $HealOpsConfig.PackageManagementURI = $PackageManagementURI
             $HealOpsConfig.FeedName = $FeedName
             $HealOpsConfig.PackageManagementAPIKey = $APIKey
-            if($null -ne $checkForUpdatesInterval_InDays) {
+            if($PSBoundParameters.ContainsKey('checkForUpdatesInterval_InDays') ) {
                 $HealOpsConfig.checkForUpdates = "True"
                 $HealOpsConfig.checkForUpdatesInterval_InDays = $checkForUpdatesInterval_InDays
                 $HealOpsConfig.checkForUpdatesNext = "" # Real value provided when HealOps is running and have done its first update cycle pass.
@@ -293,6 +354,9 @@
             <#
                 - Create privileged user for the HealOps task
             #>
+            # General user creation/control variables
+            $HealOpsUsername = "HealOps"
+
             # Password for the local user
             $numbers = 1..100
             $randomNumbers = Get-Random -InputObject $numbers -Count 9
@@ -304,19 +368,48 @@
             $password = ConvertTo-SecureString -String ($charsAndNumbersShuffled -join "") -AsPlainText -Force
             $clearTextPassword = ($charsAndNumbersShuffled -join "")
 
-            # Create the user
-            $HealOpsUsername = "HealOps"
-            $HealOpsUser = Get-LocalUser -Name $HealOpsUsername -ErrorAction SilentlyContinue
-            if ($null -ne $HealOpsUser) {
+            # Control if the user already exists
+            $HealOpsUserDescription = "Used to execute HealOps tests & repairs files."
+            if($psVersionAbove4) {
+                $HealOpsUser = Get-LocalUser -Name $HealOpsUsername -ErrorAction SilentlyContinue
+            } else {
+                ####################
+                # ADSI METHODOLOGY #
+                ####################
+                $ADSI = [ADSI]("WinNT://localhost")
                 try {
-                    $HealOpsUser | Set-LocalUser -Password $password
+                    $HealOpsUser = $ADSI.PSBase.Children.Find("$HealOpsUsername")
                 } catch {
-                    throw "Could not set the generated password on the already existing HealOps user "
+                    # The user was not there.
                 }
+            }
 
-                # Check if it is a member of the Administrators group
-                $matchOrNot = (Get-LocalGroupMember -SID S-1-5-32-544).Name -match $HealOpsUsername -as [Bool]
-                if ($matchOrNot -eq $false) {
+            if($psVersionAbove4) {
+                if ($null -ne $HealOpsUser) {
+                    try {
+                        $HealOpsUser | Set-LocalUser -Password $password
+                    } catch {
+                        throw "Could not set the generated password on the already existing HealOps user "
+                    }
+
+                    # Check if it is a member of the Administrators group
+                    $matchOrNot = (Get-LocalGroupMember -SID S-1-5-32-544).Name -match $HealOpsUsername -as [Bool]
+                    if ($matchOrNot -eq $false) {
+                        # Add the user to the local privileged group. S-1-5-32-544 is the SID for the local 'Administrators' group.
+                        try {
+                            Add-LocalGroupMember -SID S-1-5-32-544 -Member $HealOpsUser
+                        } catch {
+                            throw "Failed to add the HealOps batch user to the local 'Administrators' group. The error was > $_"
+                        }
+                    }
+                } else {
+                    # Create the HealOps user.
+                    try {
+                        $HealOpsUser = New-LocalUser -Name $HealOpsUsername -AccountNeverExpires -Description $HealOpsUserDescription -Password $password -PasswordNeverExpires -UserMayNotChangePassword
+                    } catch {
+                        throw "Failed to create a batch user for HealOps. The error was > $_"
+                    }
+
                     # Add the user to the local privileged group. S-1-5-32-544 is the SID for the local 'Administrators' group.
                     try {
                         Add-LocalGroupMember -SID S-1-5-32-544 -Member $HealOpsUser
@@ -325,18 +418,58 @@
                     }
                 }
             } else {
-                # Create the HealOps user.
-                try {
-                    $HealOpsUser = New-LocalUser -Name $HealOpsUsername -AccountNeverExpires -Description "Used to execute HealOps tests & repairs files." -Password $password -PasswordNeverExpires -UserMayNotChangePassword
-                } catch {
-                    throw "Failed to create a batch user for HealOps. The error was > $_"
-                }
+                ####################
+                # ADSI METHODOLOGY #
+                ####################
+                if ($null -ne $HealOpsUser) {
+                    # The HealOps user already exist. Set the password.
+                    try {
+                        $HealOpsUser.SetPassword($clearTextPassword)
+                        $HealOpsUser.SetInfo()
+                    } catch {
+                        throw "Could not set the generated password on the already existing HealOps user "
+                    }
 
-                # Add the user to the local privileged group. S-1-5-32-544 is the SID for the local 'Administrators' group.
-                try {
-                    Add-LocalGroupMember -SID S-1-5-32-544 -Member $HealOpsUser
-                } catch {
-                    throw "Failed to add the HealOps batch user to the local 'Administrators' group. The error was > $_"
+                    # Control if the user is already a memberOf the local Administrators group
+                    $AdministratorsGroup = $ADSI.PSBase.Children.Find("Administrators")
+                    [Boolean]$alreadyMember = ($AdministratorsGroup.Invoke("Members") | ForEach-Object { $_[0].GetType().InvokeMember("Name", 'GetProperty', $null,$_, $null) }).contains("$HealOpsUsername")
+                    if(-not ($alreadyMember)) {
+                        # Add the user to the 'Administrators' group.
+                        try {
+                            $AdministratorsGroup.invoke("Add", "WinNT://$env:COMPUTERNAME/$HealOpsUsername,user")
+                        } catch {
+                            throw "Failed to add the HealOps batch user to the local 'Administrators' group. The error was > $_"
+                        }
+                    }
+                } else {
+                    # Create the HealOps user.
+                    try {
+                        $HealOpsUser = $ADSI.Create('User', "$HealOpsUsername");
+                        $HealOpsUser.SetPassword($clearTextPassword)
+                        $HealOpsUser.SetInfo()
+                        $HealOpsUser.Description = "$HealOpsUserDescription"
+                        $HealOpsUser.SetInfo()
+                        $HealOpsUser.UserFlags = 66145 # Sets: 'User cannot change password' and 'Password never expires'
+                        $HealOpsUser.SetInfo()
+                    } catch {
+                        throw "Failed to create a batch user for HealOps. The error was > $_"
+                    }
+
+                    # Add the user to the local privileged group. S-1-5-32-544 is the SID for the local 'Administrators' group.
+                    try {
+                        $AdministratorsGroup.invoke("Add", "WinNT://$env:COMPUTERNAME/$HealOpsUsername,user")
+                    } catch {
+                        throw "Failed to add the HealOps batch user to the local 'Administrators' group. The error was > $_"
+                    }
+
+                    # Clean-up
+                    try {
+                        # To release resources used via ADSI.
+                        $HealOpsUser.Close()
+                        $AdministratorsGroup.Close
+                    } catch {
+                        # Failed to close resources used via ADSI.
+                    }
                 }
             }
 
@@ -355,7 +488,8 @@
                 if ($null -ne $latestModuleVersion -or $latestModuleVersion.length -ge 1) {
                     try {
                         Write-Progress -Activity "Installing HealOps" -CurrentOperation "Installing the HealOps package $HealOpsPackage." -Id 4
-                        Install-AvailableUpdate -PackageManagementURI $PackageManagementURI -ModuleName $HealOpsPackage -Version $latestModuleVersion -FeedName $FeedName -ProgramFilesModulesPath $ProgramFilesModulesPath
+                        $extractModulePath = Get-ExtractModulePath -modulename $HealOpsPackage -psVersionAbove4 $psVersionAbove4
+                        Install-AvailableUpdate -PackageManagementURI $PackageManagementURI -ModuleName $HealOpsPackage -Version $latestModuleVersion -FeedName $FeedName -extractModulePath $extractModulePath
                     } catch {
                         Write-Output "Failed to install the HealOps package > $HealOpsPackage. It failed with > $_"
                         $healOpsPackageInstallationResult = "failed"
@@ -367,12 +501,21 @@
                                 -- 1 task per *.Tests.ps1 file in the TestsAndRepairs folder given.
                         #>
                         $HealOpsPackageModuleBase = Split-Path -Path (Get-Module -ListAvailable -Name $HealOpsPackage).ModuleBase | Select-Object -Unique
-                        $HealOpsPackageModuleRootBase = "$HealOpsPackageModuleBase/$latestModuleVersion"
+                        if($psVersionAbove4) {
+                            $HealOpsPackageModuleRootBase = "$HealOpsPackageModuleBase/$latestModuleVersion"
+                        } else {
+                            $HealOpsPackageModuleRootBase = "$HealOpsPackageModuleBase/$HealOpsPackage"
+                        }
 
                         # Get the *.Tests.ps1 files in the provided directory
                         $TestsFiles = Get-ChildItem -Path $HealOpsPackageModuleRootBase/TestsAndRepairs -Recurse -Force -Include "*.Tests.ps1"
                         foreach ($testFile in $TestsFiles) {
-                            [Array]$HealOpsPackageConfig = Get-Content -Path $HealOpsPackageModuleRootBase/Config/*.json -Encoding UTF8 | ConvertFrom-Json
+                            if($psVersionAbove4) {
+                                [Array]$HealOpsPackageConfig = Get-Content -Path $HealOpsPackageModuleRootBase/Config/*.json -Encoding UTF8 | ConvertFrom-Json
+                            } else {
+                                [Array]$HealOpsPackageConfig = Get-Content -Path $HealOpsPackageModuleRootBase/Config/*.json | out-string | ConvertFrom-Json
+                            }
+
                             $TestsFileName = Split-Path -Path $testFile -Leaf
                             $fileExt = [System.IO.Path]::GetExtension($TestsFileName)
                             $fileNoExt = $TestsFileName -replace $fileExt,""
@@ -537,10 +680,7 @@
                 - Info to installing person
             #>
             write-host "========================================================================================" -ForegroundColor DarkYellow
-            write-host "....HealOps was installed...." -ForegroundColor Green
-            write-host " - DO REMEMBER TO SET environment specific values in the HealOps packages you specified." -ForegroundColor Red
-            write-host " - They where > $HealOpsPackages" -ForegroundColor Green
-            write-host " - And are installed in the following PowerShell module root > $ProgramFilesModulesPath." -ForegroundColor Green
+            write-host "                           ....HealOps was installed...."                                 -ForegroundColor Green
             write-host "========================================================================================" -ForegroundColor DarkYellow
         } else {
             throw "The HealOps module does not seem to be installed. So we have to stop."
