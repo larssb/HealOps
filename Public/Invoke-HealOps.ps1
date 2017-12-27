@@ -65,6 +65,17 @@
             $log4netLoggerDebug.debug("--------------------------------------------------")
 
             <#
+                - Determine system specific values
+            #>
+            # PowerShell below 5 is not module versioning compatible. Reflect this.
+            if($PSVersionTable.PSVersion.ToString() -gt 4) {
+                [Boolean]$global:psVersionAbove4 = $true
+            } else {
+                [Boolean]$global:psVersionAbove4 = $false
+            }
+            $log4netLoggerDebug.debug("The PowerShell version is: $($PSVersionTable.PSVersion.ToString()). The value of psVersionAbove4 is $psVersionAbove4")
+
+            <#
                 - CONSTANTS
             #>
             if ($PSCmdlet.ParameterSetName -eq "File") {
@@ -90,7 +101,12 @@
                 throw $_
             } else {
                 # Check file integrity & get config data
-                $healOpsConfig = Get-Content -Path $HealOpsConfigPath -Encoding UTF8 | ConvertFrom-Json
+               if($psVersionAbove4) {
+                    [Array]$healOpsConfig = Get-Content -Path $HealOpsConfigPath -Encoding UTF8 | ConvertFrom-Json
+                } else {
+                    [Array]$healOpsConfig = Get-Content -Path $HealOpsConfigPath | out-string | ConvertFrom-Json
+                }
+
                 if ($null -eq $healOpsConfig) {
                     $message = "The HealOpsConfig contains no data. Please generate a proper HealOpsConfig file. See the documentation."
                     Write-Verbose -Message $message
@@ -172,7 +188,12 @@
 
                 if($HealOpsPackageConfigFile.count -eq 1) {
                     # Check file integrity & get config data
-                    $global:HealOpsPackageConfig = Get-Content -Path $HealOpsPackageConfigFile.FullName -Encoding UTF8 | ConvertFrom-Json
+                    if($psVersionAbove4) {
+                        [Array]$global:HealOpsPackageConfig = Get-Content -Path $HealOpsPackageConfigFile.FullName -Encoding UTF8 | ConvertFrom-Json
+                    } else {
+                        [Array]$global:HealOpsPackageConfig = Get-Content -Path $HealOpsPackageConfigFile.FullName | out-string | ConvertFrom-Json
+                    }
+
                     if ($null -eq $HealOpsPackageConfig) {
                         $message = "The HealOps package config contains no data. Please provide a proper HealOps package config file."
                         Write-Verbose -Message $message
@@ -218,45 +239,49 @@
             <#
                 - Check for updates. For the modules that HealOps has a dependency on and for HealOps itself
             #>
-            $timeForUpdate = Confirm-TimeToUpdate -Config $HealOpsConfig
-            if ($timeForUpdate -eq $true -or $ForceUpdates -eq $true) {
-                # Run an update cycle on HealOps itself
-                $HealOpsModuleName = "HealOps"
-                Start-UpdateCycle -ModuleName $HealOpsModuleName -Config $healOpsConfig
+            if($healOpsConfig.checkForUpdates -eq "True" -or $ForceUpdates) {
+                $timeForUpdate = Confirm-TimeToUpdate -Config $HealOpsConfig
+                if ($timeForUpdate -eq $true -or $ForceUpdates -eq $true) {
+                    # Run an update cycle on HealOps itself
+                    $HealOpsModuleName = "HealOps"
+                    Start-UpdateCycle -ModuleName $HealOpsModuleName -Config $healOpsConfig
 
-                if ($ForceUpdates) {
-                    # All installed HealOps packages.
-                    try {
-                        # Get HealOps packages installed
-                        $InstalledHealOpsPackages = Get-Module -Name *HealOpsPackage* -ListAvailable -ErrorAction Stop
-                    } catch {
-                        $log4netLoggerDebug.error("Getting the installed HealOps packages failed with > $_")
-                    }
+                    if ($ForceUpdates) {
+                        # All installed HealOps packages.
+                        try {
+                            # Get HealOps packages installed
+                            $InstalledHealOpsPackages = Get-Module -Name *HealOpsPackage* -ListAvailable -ErrorAction Stop
+                        } catch {
+                            $log4netLoggerDebug.error("Getting the installed HealOps packages failed with > $_")
+                        }
 
-                    if ($null -ne $InstalledHealOpsPackages) {
-                        # Only 1 HealOpsPackage version per installed HealOps package.
-                        $FilteredInstalledHealOpsPackages = $InstalledHealOpsPackages | Select-Object -Unique
+                        if ($null -ne $InstalledHealOpsPackages) {
+                            # Only 1 HealOpsPackage version per installed HealOps package.
+                            $FilteredInstalledHealOpsPackages = $InstalledHealOpsPackages | Select-Object -Unique
 
-                        # Iterate over each HealOps package installed on the system and call Start-UpdateCycle
-                        foreach ($installedHealOpsPackage in $FilteredInstalledHealOpsPackages) {
-                            Start-UpdateCycle -ModuleName $installedHealOpsPackage.Name -Config $healOpsConfig
+                            # Iterate over each HealOps package installed on the system and call Start-UpdateCycle
+                            foreach ($installedHealOpsPackage in $FilteredInstalledHealOpsPackages) {
+                                Start-UpdateCycle -ModuleName $installedHealOpsPackage.Name -Config $healOpsConfig
+                            }
+                        } else {
+                            $log4netLoggerDebug.debug("No HealOps packages found on the system. Searched on > '*HealOpsPackage*'")
                         }
                     } else {
-                        $log4netLoggerDebug.debug("No HealOps packages found on the system. Searched on > '*HealOpsPackage*'")
+                        # Run an update cycle on the HealOps package that the TestsFile is a memberOf
+                        Start-UpdateCycle -ModuleName $latestHealOpsPackage.Name -Config $healOpsConfig
+                    }
+
+                    # Debug info - register that forceupdate was used.
+                    if ($ForceUpdates -eq $true) {
+                        $log4netLoggerDebug.debug("The force update parameter was used.")
                     }
                 } else {
-                    # Run an update cycle on the HealOps package that the TestsFile is a memberOf
-                    Start-UpdateCycle -ModuleName $latestHealOpsPackage.Name -Config $healOpsConfig
-                }
-
-                # Debug info - register that forceupdate was used.
-                if ($ForceUpdates -eq $true) {
-                    $log4netLoggerDebug.debug("The force update parameter was used.")
+                    # The update cycle did not run.
+                    $log4netLoggerDebug.debug("The update cycle did not run. It is not the time for updating.")
+                    Write-Verbose -Message "The update cycle did not run. It is not the time for updating."
                 }
             } else {
-                # The update cycle did not run.
-                $log4netLoggerDebug.debug("The update cycle did not run. It is not the time for updating.")
-                Write-Verbose -Message "The update cycle did not run. It is not the time for updating."
+                $log4netLoggerDebug.debug("The self-update feature is disabled.")
             }
         }
         Process {
@@ -275,6 +300,7 @@
                     # The test failed #
                     ###################
                     Write-Verbose -Message "Trying to repair the 'Failed' test/s."
+                    $log4netLogger.debug("Trying to repair the 'Failed' test/s.")
 
                     try {
                         # Invoke repairs matching the failed test
@@ -288,10 +314,10 @@
                         # Report the state of the service to the backend report system. Which should then further trigger an alarm to the on-call personnel.
                         try {
                             # Report the value of the failing component
-                            Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -metricValue $($testResult.testdata.FailureMessage) -ErrorAction Stop
+                            Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -metricValue $($testResult.testdata.FailureMessage) -Verbose @commonParms -ErrorAction Stop
 
                             # Report that the repair failed on the component
-                            Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -RepairMetricValue $repairFailedValue -ErrorAction Stop
+                            Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -RepairMetricValue $repairFailedValue -Verbose @commonParms -ErrorAction Stop
                         } catch {
                             # TODO: LOG IT and inform x
                             $log4netLogger.error("Submit-EntityStateReport failed with: $_")
@@ -325,10 +351,10 @@
                         # Report the result
                         try {
                             # Report the value of the okay component after repairing it
-                            Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -metricValue $metricValue -ErrorAction Stop
+                            Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -metricValue $metricValue -Verbose @commonParms -ErrorAction Stop
 
                             # Report that the repair succeeded on the component
-                            Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -RepairMetricValue $repairSuccessValue -ErrorAction Stop
+                            Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -RepairMetricValue $repairSuccessValue -Verbose @commonParms -ErrorAction Stop
                         } catch {
                             # TODO: LOG IT and inform x
                             $log4netLogger.error("Submit-EntityStateReport failed with: $_")
@@ -353,7 +379,7 @@
                     # Report the state of the service to the backend report system.
                     try {
                         # Report the value of the okay component
-                        Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -metricValue $metricValue -ErrorAction Stop
+                        Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -metricValue $metricValue -Verbose @commonParms -ErrorAction Stop
                     } catch {
                         # TODO: LOG IT and inform x
                         $log4netLogger.error("Submit-EntityStateReport failed with: $_")

@@ -1,7 +1,6 @@
-#Requires -RunAsAdministrator
 <#PSScriptInfo
 
-.VERSION 0.0.0.15
+.VERSION 0.0.0.16
 
 .GUID bbf74424-f58d-42d1-9d5a-aeba44ccd545
 
@@ -102,8 +101,13 @@
     # Execution #
     #############
     Begin {
+        $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator");
+        if (-not ($isAdmin)) {
+            throw "You need to execute PowerShell as admin/sudo/root in order to Install HealOps."
+        }
+
         <#
-            - Determine system agnostic values
+            - Determine system specific values
         #>
         $script:IsInbox = $PSHOME.EndsWith('\WindowsPowerShell\v1.0', [System.StringComparison]::OrdinalIgnoreCase)
         if($script:IsInbox) {
@@ -377,11 +381,10 @@
                 # ADSI METHODOLOGY #
                 ####################
                 $ADSI = [ADSI]("WinNT://localhost")
-                try {
-                    $HealOpsUser = $ADSI.PSBase.Children.Find("$HealOpsUsername")
-                } catch {
-                    # The user was not there.
-                }
+                $currentErrorActionPreference = $ErrorActionPreference
+                $ErrorActionPreference = SilentlyContinue
+                $HealOpsUser = $ADSI.PSBase.Children.Find("$HealOpsUsername")
+                $ErrorActionPreference = $currentErrorActionPreference
             }
 
             if($psVersionAbove4) {
@@ -463,13 +466,12 @@
                     }
 
                     # Clean-up
-                    try {
-                        # To release resources used via ADSI.
-                        $HealOpsUser.Close()
-                        $AdministratorsGroup.Close
-                    } catch {
-                        # Failed to close resources used via ADSI.
-                    }
+                    # To release resources used via ADSI.
+                    $currentErrorActionPreference = $ErrorActionPreference
+                    $ErrorActionPreference = SilentlyContinue
+                    $HealOpsUser.Close()
+                    $AdministratorsGroup.Close
+                    $ErrorActionPreference = $currentErrorActionPreference
                 }
             }
 

@@ -40,20 +40,32 @@ function write-metricToOpenTSDB() {
     # Test that the config file is there
     $configFilePath = "$PSScriptRoot/../Artefacts/openTSDBConfig.json"
     if(Test-Path $configFilePath) {
-        # Get config info
-        $OpenTSDBconfig = Get-Content -Path $configFilePath -Encoding UTF8 | ConvertFrom-Json
+        try {
+            # Get config info
+            if($psVersionAbove4) {
+                $OpenTSDBconfig = Get-Content -Path $configFilePath -Encoding UTF8 | ConvertFrom-Json -ErrorAction Stop
+            } else {
+                $OpenTSDBconfig = Get-Content -Path $configFilePath | out-string | ConvertFrom-Json -ErrorAction Stop
+            }
+        } catch {
+            $log4netLogger.error("Reading the OpenTSDB config failed inside write-metricToOpenTSDB. It failed with > $_.")
+        }
     } else {
         throw "The config file for openTSDB settings does not exist. Fix and try again."
     }
 
-    # Validate input and transfrom to JSON
+    # Validate input and transform to JSON
     # TODO: validate metric input > should conform to "sss.sss.sss.sss.sss"
     $metricHolder = @{}
     $metricHolder.metric = $metric
     $metricHolder.tags = $tagPairs
     $metricHolder.timestamp = (get-date ((get-date).touniversaltime()) -UFormat %s) -replace ",.+","" -replace "\..+","" # Unix/POSIX Epoch timestamp. Conforming to the OpenTSDB std.
     $metricHolder.value = $metricValue
-    $metricInJSON = ConvertTo-Json -InputObject $metricHolder -Depth 3
+    try {
+        $metricInJSON = ConvertTo-Json -InputObject $metricHolder -Depth 3 -ErrorAction Stop
+    } catch {
+        $log4netLogger.error("ConvertTo-JSON failed inside write-metricToOpenTSDB. It failed with > $_.")
+    }
 
     # POST the metric to OpenTSDB
     try {
@@ -73,7 +85,7 @@ function write-metricToOpenTSDB() {
         # TODO: Log info
         # TODO: Look further into the request data... e.g. I got this error:
         <#
-            2017-11-09 10:07:44,209 ERROR [OpenTSDB I/O Worker #3] RpcHandler: [id: 0x9344fdcb, /192.168.49.22:51840 => /172.17.0.2:4242] Received an un                                                  supported chunked request: DefaultHttpRequest(chunked: true)
+            2017-11-09 10:07:44,209 ERROR [OpenTSDB I/O Worker #3] RpcHandler: [id: 0x9344fdcb, /192.168.49.22:51840 => /172.17.0.2:4242] Received an unsupported chunked request: DefaultHttpRequest(chunked: true)
 POST /api/put HTTP/1.1
 User-Agent: Mozilla/5.0 (Windows NT; Windows NT 6.3; da-DK) WindowsPowerShell/5.1.14409.1005
 Content-Type: application/json

@@ -76,6 +76,10 @@ function Submit-EntityStateReport() {
         [int]$Value = $metricValue
     }
 
+    Write-Verbose -Message "The metric to is > $metric"
+    Write-Verbose -Message "It's value is > $metricValue"
+    Write-Verbose -Message "The following tags is set > $($tags.values)"
+
     # Determine the reporting backend system to use & push the report
     switch ($reportBackendSystem) {
         { $_ -eq "OpenTSDB" } {
