@@ -122,14 +122,24 @@ function Start-UpdateCycle() {
         # Run registration of a update cycle if the main module was tried updated (That not being the case means it was a HealOps package being updated. That is not to be registed in the HealOps main module config file.)
         if ($ModuleName -eq "HealOps") {
             if($installResultMainModule -eq $true) {
-                # Register that the main module was updated.
-                $registerResult = Register-UpdateCycle -Config $Config -ModuleExtractionPath $extractModulePath
+                try {
+                    # Register that the main module was updated.
+                    $registerResult = Register-UpdateCycle -Config $Config -ModuleExtractionPath $extractModulePath
+                } catch {
+                    $log4netLogger.error("Failed to register that an update cycle ran. Register-UpdateCycle failed with > $_")
+                }
+
                 if ($registerResult -eq $false) {
                     $log4netLogger.error("Failed to register that an update cycle ran. CASE > The main module was updated.")
                 }
             } else {
-                # Register that an update cycle was ran. But register to the current version of the main module as it was not updated.
-                $registerResult = Register-UpdateCycle -Config $Config -ModuleExtractionPath $extractModulePath
+                try {
+                    # Register that an update cycle was ran. But register to the current version of the main module as it was not updated.
+                    $registerResult = Register-UpdateCycle -Config $Config -ModuleExtractionPath $extractModulePath
+                } catch {
+                    $log4netLogger.error("Failed to register that an update cycle ran. Register-UpdateCycle failed with > $_")
+                }
+
                 if ($registerResult -eq $false) {
                     $log4netLogger.error("Failed to register that an update cycle ran. CASE > The main module was NOT updated.")
                 }
