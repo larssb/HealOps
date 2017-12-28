@@ -56,7 +56,7 @@ function Install-AvailableUpdate() {
         if(-not $psVersionAbove4) {
             if(Test-Path -Path $ModuleExtractionPath) {
                 try {
-                    Remove-Item -Path $ModuleExtractionPath -Force -Recurse -ErrorAction Stop
+                    Get-ChildItem -Path $ModuleExtractionPath -Force -Recurse -ErrorAction Stop | Remove-Item -Recurse -Force -ErrorAction Stop # Using Get-childitem and piping to be compatible with PSv3
                 } catch {
                     throw "Failed to remove the already existing module folder, for the module named $ModuleName (prep. for installing the module on a system with a PowerShell version `
                     that do not support module versioning). It failed with > $_"
