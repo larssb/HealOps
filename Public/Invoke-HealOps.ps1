@@ -115,9 +115,9 @@
             } else {
                 # Check file integrity & get config data
                if($psVersionAbove4) {
-                    [Array]$healOpsConfig = Get-Content -Path $HealOpsConfigPath -Encoding UTF8 | ConvertFrom-Json
+                    [PSCustomObject]$healOpsConfig = Get-Content -Path $HealOpsConfigPath -Encoding UTF8 | ConvertFrom-Json
                 } else {
-                    [Array]$healOpsConfig = Get-Content -Path $HealOpsConfigPath | out-string | ConvertFrom-Json
+                    [PSCustomObject]$healOpsConfig = Get-Content -Path $HealOpsConfigPath | out-string | ConvertFrom-Json
                 }
 
                 if ($null -eq $healOpsConfig) {
@@ -202,9 +202,9 @@
                 if($HealOpsPackageConfigFile.count -eq 1) {
                     # Check file integrity & get config data
                     if($psVersionAbove4) {
-                        [Array]$global:HealOpsPackageConfig = Get-Content -Path $HealOpsPackageConfigFile.FullName -Encoding UTF8 | ConvertFrom-Json
+                        [PSCustomObject]$global:HealOpsPackageConfig = Get-Content -Path $HealOpsPackageConfigFile.FullName -Encoding UTF8 | ConvertFrom-Json
                     } else {
-                        [Array]$global:HealOpsPackageConfig = Get-Content -Path $HealOpsPackageConfigFile.FullName | out-string | ConvertFrom-Json
+                        [PSCustomObject]$global:HealOpsPackageConfig = Get-Content -Path $HealOpsPackageConfigFile.FullName | out-string | ConvertFrom-Json
                     }
 
                     if ($null -eq $HealOpsPackageConfig) {
