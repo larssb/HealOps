@@ -314,10 +314,10 @@
                         # Report the state of the service to the backend report system. Which should then further trigger an alarm to the on-call personnel.
                         try {
                             # Report the value of the failing component
-                            Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -metricValue $($testResult.testdata.FailureMessage) -Verbose @commonParms -ErrorAction Stop
+                            Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -metricValue $($testResult.testdata.FailureMessage) @commonParms -ErrorAction Stop
 
                             # Report that the repair failed on the component
-                            Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -RepairMetricValue $repairFailedValue -Verbose @commonParms -ErrorAction Stop
+                            Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -RepairMetricValue $repairFailedValue @commonParms -ErrorAction Stop
                         } catch {
                             # TODO: LOG IT and inform x
                             $log4netLogger.error("Submit-EntityStateReport failed with: $_")
@@ -351,10 +351,10 @@
                         # Report the result
                         try {
                             # Report the value of the okay component after repairing it
-                            Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -metricValue $metricValue -Verbose @commonParms -ErrorAction Stop
+                            Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -metricValue $metricValue @commonParms -ErrorAction Stop
 
                             # Report that the repair succeeded on the component
-                            Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -RepairMetricValue $repairSuccessValue -Verbose @commonParms -ErrorAction Stop
+                            Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -RepairMetricValue $repairSuccessValue @commonParms -ErrorAction Stop
                         } catch {
                             # TODO: LOG IT and inform x
                             $log4netLogger.error("Submit-EntityStateReport failed with: $_")
@@ -379,7 +379,7 @@
                     # Report the state of the service to the backend report system.
                     try {
                         # Report the value of the okay component
-                        Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -metricValue $metricValue -Verbose @commonParms -ErrorAction Stop
+                        Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -metricValue $metricValue @commonParms -ErrorAction Stop
                     } catch {
                         # TODO: LOG IT and inform x
                         $log4netLogger.error("Submit-EntityStateReport failed with: $_")

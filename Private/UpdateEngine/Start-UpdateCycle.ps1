@@ -49,7 +49,6 @@ function Start-UpdateCycle() {
 
         # Get the main module. The newest version of it, if several is installed
         $MainModule = Get-LatestModuleVersionLocally -ModuleName $ModuleName
-        #$MainModuleRoot = Split-Path -Path $MainModule.ModuleBase
     }
     Process {
         <#
@@ -66,13 +65,12 @@ function Start-UpdateCycle() {
                 if ($null -ne $availableUpdateResult.Version) {
                     # Get the module. The newest version of it, if several is installed
                     $requiredModule = Get-LatestModuleVersionLocally -ModuleName $requiredModule.Name
-                    #$requiredModuleRoot = Split-Path -Path $requiredModule.ModuleBase
 
                     # Determine the path to extract a downloaded module to
                     $extractModulePath = Get-ModuleExtractionPath -ModuleName $requiredModule.Name -Version $availableUpdateResult.Version
 
                     # Update the module
-                    $installResult = Install-AvailableUpdate -ModuleName $requiredModule.Name -extractModulePath $extractModulePath -PackageManagementURI $config.PackageManagementURI -FeedName $Config.FeedName -Version $availableUpdateResult.Version
+                    $installResult = Install-AvailableUpdate -ModuleName $requiredModule.Name -ModuleExtractionPath $extractModulePath -PackageManagementURI $config.PackageManagementURI -FeedName $Config.FeedName -Version $availableUpdateResult.Version
 
                     if ($installResult -eq $true) {
                         # Control if the module was actually updated after a non-failing Install-AvailableUpdate execution and log it
@@ -98,7 +96,7 @@ function Start-UpdateCycle() {
             $extractModulePath = Get-ModuleExtractionPath -ModuleName $MainModule.Name -Version $availableUpdateResult.Version
 
             # Update the module
-            $installResultMainModule = Install-AvailableUpdate -ModuleName $MainModule.Name -extractModulePath $extractModulePath -PackageManagementURI $config.PackageManagementURI -FeedName $Config.FeedName -Version $availableUpdateResult.Version
+            $installResultMainModule = Install-AvailableUpdate -ModuleName $MainModule.Name -ModuleExtractionPath $extractModulePath -PackageManagementURI $config.PackageManagementURI -FeedName $Config.FeedName -Version $availableUpdateResult.Version
 
             if ($installResultMainModule -eq $true) {
                 # Control if the module was actually updated after a non-failing Install-AvailableUpdate execution and log it
@@ -125,13 +123,13 @@ function Start-UpdateCycle() {
         if ($ModuleName -eq "HealOps") {
             if($installResultMainModule -eq $true) {
                 # Register that the main module was updated.
-                $registerResult = Register-UpdateCycle -Config $Config -Version $availableUpdateResult.Version -ModuleBase $MainModuleRoot
+                $registerResult = Register-UpdateCycle -Config $Config -ModuleExtractionPath $extractModulePath
                 if ($registerResult -eq $false) {
                     $log4netLogger.error("Failed to register that an update cycle ran. CASE > The main module was updated.")
                 }
             } else {
                 # Register that an update cycle was ran. But register to the current version of the main module as it was not updated.
-                $registerResult = Register-UpdateCycle -Config $Config -Version $moduleVersionBeforeUpdate -ModuleBase $MainModuleRoot
+                $registerResult = Register-UpdateCycle -Config $Config -ModuleExtractionPath $extractModulePath
                 if ($registerResult -eq $false) {
                     $log4netLogger.error("Failed to register that an update cycle ran. CASE > The main module was NOT updated.")
                 }

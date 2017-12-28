@@ -1,6 +1,6 @@
 <#PSScriptInfo
 
-.VERSION 0.0.0.16
+.VERSION 0.0.0.17
 
 .GUID bbf74424-f58d-42d1-9d5a-aeba44ccd545
 
@@ -198,7 +198,7 @@
                 if(-not $psVersionAbove4) {
                     if(Test-Path -Path $extractModulePath) {
                         try {
-                            Remove-Item -Path $extractModulePath -Force -Recurse -ErrorAction Stop
+                            Get-ChildItem -Path $extractModulePath -Force -Recurse -ErrorAction Stop | Remove-Item -Recurse -Force -ErrorAction Stop # Using Get-childitem and piping to be compatible with PSv3
                         } catch {
                             Write-Output "Cannot continue...."
                             throw "Failed to remove the already existing module folder, for the module named $ModuleName (prep. for installing the module on a system with a PowerShell version `
@@ -382,7 +382,7 @@
                 ####################
                 $ADSI = [ADSI]("WinNT://localhost")
                 $currentErrorActionPreference = $ErrorActionPreference
-                $ErrorActionPreference = SilentlyContinue
+                $ErrorActionPreference = "SilentlyContinue"
                 $HealOpsUser = $ADSI.PSBase.Children.Find("$HealOpsUsername")
                 $ErrorActionPreference = $currentErrorActionPreference
             }
@@ -672,7 +672,7 @@
             # Remove the contents of the download temp dir.
             if($reasonToUpdate -eq $true) {
                 try {
-                    Remove-Item -Path $tempDirPath -Force -Recurse -Include *.zip -ErrorAction Stop
+                    Get-ChildItem -Path $tempDirPath -Include *.zip -Force -Recurse -ErrorAction Stop | Remove-Item -Recurse -Force -ErrorAction Stop # Using Get-childitem and piping to be compatible with PSv3
                 } catch {
                     Write-Output "Cleaning up the download temp dir > $tempDirPath faild with > $_"
                 }

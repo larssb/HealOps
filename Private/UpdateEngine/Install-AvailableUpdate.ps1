@@ -19,7 +19,7 @@ function Install-AvailableUpdate() {
     The name of the Feed to get the latest version of the module specified in the ModuleName parameter.
 .PARAMETER Version
     The version of the module to download, named as specified with the ModuleName parameter.
-.PARAMETER extractModulePath
+.PARAMETER ModuleExtractionPath
     The path to extract the module to.
 #>
 
@@ -41,7 +41,7 @@ function Install-AvailableUpdate() {
         [String]$Version,
         [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The path to extract the module to.")]
         [ValidateNotNullOrEmpty()]
-        [String]$extractModulePath
+        [String]$ModuleExtractionPath
     )
 
     #############
@@ -54,9 +54,9 @@ function Install-AvailableUpdate() {
 
         # Remove the module folder if it is already present - PS v4 and below
         if(-not $psVersionAbove4) {
-            if(Test-Path -Path $extractModulePath) {
+            if(Test-Path -Path $ModuleExtractionPath) {
                 try {
-                    Remove-Item -Path $extractModulePath -Force -Recurse -ErrorAction Stop
+                    Remove-Item -Path $ModuleExtractionPath -Force -Recurse -ErrorAction Stop
                 } catch {
                     throw "Failed to remove the already existing module folder, for the module named $ModuleName (prep. for installing the module on a system with a PowerShell version `
                     that do not support module versioning). It failed with > $_"
@@ -77,21 +77,21 @@ function Install-AvailableUpdate() {
             # Extract the package
             try {
                 if(Get-Command -Name Expand-Archive -ErrorAction SilentlyContinue) {
-                    Expand-Archive $modulePackagePath -DestinationPath $extractModulePath -Force -ErrorAction Stop -ErrorVariable extractEV
+                    Expand-Archive $modulePackagePath -DestinationPath $ModuleExtractionPath -Force -ErrorAction Stop -ErrorVariable extractEV
                     $expandArchiveResult = $true
                 } else {
                     # Add the .NET compression class to the current session
                     Add-Type -Assembly System.IO.Compression.FileSystem
 
                     # Extract the zip file
-                    [System.IO.Compression.ZipFile]::ExtractToDirectory("$modulePackagePath", "$extractModulePath")
+                    [System.IO.Compression.ZipFile]::ExtractToDirectory("$modulePackagePath", "$ModuleExtractionPath")
                 }
             } catch {
                 $log4netLogger.error("Failed to extract the nuget package. The extraction failed with > $_")
                 $expandArchiveResult = $false
             }
 
-            if ( (Test-Path -Path $extractModulePath) -and ($expandArchiveResult -eq $true)) {
+            if ( (Test-Path -Path $ModuleExtractionPath) -and ($expandArchiveResult -eq $true)) {
                 # Return
                 $true
             } else {

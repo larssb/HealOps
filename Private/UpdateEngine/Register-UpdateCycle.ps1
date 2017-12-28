@@ -13,10 +13,8 @@ function Register-UpdateCycle() {
     Tries to register that an update cycle was run.
 .PARAMETER Config
     The config file holding package management repository info. Of the PSCustomObject type
-.PARAMETER ModuleBase
-    The root folder to install the module in.
-.PARAMETER Version
-    The version of the HealOps module to register an update cycle for.
+.PARAMETER ModuleExtractionPath
+    The path to extract the module to.
 #>
 
     # Define parameters
@@ -26,12 +24,9 @@ function Register-UpdateCycle() {
         [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The config file holding package management repository info. Of the PSCustomObject type.")]
         [ValidateNotNullOrEmpty()]
         [PSCustomObject]$Config,
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The root folder to install the module in.")]
+        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The path to extract the module to.")]
         [ValidateNotNullOrEmpty()]
-        [String]$ModuleBase,
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The version of the HealOps module to register an update cycle for.")]
-        [ValidateNotNullOrEmpty()]
-        [String]$Version
+        [String]$ModuleExtractionPath
     )
 
     #############
@@ -62,13 +57,13 @@ function Register-UpdateCycle() {
 
     # Update the HealOps config json file
     try {
-        Set-Content -Path "$ModuleBase/$Version/Artefacts/HealOpsConfig.json" -Value $ConfigInJSON -Force -Encoding UTF8 -ErrorAction Stop
+        Set-Content -Path "$ModuleExtractionPath/Artefacts/HealOpsConfig.json" -Value $ConfigInJSON -Force -Encoding UTF8 -ErrorAction Stop
 
         # Return
         $true
     } catch {
         # Log it
-        $log4netLogger.error("Failed to write the config json file for the module > $ModuleBase. Failed with > $_")
+        $log4netLogger.error("Failed to write the config json file for the module > $ModuleExtractionPath. Failed with > $_")
 
         # Return
         $false
