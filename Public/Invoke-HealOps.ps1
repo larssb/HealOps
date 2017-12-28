@@ -43,28 +43,6 @@
         #############
         Begin {
             <#
-                - Configure logging
-            #>
-            # Define log4net variables
-            $log4NetConfigName = "HealOps.Log4Net"
-            $log4netPath = "$PSScriptRoot/../Artefacts"
-
-            # Initiate the log4net logger
-            if($PSCmdlet.ParameterSetName -eq "File") {
-                $logfileName_GeneratedPart = (Split-Path -Path $TestsFileName -Leaf) -replace ".ps1",""
-            } else {
-                $logfileName_GeneratedPart = "ForceUpdates"
-            }
-            $global:log4netLogger = initialize-log4net -log4NetPath $log4netPath -configFileName $log4NetConfigName -logfileName "HealOps.$logfileName_GeneratedPart" -loggerName "HealOps_Error"
-            $global:log4netLoggerDebug = initialize-log4net -log4NetPath $log4netPath -configFileName $log4NetConfigName -logfileName "HealOps.$logfileName_GeneratedPart" -loggerName "HealOps_Debug"
-
-            # Make the log more viewable.
-            $log4netLoggerDebug.debug("--------------------------------------------------")
-            $log4netLoggerDebug.debug("------------- HealOps logging started ------------")
-            $log4netLoggerDebug.debug("------------- $((get-date).ToString()) -----------")
-            $log4netLoggerDebug.debug("--------------------------------------------------")
-
-            <#
                 - Determine system specific values
             #>
             # PowerShell below 5 is not module versioning compatible. Reflect this.
@@ -73,6 +51,41 @@
             } else {
                 [Boolean]$global:psVersionAbove4 = $false
             }
+
+            <#
+                - Configure logging
+            #>
+            # Define log4net variables
+            $log4NetConfigFile = "$PSScriptRoot/../Artefacts/HealOps.Log4Net.xml"
+            if ($psVersionAbove4) {
+                $LogFilesPath = "$PSScriptRoot/../Artefacts"
+            } else {
+                <#
+                    -  Need to put logs into a folder outside the HealOps module. This when on a PS version below 5+ as the self-update feature will not be able to
+                    remove the module because the logfile will be locked. Also ensures that logfiles are not deleted when the module is updated.
+
+                    - $env:TEMP resolves to:
+                        > On Windows == the user context %temp%
+                #>
+                $LogFilesPath = "$env:TEMP"
+            }
+
+            # Initiate the log4net logger
+            if($PSCmdlet.ParameterSetName -eq "File") {
+                $logfileName_GeneratedPart = (Split-Path -Path $TestsFileName -Leaf) -replace ".ps1",""
+            } else {
+                $logfileName_GeneratedPart = "ForceUpdates"
+            }
+            $global:log4netLogger = initialize-log4net -log4NetConfigFile $log4NetConfigFile -LogFilesPath $LogFilesPath -logfileName "HealOps.$logfileName_GeneratedPart" -loggerName "HealOps_Error"
+            $global:log4netLoggerDebug = initialize-log4net -log4NetConfigFile $log4NetConfigFile -LogFilesPath $LogFilesPath -logfileName "HealOps.$logfileName_GeneratedPart" -loggerName "HealOps_Debug"
+
+            # Make the log more viewable.
+            $log4netLoggerDebug.debug("--------------------------------------------------")
+            $log4netLoggerDebug.debug("------------- HealOps logging started ------------")
+            $log4netLoggerDebug.debug("------------- $((get-date).ToString()) -----------")
+            $log4netLoggerDebug.debug("--------------------------------------------------")
+
+            # Note the version of PowerShell we are workin with.
             $log4netLoggerDebug.debug("The PowerShell version is: $($PSVersionTable.PSVersion.ToString()). The value of psVersionAbove4 is $psVersionAbove4")
 
             <#
