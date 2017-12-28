@@ -67,7 +67,7 @@
                     - $env:TEMP resolves to:
                         > On Windows == the user context %temp%
                 #>
-                $LogFilesPath = "$env:TEMP"
+                $LogFilesPath = "$env:TEMP/HealOps"
             }
 
             # Initiate the log4net logger
