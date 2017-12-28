@@ -91,12 +91,13 @@ function Start-UpdateCycle() {
         # Check the Package Management backend for an available update to the current dependency module
         $availableUpdateResult = Get-AvailableUpdate -ModuleName $MainModule.Name -CurrentModuleVersion $moduleVersionBeforeUpdate -Config $Config
 
+        # Determine the path to extract a downloaded module to
+        $extractMainModulePath = Get-ModuleExtractionPath -ModuleName $MainModule.Name -Version $availableUpdateResult.Version
+
         if ($null -ne $availableUpdateResult.Version) {
-            # Determine the path to extract a downloaded module to
-            $extractModulePath = Get-ModuleExtractionPath -ModuleName $MainModule.Name -Version $availableUpdateResult.Version
 
             # Update the module
-            $installResultMainModule = Install-AvailableUpdate -ModuleName $MainModule.Name -ModuleExtractionPath $extractModulePath -PackageManagementURI $config.PackageManagementURI -FeedName $Config.FeedName -Version $availableUpdateResult.Version
+            $installResultMainModule = Install-AvailableUpdate -ModuleName $MainModule.Name -ModuleExtractionPath $extractMainModulePath -PackageManagementURI $config.PackageManagementURI -FeedName $Config.FeedName -Version $availableUpdateResult.Version
 
             if ($installResultMainModule -eq $true) {
                 # Control if the module was actually updated after a non-failing Install-AvailableUpdate execution and log it
@@ -124,7 +125,7 @@ function Start-UpdateCycle() {
             if($installResultMainModule -eq $true) {
                 try {
                     # Register that the main module was updated.
-                    $registerResult = Register-UpdateCycle -Config $Config -ModuleExtractionPath $extractModulePath
+                    $registerResult = Register-UpdateCycle -Config $Config -ModuleExtractionPath $extractMainModulePath
                 } catch {
                     $log4netLogger.error("Failed to register that an update cycle ran. Register-UpdateCycle failed with > $_")
                 }
@@ -135,7 +136,7 @@ function Start-UpdateCycle() {
             } else {
                 try {
                     # Register that an update cycle was ran. But register to the current version of the main module as it was not updated.
-                    $registerResult = Register-UpdateCycle -Config $Config -ModuleExtractionPath $extractModulePath
+                    $registerResult = Register-UpdateCycle -Config $Config -ModuleExtractionPath $extractMainModulePath
                 } catch {
                     $log4netLogger.error("Failed to register that an update cycle ran. Register-UpdateCycle failed with > $_")
                 }
