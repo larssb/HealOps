@@ -122,7 +122,7 @@
 
         if(-not ($currentPSModulePath.contains($ProgramFilesModulesPath) ) ) {
             # Define the new PSModulePath to add to the system level PSModule path
-            $newPSModulePath = $currentPSModulePath+’;’+$ProgramFilesModulesPath
+            $newPSModulePath = $currentPSModulePath+';'+$ProgramFilesModulesPath
 
             # Add the defined PSModulePath to the system level PSModulepath for future PowerShell sessions
             #### TRY / CATCH HERE
@@ -186,7 +186,7 @@
             Write-Output($PackageVersion.Version_Text)
         }
 
-        function Get-ExtractModulePath ($modulename,$psVersionAbove4) {
+        function Get-ModuleExtractionPath ($modulename,$psVersionAbove4,$Version) {
             # Define the path to extract to
             if($psVersionAbove4) {
                 $extractModulePath = "$ProgramFilesModulesPath/$modulename/$Version"
@@ -269,7 +269,7 @@
             # Install HealOps
             if ($null -ne $latestModuleVersion -or $latestModuleVersion.length -ge 1) {
                 Write-Progress -Activity "Installing HealOps" -CurrentOperation "Installing the HealOps module." -Id 1
-                $extractModulePath = Get-ExtractModulePath -modulename $HealOpsModuleName -psVersionAbove4 $psVersionAbove4
+                $extractModulePath = Get-ModuleExtractionPath -modulename $HealOpsModuleName -psVersionAbove4 $psVersionAbove4 -Version $latestModuleVersion
                 Install-AvailableUpdate -PackageManagementURI $PackageManagementURI -ModuleName $HealOpsModuleName -Version $latestModuleVersion -FeedName $FeedName -extractModulePath $extractModulePath
             }
         } else {
@@ -312,7 +312,7 @@
                 if ($reasonToUpdate -eq $true) {
                     try {
                         Write-Progress -Activity "Installing HealOps" -CurrentOperation "Installing the HealOps dependency module $requiredModule." -Id 2
-                        $extractModulePath = Get-ExtractModulePath -modulename $requiredModule.Name -psVersionAbove4 $psVersionAbove4
+                        $extractModulePath = Get-ModuleExtractionPath -modulename $requiredModule.Name -psVersionAbove4 $psVersionAbove4 -Version $latestRequiredModuleVersion
                         Install-AvailableUpdate -PackageManagementURI $PackageManagementURI -ModuleName $requiredModule.Name -Version $latestRequiredModuleVersion -FeedName $FeedName -extractModulePath $extractModulePath
                     } catch {
                         throw "Failed to install the HealOps required module $requiredModule. It failed with > $_"
@@ -490,7 +490,7 @@
                 if ($null -ne $latestModuleVersion -or $latestModuleVersion.length -ge 1) {
                     try {
                         Write-Progress -Activity "Installing HealOps" -CurrentOperation "Installing the HealOps package $HealOpsPackage." -Id 4
-                        $extractModulePath = Get-ExtractModulePath -modulename $HealOpsPackage -psVersionAbove4 $psVersionAbove4
+                        $extractModulePath = Get-ModuleExtractionPath -modulename $HealOpsPackage -psVersionAbove4 $psVersionAbove4 -Version $latestModuleVersion
                         Install-AvailableUpdate -PackageManagementURI $PackageManagementURI -ModuleName $HealOpsPackage -Version $latestModuleVersion -FeedName $FeedName -extractModulePath $extractModulePath
                     } catch {
                         Write-Output "Failed to install the HealOps package > $HealOpsPackage. It failed with > $_"
