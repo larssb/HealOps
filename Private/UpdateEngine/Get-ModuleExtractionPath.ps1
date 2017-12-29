@@ -1,21 +1,21 @@
 function Get-ModuleExtractionPath() {
-<#
-.DESCRIPTION
-    Determines the path to extract a module to. A module downloaded from a package management backend.
-.INPUTS
-    <none>
-.OUTPUTS
-    [String] representing the path to extract the module being updated or installed.
-.NOTES
-    Uses the global variable named psVersionAbove4 which is set in the Invoke-HealOps function.
-.EXAMPLE
-    $extractModulePath = Get-ModuleExtractionPath -ModuleName $ModuleName
-    > Determines the path to extract a module to. A module downloaded from a package management backend.
-.PARAMETER ModuleName
-    The name of the module being installed or updated.
-.PARAMETER Version
-    The version of the module being installed or updated.
-#>
+    <#
+    .DESCRIPTION
+        Determines the path to extract a module to. A module downloaded from a package management backend.
+    .INPUTS
+        <none>
+    .OUTPUTS
+        [String] representing the path to extract the module being updated or installed.
+    .NOTES
+        Uses the global variable named psVersionAbove4 which is set in the Invoke-HealOps function.
+    .EXAMPLE
+        $extractModulePath = Get-ModuleExtractionPath -ModuleName $ModuleName
+        > Determines the path to extract a module to. A module downloaded from a package management backend.
+    .PARAMETER ModuleName
+        The name of the module being installed or updated.
+    .PARAMETER Version
+        The version of the module being installed or updated.
+    #>
 
     # Define parameters
     [CmdletBinding()]
@@ -43,7 +43,7 @@ function Get-ModuleExtractionPath() {
             $extractModulePath = "$psProgramFilesModulesPath/$modulename/$Version"
         } else {
             # No version value in the path def.
-            $extractModulePath = "$psProgramFilesModulesPath/$modulename"
+            $extractModulePath = "$psProgramFilesModulesPath/$modulename/Artefacts/Temp"
         }
     }
     End {

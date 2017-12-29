@@ -1,22 +1,22 @@
 function Start-UpdateCycle() {
-<#
-.DESCRIPTION
-    Updates a PowerShell module and its dependencies. This function expects that a Package Management is used to hold the module
-    and its dependencies.
-.INPUTS
-    <none>
-.OUTPUTS
-    <none>
-.NOTES
-    General notes
-.EXAMPLE
-    Start-UpdateCycle -ModuleName $ModuleName -Config $Config
-    Start an update cycle so that the module specified as well as its dependencies is updated
-.PARAMETER ModuleName
-    The name of the PowerShell module to update.
-.PARAMETER Config
-    The config file holding package management repository info. Of the PSCustomObject type
-#>
+    <#
+    .DESCRIPTION
+        Updates a PowerShell module and its dependencies. This function expects that a Package Management is used to hold the module
+        and its dependencies.
+    .INPUTS
+        <none>
+    .OUTPUTS
+        <none>
+    .NOTES
+        General notes
+    .EXAMPLE
+        Start-UpdateCycle -ModuleName $ModuleName -Config $Config
+        Start an update cycle so that the module specified as well as its dependencies is updated
+    .PARAMETER ModuleName
+        The name of the PowerShell module to update.
+    .PARAMETER Config
+        The config file holding package management repository info. Of the PSCustomObject type
+    #>
 
     # Define parameters
     [CmdletBinding()]
@@ -38,12 +38,19 @@ function Start-UpdateCycle() {
             - Prep. and sanity checks
         #>
         # Check for the temp download folder
-        $tempDirPath = "$PSScriptRoot/Temp"
+        $tempDirPath = "$PSScriptRoot/../../Artefacts/Temp"
         if (-not (Test-Path -Path $tempDirPath)) {
             try {
-                New-Item -Path $PSScriptRoot -Name "Temp" -ItemType Directory -Force -ErrorAction Stop | Out-Null
+                New-Item -Path "$PSScriptRoot/../../Artefacts" -Name "Temp" -ItemType Directory -Force -ErrorAction Stop | Out-Null
             } catch {
                 $log4netLogger.error("Failed to create the temp download folder. The failure was > $_")
+            }
+        } else {
+            # Clean-up temp before starting. To avoid issues with copying, moving and generally handling files
+            try {
+                Get-ChildItem -Path $tempDirPath -Force -Recurse -ErrorAction Stop | Remove-Item -Force -Recurse -ErrorAction Stop
+            } catch {
+                $log4netLogger.error("Cleaning up the download temp dir > $tempDirPath faild with > $_")
             }
         }
 
@@ -113,7 +120,7 @@ function Start-UpdateCycle() {
         if($installResult -eq $true -or $installResultMainModule -eq $true) {
             # Remove the contents of the download temp dir.
             try {
-                Remove-Item -Path $tempDirPath -Force -Recurse -Include *.zip -ErrorAction Stop
+                Get-ChildItem -Path $tempDirPath -Force -Recurse -ErrorAction Stop | Remove-Item -Force -Recurse -ErrorAction Stop
             } catch {
                 $log4netLogger.error("Cleaning up the download temp dir > $tempDirPath faild with > $_")
             }
