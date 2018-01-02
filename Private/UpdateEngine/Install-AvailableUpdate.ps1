@@ -48,24 +48,24 @@ function Install-AvailableUpdate() {
     # Execution #
     #############
     Begin {
-        # Define variables
+        # Define shared variables (shared between PS versions)
         $API_BaseURI = "$PackageManagementURI/nuget/$FeedName/package"
-        $modulePackagePath = "$PSScriptRoot/../../Artefacts/Temp/$ModuleName.zip"
 
         <#
             - Remove the module folder if it is already present - PS v4 and below
         #>
         if(-not $psVersionAbove4) {
-            # Determine folders
+            # Determine folders to use
+            $modulePackagePath = "$ModuleExtractionPath/$ModuleName.zip"
             $psProgramFilesModulesPath = Get-PSProgramFilesModulesPath
             $moduleRoot = "$psProgramFilesModulesPath/$ModuleName"
 
             # Remove
             if(Test-Path -Path $moduleRoot) {
                 try {
-                    if($ModuleName -eq "HealOps" -or $ModuleName -eq "powerShellTooling") {
-                        # Exclude the Artefacts folder in order to avoid exceptional behavior because of Log4Net locking files. And we would like to keep logs and so forth.
-                        $elementsToRemove = Get-ChildItem -Path $moduleRoot -Force -Exclude "Artefacts" -ErrorAction Stop
+                    if($ModuleName -eq "HealOps" -or $ModuleName -eq "powerShellTooling" -or $ModuleName -eq "Pester") {
+                        # Exclude the Artefacts folder (HealOps and PowerShellTooling) and the lib folder (Pester) in order to avoid exceptional behavior because of files being locked. We would also like to keep logs and so forth.
+                        $elementsToRemove = Get-ChildItem -Path $moduleRoot -Force -Exclude "Artefacts","lib" -ErrorAction Stop
                     } else {
                         $elementsToRemove = Get-ChildItem -Path $moduleRoot -Force -ErrorAction Stop
                     }
@@ -88,6 +88,9 @@ function Install-AvailableUpdate() {
                     that do not support module versioning). It failed with > $_"
                 }
             }
+        } else {
+            # Determine folders to use
+            $modulePackagePath = "$PSScriptRoot/../../Artefacts/Temp/$ModuleName.zip"
         }
     }
     Process {
@@ -124,20 +127,21 @@ function Install-AvailableUpdate() {
 
                     # Extract the zip file
                     [System.IO.Compression.ZipFile]::ExtractToDirectory("$modulePackagePath", "$ModuleExtractionPath")
+                    $installationResult = $true
                 } catch {
                     $log4netLogger.error("Failed to extract the nuget package. The extraction failed with > $_")
                     $installationResult = $false
                 }
 
-                try {
-                    # Move the files from the extraction dir. to the root module dir.
-                    Get-ChildItem -Path $ModuleExtractionPath -Exclude "Artefacts","$ModuleName.zip" -Force -ErrorAction Stop | Move-Item -Destination "$ModuleExtractionPath\..\.." -Force -ErrorAction Stop
-                    $installationResult = $true
-                } catch {
-                    $log4netLogger.error("Moving module files to the correct dir failed with > $_")
-                    $installationResult = $false
+                if ($installationResult) {
+                    try {
+                        # Move the files from the extraction dir. to the root module dir.
+                        Get-ChildItem -Path $ModuleExtractionPath -Exclude "Artefacts","lib","$ModuleName.zip" -Force -ErrorAction Stop | Move-Item -Destination "$moduleRoot" -Force -ErrorAction Stop
+                    } catch {
+                        $log4netLogger.error("Moving module files to the correct dir failed with > $_")
+                        $installationResult = $false
+                    }
                 }
-
             }
 
             if ( (Test-Path -Path $ModuleExtractionPath) -and ($installationResult -eq $true)) {

@@ -1,38 +1,32 @@
 function Register-UpdateCycle() {
-<#
-.DESCRIPTION
-    Registers the fact that an HealOps update cycle ran.
-.INPUTS
-    Inputs (if any)
-.OUTPUTS
-    [Boolean] relative to the result of registering the update to a config file.
-.NOTES
-    <none>
-.EXAMPLE
-    Register-UpdateCycle -Config $Config -ModuleExtractionPath $ModuleExtractionPath
-    Tries to register that an update cycle was run. Here the case was > the module was upated.
-.PARAMETER Config
-    The config file holding package management repository info. Of the PSCustomObject type
-.PARAMETER ModuleBase
-    The base (folder path) to the location of the updated module.
-.PARAMETER ModuleExtractionPath
-    The path to extract the module to.
-#>
+    <#
+    .DESCRIPTION
+        Registers the fact that an HealOps update cycle ran.
+    .INPUTS
+        Inputs (if any)
+    .OUTPUTS
+        [Boolean] relative to the result of registering the update to a config file.
+    .NOTES
+        <none>
+    .EXAMPLE
+        Register-UpdateCycle -Config $Config -ModuleBase $MainModule.ModuleBase
+        Tries to register that an update cycle was run.
+    .PARAMETER Config
+        The config file holding package management repository info. Of the PSCustomObject type
+    .PARAMETER ModuleBase
+        The base (folder path) to the location of the updated module.
+    #>
 
     # Define parameters
     [CmdletBinding()]
     [OutputType([Boolean])]
     param(
-        [Parameter(Mandatory=$true, ParameterSetName="ModuleUpdated", HelpMessage="The config file holding package management repository info. Of the PSCustomObject type.")]
-        [Parameter(Mandatory=$true, ParameterSetName="ModuleNotUpdated", HelpMessage="The config file holding package management repository info. Of the PSCustomObject type.")]
+        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The config file holding package management repository info. Of the PSCustomObject type.")]
         [ValidateNotNullOrEmpty()]
         [PSCustomObject]$Config,
-        [Parameter(Mandatory=$true, ParameterSetName="ModuleNotUpdated", HelpMessage="The base (folder path) to the location of the updated module.")]
+        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The base (folder path) to the location of the updated module.")]
         [ValidateNotNullOrEmpty()]
-        [String]$ModuleBase,
-        [Parameter(Mandatory=$true, ParameterSetName="ModuleUpdated", HelpMessage="The path to extract the module to.")]
-        [ValidateNotNullOrEmpty()]
-        [String]$ModuleExtractionPath
+        [String]$ModuleBase
     )
 
     #############
@@ -53,7 +47,7 @@ function Register-UpdateCycle() {
 
     # When in verbose mode & for reference
     Write-Verbose -Message "The value of checkForUpdatesNext > $checkForUpdatesNext"
-    $log4netLoggerDebug.debug("The value of checkForUpdatesNext > $checkForUpdatesNext")
+    $log4netLoggerDebug.debug("Register-UpdateCycle > The value of checkForUpdatesNext > $checkForUpdatesNext")
 
     # Update the HealOps config json file
     $Config.checkForUpdatesNext = $checkForUpdatesNext
@@ -62,20 +56,15 @@ function Register-UpdateCycle() {
     $ConfigInJSON = ConvertTo-Json -InputObject $Config -Depth 3
 
     # Update the HealOps config json file
-    if ( $PSBoundParameters.ContainsKey('ModuleExtractionPath') ) {
-        $basePath = $ModuleExtractionPath
-    } else {
-        $basePath = $ModuleBase
-    }
     try {
         # Record the update cycle data to the HealOps modules config file.
-        Set-Content -Path "$basePath/Artefacts/HealOpsConfig.json" -Value $ConfigInJSON -Force -Encoding UTF8 -ErrorAction Stop
+        Set-Content -Path "$ModuleBase/Artefacts/HealOpsConfig.json" -Value $ConfigInJSON -Force -Encoding UTF8 -ErrorAction Stop
 
         # Return
         $true
     } catch {
         # Log it
-        $log4netLogger.error("Failed to write the config json file for the module > $basePath. Failed with > $_")
+        $log4netLogger.error("Register-UpdateCycle > Failed to write the config json file for the module > $ModuleBase. Failed with > $_")
 
         # Return
         $false

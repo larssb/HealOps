@@ -43,7 +43,7 @@ function Get-ModuleExtractionPath() {
             $extractModulePath = "$psProgramFilesModulesPath/$modulename/$Version"
         } else {
             # No version value in the path def.
-            $extractModulePath = "$psProgramFilesModulesPath/$modulename/Artefacts/Temp"
+            $extractModulePath = "$psProgramFilesModulesPath/HealOps/Artefacts/Temp"
         }
     }
     End {

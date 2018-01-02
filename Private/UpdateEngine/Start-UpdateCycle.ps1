@@ -76,12 +76,23 @@ function Start-UpdateCycle() {
                     # Determine the path to extract a downloaded module to
                     $extractModulePath = Get-ModuleExtractionPath -ModuleName $requiredModule.Name -Version $availableUpdateResult.Version
 
-                    # Update the module
-                    $installResult = Install-AvailableUpdate -ModuleName $requiredModule.Name -ModuleExtractionPath $extractModulePath -PackageManagementURI $config.PackageManagementURI -FeedName $Config.FeedName -Version $availableUpdateResult.Version
+                    try {
+                        # Update the module
+                        $installResult = Install-AvailableUpdate -ModuleName $requiredModule.Name -ModuleExtractionPath $extractModulePath -PackageManagementURI $config.PackageManagementURI -FeedName $Config.FeedName -Version $availableUpdateResult.Version
+                    } catch {
+                        $log4netLogger.error("Install-AvailableUpdate failed with > $_")
+                    }
 
                     if ($installResult -eq $true) {
                         # Control if the module was actually updated after a non-failing Install-AvailableUpdate execution and log it
                         Test-ModuleUpdated -ModuleName $requiredModule.Name -CurrentModuleVersion $moduleVersionBeforeUpdate
+
+                        # Remove the contents of the download temp dir.
+                        try {
+                            Get-ChildItem -Path $tempDirPath -Force -Recurse -ErrorAction Stop | Remove-Item -Force -Recurse -ErrorAction Stop
+                        } catch {
+                            $log4netLogger.error("Cleaning up the download temp dir > $tempDirPath faild with > $_")
+                        }
                     }
                 } else {
                     $log4netLoggerDebug.debug("There was no newer version of the module: $($requiredModule.Name) - on the Package Management backend.")
@@ -102,42 +113,47 @@ function Start-UpdateCycle() {
             # Determine the path to extract a downloaded module to
             $extractMainModulePath = Get-ModuleExtractionPath -ModuleName $MainModule.Name -Version $availableUpdateResult.Version
 
-            # Update the module
-            $installResultMainModule = Install-AvailableUpdate -ModuleName $MainModule.Name -ModuleExtractionPath $extractMainModulePath -PackageManagementURI $config.PackageManagementURI -FeedName $Config.FeedName -Version $availableUpdateResult.Version
+            try {
+                # Update the module
+                $installResultMainModule = Install-AvailableUpdate -ModuleName $MainModule.Name -ModuleExtractionPath $extractMainModulePath -PackageManagementURI $config.PackageManagementURI -FeedName $Config.FeedName -Version $availableUpdateResult.Version
+            } catch {
+                $log4netLogger.error("Install-AvailableUpdate failed with > $_")
+            }
 
             if ($installResultMainModule -eq $true) {
                 # Control if the module was actually updated after a non-failing Install-AvailableUpdate execution and log it
                 Test-ModuleUpdated -ModuleName $MainModule.Name -CurrentModuleVersion $moduleVersionBeforeUpdate
+
+                # Remove the contents of the download temp dir.
+                try {
+                    Get-ChildItem -Path $tempDirPath -Force -Recurse -ErrorAction Stop | Remove-Item -Force -Recurse -ErrorAction Stop
+                } catch {
+                    $log4netLogger.error("Cleaning up the download temp dir > $tempDirPath faild with > $_")
+                }
             }
         } else {
             $log4netLoggerDebug.debug("There was no newer version of the module: $($MainModule.Name) - on the Package Management backend.")
         }
     }
     End {
-        <#
-            - Clean-up & finalization
-        #>
-        if($installResult -eq $true -or $installResultMainModule -eq $true) {
-            # Remove the contents of the download temp dir.
-            try {
-                Get-ChildItem -Path $tempDirPath -Force -Recurse -ErrorAction Stop | Remove-Item -Force -Recurse -ErrorAction Stop
-            } catch {
-                $log4netLogger.error("Cleaning up the download temp dir > $tempDirPath faild with > $_")
-            }
-        }
-
         # Run registration of a update cycle if the main module was tried updated (That not being the case means it was a HealOps package being updated. That is not to be registed in the HealOps main module config file.)
         if ($ModuleName -eq "HealOps") {
             if($installResultMainModule -eq $true) {
+                $log4netLoggerDebug.debug("CASE > The main module was updated.")
                 try {
-                    # Register that the main module was updated.
-                    $registerResult = Register-UpdateCycle -Config $Config -ModuleExtractionPath $extractMainModulePath
+                    # Refresh the latest main module info after a successfull installation/update
+                    $MainModule = Get-LatestModuleVersionLocally -ModuleName $ModuleName
                 } catch {
-                    $log4netLogger.error("Failed to register that an update cycle ran. Register-UpdateCycle failed with > $_")
+                    $log4netLogger.error("Failed to register that an update cycle ran. Failed with > $_")
                 }
 
-                if ($registerResult -eq $false) {
-                    $log4netLogger.error("Failed to register that an update cycle ran. CASE > The main module was updated.")
+                if($null -ne $MainModule.ModuleBase) {
+                    try {
+                        # Register that the main module was updated.
+                        $registerResult = Register-UpdateCycle -Config $Config -ModuleBase $MainModule.ModuleBase
+                    } catch {
+                        $log4netLogger.error("Failed to register that an update cycle ran. Failed with > $_")
+                    }
                 }
             } else {
                 try {
