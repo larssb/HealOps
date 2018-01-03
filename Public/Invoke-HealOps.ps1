@@ -244,34 +244,10 @@
         if($healOpsConfig.checkForUpdates -eq "True" -or $ForceUpdates) {
             $timeForUpdate = Confirm-TimeToUpdate -Config $HealOpsConfig
             if ($timeForUpdate -eq $true -or $ForceUpdates -eq $true) {
-                # Run an update cycle on HealOps itself
-                $HealOpsModuleName = "HealOps"
-                Start-UpdateCycle -ModuleName $HealOpsModuleName -Config $healOpsConfig
+# !!! CONTROL on UpdateMode in the HealOpsConfig.
 
-                if ($ForceUpdates) {
-                    # All installed HealOps packages.
-                    try {
-                        # Get HealOps packages installed
-                        $InstalledHealOpsPackages = Get-Module -Name *HealOpsPackage* -ListAvailable -ErrorAction Stop
-                    } catch {
-                        $log4netLoggerDebug.error("Getting the installed HealOps packages failed with > $_")
-                    }
-
-                    if ($null -ne $InstalledHealOpsPackages) {
-                        # Only 1 HealOpsPackage version per installed HealOps package.
-                        $FilteredInstalledHealOpsPackages = $InstalledHealOpsPackages | Select-Object -Unique
-
-                        # Iterate over each HealOps package installed on the system and call Start-UpdateCycle
-                        foreach ($installedHealOpsPackage in $FilteredInstalledHealOpsPackages) {
-                            Start-UpdateCycle -ModuleName $installedHealOpsPackage.Name -Config $healOpsConfig
-                        }
-                    } else {
-                        $log4netLoggerDebug.debug("No HealOps packages found on the system. Searched on > '*HealOpsPackage*'")
-                    }
-                } else {
-                    # Run an update cycle on the HealOps package that the TestsFile is a memberOf
-                    Start-UpdateCycle -ModuleName $latestHealOpsPackage.Name -Config $healOpsConfig
-                }
+                # Call Start-HealOpsUpdateCycle to execute the self-update feature
+                Start-HealOpsUpdateCycle -UpdateMode $healOpsConfig.UpdateMode -Config $healOpsConfig
 
                 # Debug info - register that forceupdate was used.
                 if ($ForceUpdates -eq $true) {
@@ -302,7 +278,7 @@
                 # The test failed #
                 ###################
                 Write-Verbose -Message "Trying to repair the 'Failed' test/s."
-                $log4netLogger.debug("Trying to repair the 'Failed' test/s.")
+                $log4netLoggerDebug.debug("Trying to repair the 'Failed' test/s.")
 
                 try {
                     # Invoke repairs matching the failed test
