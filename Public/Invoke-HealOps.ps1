@@ -242,16 +242,23 @@
             - Check for updates. For the modules that HealOps has a dependency on and for HealOps itself
         #>
         if($healOpsConfig.checkForUpdates -eq "True" -or $ForceUpdates) {
-            $timeForUpdate = Confirm-TimeToUpdate -Config $HealOpsConfig
+            if (-not $ForceUpdates) {
+                $timeForUpdate = Confirm-TimeToUpdate -Config $HealOpsConfig
+            }
+
             if ($timeForUpdate -eq $true -or $ForceUpdates -eq $true) {
-# !!! CONTROL on UpdateMode in the HealOpsConfig.
-
-                # Call Start-HealOpsUpdateCycle to execute the self-update feature
-                Start-HealOpsUpdateCycle -UpdateMode $healOpsConfig.UpdateMode -Config $healOpsConfig
-
                 # Debug info - register that forceupdate was used.
                 if ($ForceUpdates -eq $true) {
                     $log4netLoggerDebug.debug("The force update parameter was used.")
+                }
+
+                try {
+                    $log4netLoggerDebug.debug("The value of > UpdateMode in the HealOps config json file > $($healOpsConfig.UpdateMode)")
+
+                    # Call Start-HealOpsUpdateCycle to execute the self-update feature
+                    Start-HealOpsUpdateCycle -UpdateMode $healOpsConfig.UpdateMode -Config $healOpsConfig
+                } catch {
+                    $log4netLogger.error("Start-HealOpsUpdateCycle failed with: $_")
                 }
             } else {
                 # The update cycle did not run.
@@ -260,6 +267,7 @@
             }
         } else {
             $log4netLoggerDebug.debug("The self-update feature is disabled.")
+            $log4netLoggerDebug.debug("The value of > checkForUpdates in the HealOps config json file > $($healOpsConfig.checkForUpdates)")
         }
     }
     Process {
@@ -269,7 +277,6 @@
             try {
                 $testResult = Test-EntityState -TestFilePath $TestsFile.FullName -ErrorAction Stop
             } catch {
-                # Log it
                 $log4netLogger.error("Test-EntityState failed with: $_")
             }
 

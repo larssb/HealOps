@@ -1,7 +1,7 @@
 ﻿{
     "reportingBackend":  "OpenTSDB",
     "checkForUpdates":  "True",
-    "checkForUpdatesInterval_InDays": "",
+    "checkForUpdatesInterval_Hours": "",
     "checkForUpdatesNext":  "",
     "PackageManagementURI":  "",
     "FeedName":  "HealOps",

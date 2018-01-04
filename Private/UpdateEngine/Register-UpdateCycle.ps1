@@ -37,12 +37,12 @@ function Register-UpdateCycle() {
     #>
     # Determine DateTime for checkForUpdatesNext. Using a random plus "M" minutes, in order to NOT overload the Package Management backend with requests at the same time from multiple instances of HealOps. In this way update requests will be more evenly spread out.
     $checkForUpdatesNext_DateTimeRandom = get-random -Minimum 1 -Maximum 123
-    if ($Config.checkForUpdatesInterval_InDays.length -ge 1) {
+    if ($Config.checkForUpdatesInterval_Hours.length -ge 1) {
         # Use the interval from the HealOps config json file.
-        $checkForUpdatesNext = (get-date).AddDays($Config.checkForUpdatesInterval_InDays).AddMinutes(($checkForUpdatesNext_DateTimeRandom)).ToString()
+        $checkForUpdatesNext = (get-date).AddHours($Config.checkForUpdatesInterval_Hours).AddMinutes(($checkForUpdatesNext_DateTimeRandom)).ToString()
     } else {
-        # Fall back to a default interval of 1 day. As the checkForUpdatesInterval_InDays property in the config file was corrupt.
-        $checkForUpdatesNext = (get-date).AddDays(1).AddMinutes(($checkForUpdatesNext_DateTimeRandom)).ToString()
+        # Fall back to a default interval of 1 day. As the checkForUpdatesInterval_Hours property in the config file was corrupt.
+        $checkForUpdatesNext = (get-date).AddHours(1).AddMinutes(($checkForUpdatesNext_DateTimeRandom)).ToString()
     }
 
     # When in verbose mode & for reference

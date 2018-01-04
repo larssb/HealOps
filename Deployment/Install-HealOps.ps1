@@ -1,6 +1,6 @@
 <#PSScriptInfo
 
-.VERSION 0.0.0.17
+.VERSION 0.0.0.20
 
 .GUID bbf74424-f58d-42d1-9d5a-aeba44ccd545
 
@@ -44,57 +44,65 @@
 .NOTES
     <none>
 .EXAMPLE
-    "PATH_TO_THIS_FILE"/Instal-HealOps.ps1 -reportingBackend 'OpenTSDB' -checkForUpdatesInterval_InDays 3 -PackageManagementURI https://proget.danskespil.dk -FeedName HealOps `
+    "PATH_TO_THIS_FILE"/Instal-HealOps.ps1 -reportingBackend 'OpenTSDB' -checkForUpdatesInterval_Hours 3 -PackageManagementURI https://proget.danskespil.dk -FeedName HealOps `
     -APIKey "API_KEY" -HealOpsPackages Citrix.HealOpsPackage -JobType WinScTask
 
     >> Executes Installs HealOps on the node where it is executed. Sets the reporting backend to use OpenTSDB. Updates will be checked for every third day. The PackageManagement system `
     is accessed via https://proget.danskespil.dk. The feed on the Package Management system is named HealOps. The HealOps packages that will be installed is named Citrix.HealOpsPackage `
     The type of the job that will invoke HealOps will be a Windows Scheduled Task.
-.PARAMETER reportingBackend
-    Used to specify the software used as the reporting backend. For storing test result metrics.
-.PARAMETER checkForUpdatesInterval_InDays
-    The interval in days between checking for updates. Specifying this implicitly also enables the check for updates feature.
-.PARAMETER PackageManagementURI
-    The URI of the Package Management backend, where modules used by HealOps are stored.
-.PARAMETER FeedName
-    The name of the feed on the Package Management backend, in which modules used by HealOps are stored.
-.PARAMETER APIKey
-    The API key to used when communicatnig with the Package Management backend.
 .PARAMETER AnonymousNotAllowed
     Used to specify that the package management backend does not allow anonymous access. This will make the script prompt for credentials.
+.PARAMETER APIKey
+    The API key to used when communicatnig with the Package Management backend.
+.PARAMETER checkForUpdatesInterval_Hours
+    The interval in hours between checking for updates. Specifying this implicitly also enables the check for updates feature.
+.PARAMETER FeedName
+    The name of the feed on the Package Management backend, in which modules used by HealOps are stored.
 .PARAMETER HealOpsPackages
     An Array containing the names of the HealOps packages to install on the system.
 .PARAMETER JobType
     The type of job to use for invoking HealOps.
+.PARAMETER PackageManagementURI
+    The URI of the Package Management backend, where modules used by HealOps are stored.
+.PARAMETER reportingBackend
+    Used to specify the software used as the reporting backend. For storing test result metrics.
+.PARAMETER UpdateMode
+    The execute mode that the self-update should use.
+        > All = Everything will be updated. HealOps itself, its required modules and the HealOps packages on the system.
+        > HealOpsPackages = Only HealOps packages will be updated.
+        > HealOps = Only HealOps itself and its requird modules will be updated.
 #>
 
     # Define parameters
     [CmdletBinding()]
     [OutputType([Void])]
     param(
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="Used to specify the software used as the reporting backend. For storing test result metrics.")]
-        [ValidateSet('OpenTSDB')]
-        [String]$reportingBackend,
-        [Parameter(Mandatory=$false, ParameterSetName="Default", HelpMessage="The interval in days between checking for updates. If you don't set this the self-update feature will not be activated.")]
-        [ValidateNotNullOrEmpty()]
-        [Int]$checkForUpdatesInterval_InDays,
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The URI of the Package Management backend, where modules used by HealOps are stored.")]
-        [ValidateNotNullOrEmpty()]
-        [String]$PackageManagementURI,
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The name of the feed on the Package Management backend, in which modules used by HealOps are stored.")]
-        [ValidateNotNullOrEmpty()]
-        [String]$FeedName,
+        [Parameter(Mandatory=$false, ParameterSetName="Default", HelpMessage="Used to specify that the package management backend does not allow anonymous access. This will make the script prompt for credentials.")]
+        [Switch]$AnonymousNotAllowed,
         [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The API key to used when communicatnig with the Package Management backend.")]
         [ValidateNotNullOrEmpty()]
         [String]$APIKey,
-        [Parameter(Mandatory=$false, ParameterSetName="Default", HelpMessage="Used to specify that the package management backend does not allow anonymous access. This will make the script prompt for credentials.")]
-        [Switch]$AnonymousNotAllowed,
+        [Parameter(Mandatory=$false, ParameterSetName="Default", HelpMessage="The interval in hours between checking for updates. If you don't set this the self-update feature will not be activated.")]
+        [ValidateNotNullOrEmpty()]
+        [Int]$checkForUpdatesInterval_Hours,
+        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The name of the feed on the Package Management backend, in which modules used by HealOps are stored.")]
+        [ValidateNotNullOrEmpty()]
+        [String]$FeedName,
         [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="An Array containing the names of the HealOps packages to install on the system.")]
         [ValidateNotNullOrEmpty()]
         [Array]$HealOpsPackages,
         [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The type of job to use for invoking HealOps.")]
         [ValidateSet('WinPSJob','WinScTask','LinCronJob')]
-        [String]$JobType
+        [String]$JobType,
+        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The URI of the Package Management backend, where modules used by HealOps are stored.")]
+        [ValidateNotNullOrEmpty()]
+        [String]$PackageManagementURI,
+        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="Used to specify the software used as the reporting backend. For storing test result metrics.")]
+        [ValidateSet('OpenTSDB')]
+        [String]$reportingBackend,
+        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The execute mode that the self-update should use.")]
+        [ValidateSet("All","HealOpsPackages","HealOps")]
+        [String]$UpdateMode
     )
 
     #############
@@ -333,13 +341,14 @@
             Write-Progress -Activity "Installing HealOps" -CurrentOperation "Defining the HealOps config json file." -Id 3
             $HealOpsConfig = @{}
             $HealOpsConfig.reportingBackend = $reportingBackend
-            $HealOpsConfig.PackageManagementURI = $PackageManagementURI
-            $HealOpsConfig.FeedName = $FeedName
-            $HealOpsConfig.PackageManagementAPIKey = $APIKey
-            if($PSBoundParameters.ContainsKey('checkForUpdatesInterval_InDays') ) {
+            if($PSBoundParameters.ContainsKey('checkForUpdatesInterval_Hours') ) {
                 $HealOpsConfig.checkForUpdates = "True"
-                $HealOpsConfig.checkForUpdatesInterval_InDays = $checkForUpdatesInterval_InDays
+                $HealOpsConfig.checkForUpdatesInterval_Hours = $checkForUpdatesInterval_Hours
                 $HealOpsConfig.checkForUpdatesNext = "" # Real value provided when HealOps is running and have done its first update cycle pass.
+                $HealOpsConfig.PackageManagementURI = $PackageManagementURI
+                $HealOpsConfig.FeedName = $FeedName
+                $HealOpsConfig.PackageManagementAPIKey = $APIKey
+                $HealOpsConfig.UpdateMode = $UpdateMode
             } else {
                 $HealOpsConfig.checkForUpdates = "False"
             }
@@ -458,7 +467,8 @@
                         throw "Failed to create a batch user for HealOps. The error was > $_"
                     }
 
-                    # Add the user to the local privileged group. S-1-5-32-544 is the SID for the local 'Administrators' group.
+                    # Add the user to the 'Administrators' group.
+                    $AdministratorsGroup = $ADSI.PSBase.Children.Find("Administrators")
                     try {
                         $AdministratorsGroup.invoke("Add", "WinNT://$env:COMPUTERNAME/$HealOpsUsername,user")
                     } catch {
@@ -468,7 +478,7 @@
                     # Clean-up
                     # To release resources used via ADSI.
                     $currentErrorActionPreference = $ErrorActionPreference
-                    $ErrorActionPreference = SilentlyContinue
+                    $ErrorActionPreference = "SilentlyContinue"
                     $HealOpsUser.Close()
                     $AdministratorsGroup.Close
                     $ErrorActionPreference = $currentErrorActionPreference
@@ -527,7 +537,6 @@
                             ################
                             # JOB CREATION #
                             ################
-                            $HealOpsPackageConfigPath = Get-ChildItem -Path $HealOpsPackageModuleRootBase/Config -Include "*.json" -Force -File -Recurse
                             [String]$ScriptBlockString = "Invoke-HealOps -TestsFileName '$fileNoExt' -HealOpsPackageName '$HealOpsPackage'"
                             Write-Progress -Activity "Installing HealOps" -CurrentOperation "Creating a task to execute HealOps. For the *.Tests.ps1 file > $testFile" -Status "With the following task repetition interval > $TestsFileJobInterval" -Id 5
                             switch ($JobType) {

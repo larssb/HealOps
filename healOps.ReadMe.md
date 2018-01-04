@@ -235,3 +235,14 @@ The std. is:
         }
     }
     `
+
+## The self-update feature
+
+    ''Update interval''
+    - The property checkForUpdatesInterval_Hours is used to provide a interval value in hours representing the self-update frequency.
+    ''UpdateMode''
+    - This property controls what the self-update feature will update. There are three options:
+        > All = Everything will be updated. HealOps itself, its required modules and the HealOps packages on the system.
+        > HealOpsPackages = Only HealOps packages will be updated.
+        > HealOps = Only HealOps itself and its requird modules will be updated.
+    - It is controlled by setting it to one of the above three values in the HealOpsConfig json file or when installing HealOps with the Install-HealOps deploy script.
