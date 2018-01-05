@@ -299,12 +299,17 @@
                     # Report the state of the service to the backend report system. Which should then further trigger an alarm to the on-call personnel.
                     try {
                         # Report the value of the failing component
-                        Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -metricValue $($testResult.testdata.FailureMessage) @commonParms -ErrorAction Stop
+                        Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -TestData $($testResult.testdata) @commonParms -ErrorAction Stop
+                    } catch {
+                        # TODO: LOG IT and inform x
+                        $log4netLogger.error("Submit-EntityStateReport failed with: $_")
+                        Write-Verbose "Submit-EntityStateReport failed with: $_"
+                    }
 
+                    try {
                         # Report that the repair failed on the component
                         Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -RepairMetricValue $repairFailedValue @commonParms -ErrorAction Stop
                     } catch {
-                        # TODO: LOG IT and inform x
                         $log4netLogger.error("Submit-EntityStateReport failed with: $_")
                         Write-Verbose "Submit-EntityStateReport failed with: $_"
                     }
@@ -317,31 +322,20 @@
                         $log4netLogger.error("Test-EntityState failed with: $_")
                     }
 
-                    # Test on the result in order to get correct data for the metric value.
-                    if ($testResult.state -eq $true) {
-                        if ((Get-Variable -Name passedTestResult -ErrorAction SilentlyContinue)) {
-                            $metricValue = $passedTestResult # Uses the global variable set in the *.Tests.ps1 file to capture a numeric value to report to the reporting backend.
-                            $log4netLoggerDebug.debug("passedTestResult value > $passedTestResult set in *.Tests.ps1 file > $TestsFileName")
-                            Write-Verbose -Message "passedTestResult > $passedTestResult"
-                        } else {
-                            # TODO: Log IT and inform x!
-                            $metricValue = -1 # Value indicating that the global variable passedTestResult was not set correctly in the *.Tests.ps1 file.
-                            $log4netLogger.error("The passedTestResult variable was NOT defined in the *.Tests.ps1 file > $TestsFileName <- this HAS to be done.")
-                            Write-Verbose -Message "The passedTestResult variable was NOT defined in the *.Tests.ps1 file > $TestsFileName <- this HAS to be done."
-                        }
-                    } else {
-                        $metricValue = $($testResult.testdata.FailureMessage)
-                    }
-
                     # Report the result
                     try {
                         # Report the value of the okay component after repairing it
-                        Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -metricValue $metricValue @commonParms -ErrorAction Stop
+                        Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -TestData $($testResult.testdata) @commonParms -ErrorAction Stop
+                    } catch {
+                        # TODO: LOG IT and inform x
+                        $log4netLogger.error("Submit-EntityStateReport failed with: $_")
+                        Write-Verbose "Submit-EntityStateReport failed with: $_"
+                    }
 
+                    try {
                         # Report that the repair succeeded on the component
                         Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -RepairMetricValue $repairSuccessValue @commonParms -ErrorAction Stop
                     } catch {
-                        # TODO: LOG IT and inform x
                         $log4netLogger.error("Submit-EntityStateReport failed with: $_")
                         Write-Verbose "Submit-EntityStateReport failed with: $_"
                     }
@@ -350,21 +344,10 @@
                 ######################
                 # The test succeeded #
                 ######################
-                if ((Get-Variable -Name passedTestResult -ErrorAction SilentlyContinue)) {
-                    $metricValue = $passedTestResult # Uses the global variable set in the *.Tests.ps1 file to capture a numeric value to report to the reporting backend.
-                    $log4netLoggerDebug.debug("passedTestResult value > $passedTestResult set in *.Tests.ps1 file > $TestsFileName")
-                    Write-Verbose -Message "passedTestResult > $passedTestResult"
-                } else {
-                    # TODO: Log IT and inform x!
-                    $metricValue = -1 # Value indicating that the global variable passedTestResult was not set correctly in the *.Tests.ps1 file.
-                    $log4netLogger.error("The passedTestResult variable was NOT defined in the *.Tests.ps1 file > $TestsFileName <- this HAS to be done.")
-                    Write-Verbose -Message "The passedTestResult variable was NOT defined in the *.Tests.ps1 file > $TestsFileName <- this HAS to be done."
-                }
-
                 # Report the state of the service to the backend report system.
                 try {
                     # Report the value of the okay component
-                    Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -metricValue $metricValue @commonParms -ErrorAction Stop
+                    Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -TestData $($testResult.testdata) @commonParms -ErrorAction Stop
                 } catch {
                     # TODO: LOG IT and inform x
                     $log4netLogger.error("Submit-EntityStateReport failed with: $_")

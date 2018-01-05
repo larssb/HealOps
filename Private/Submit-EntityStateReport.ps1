@@ -9,16 +9,16 @@ function Submit-EntityStateReport() {
     .NOTES
         General notes
     .EXAMPLE
-        PS C:\> <example usage>
+        Submit-EntityStateReport -
         Explanation of what the example does
     .PARAMETER reportBackendSystem
         Used to specify the software used as the reporting backend. For storing test result metrics.
     .PARAMETER metric
-        The metric value, in a format supported by OpenTSDB, of the IT service/Entity to log data for, into OpenTSDB.
-    .PARAMETER metricValue
-        The value to record on the metric being writen to OpenTSDB.
+        The name of the metric, in a format supported by the reporting backend.
+    .PARAMETER TestData
+        A Hashtable or Int32 type object. Containing testdata.
     .PARAMETER RepairMetricValue
-        With this parameter you specify the metricvalue to report for a repair, relative to the result of Repair-EntityState.
+        With this parameter you specify the TestData to report for a repair, relative to the result of Repair-EntityState().
     #>
 
     # Define parameters
@@ -30,14 +30,14 @@ function Submit-EntityStateReport() {
         [ValidateNotNullOrEmpty()]
         [ValidateSet("OpenTSDB")]
         [String]$reportBackendSystem,
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The metric value, in a format supported by OpenTSDB, of the IT service/Entity to log data for, into OpenTSDB.")]
-        [Parameter(Mandatory=$true, ParameterSetName="Repair", HelpMessage="The metric value, in a format supported by OpenTSDB, of the IT service/Entity to log data for, into OpenTSDB.")]
+        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The name of the metric, in a format supported by the reporting backend.")]
+        [Parameter(Mandatory=$true, ParameterSetName="Repair", HelpMessage="The name of the metric, in a format supported by the reporting backend.")]
         [ValidateNotNullOrEmpty()]
         [String]$metric,
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The value to record on the metric being writen to OpenTSDB.")]
+        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="A Hashtable or Int32 type object. Containing testdata.")]
         [ValidateNotNullOrEmpty()]
-        [int]$metricValue,
-        [Parameter(Mandatory=$true, ParameterSetName="Repair", HelpMessage="With this parameter you specify the metricvalue to report for a repair, relative to the result of Repair-EntityState.")]
+        $TestData,
+        [Parameter(Mandatory=$true, ParameterSetName="Repair", HelpMessage="With this parameter you specify the TestData to report for a repair, relative to the result of Repair-EntityState.")]
         [ValidateNotNullOrEmpty()]
         [ValidateSet(0,1)]
         [int]$RepairMetricValue
@@ -46,56 +46,187 @@ function Submit-EntityStateReport() {
     #############
     # Execution #
     #############
-    <#
-        - Transform incoming data to send to the report backend
-    #>
-    # Define tags in JSON
-    $tags = @{}
-    $tags.Add("node",(get-hostname))
-    $tags.Add("environment",$($HealOpsPackageConfig.environment))
+    Begin {
+        <#
+            - Sanity tests
+        #>
+        # Determine the type of the incoming object to the TestData parameter.
+        if (-not $TestData.GetType().Name -eq "Hashtable" -or $TestData.GetType().Name -eq "Int32") {
+            # Throw
+            $testDataType = $TestData.GetType().Name
+            throw "The datatype of the TestData parameter is not supported. The datatype is > $testDataType"
+        }
 
-    <#
-        - Set specific settings in relation to what metric value paraneter that was provided.
-    #>
-    if ($PSCmdlet.ParameterSetName -eq "Repair") {
-        [int]$Value = $RepairMetricValue
+        ############################
+        # PRIVATE HELPER FUNCTIONS #
+        ############################
+        <#
+            - Reports to a reporting backend
+                > Invoke-ReportIt declared here to avoid it being exposed outside Submit-EntityStateReport(). Used to adhere to DRY. So that we can support [Hashtable] and [Int32] case on the TestData param coming
+                into the mother function (Submit-EntityStateReport).
+        #>
+        function Invoke-ReportIt () {
+            <#
+            .DESCRIPTION
+                Private function used to report to a reporting backend.
+            .INPUTS
+                <none>
+            .OUTPUTS
+                [Bool] relative to success/failure in regards to reporting to the report backend.
+            .NOTES
+                <none>
+            .EXAMPLE
+                $result = Invoke-ReportIt -reportBackendSystem $reportBackendSystem -metric $metric -metricValue $RepairMetricValue -tags $tags
+                    > Calles Invoke-ReportIt to report to the report backend system specified in the $reportBackendSystem variable. With the data in the metric, metricvalue and tags variables.
+            .PARAMETER reportBackendSystem
+                Used to specify the software used as the reporting backend. For storing test result metrics.
+            .PARAMETER metric
+                The name of the metric, in a format supported by the reporting backend.
+            .PARAMETER metricValue
+                The value to record on the metric being writen to the reporting backend.
+            .PARAMETER tags
+                The tags to set on the metric. Used to improve querying on the reporting backend. Provided as a Key/Value collection.
+            #>
 
-        # Component tag
-        $tags.Add("component",$metric)
+            # Define parameters
+            [CmdletBinding()]
+            [OutputType([Boolean])]
+            param(
+                [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="Used to specify the software used as the reporting backend. For storing test result metrics.")]
+                [Parameter(Mandatory=$true, ParameterSetName="Repair", HelpMessage="Used to specify the software used as the reporting backend. For storing test result metrics.")]
+                [ValidateSet("OpenTSDB")]
+                [String]$reportBackendSystem,
+                [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The name of the metric, in a format supported by the reporting backend.")]
+                [ValidateNotNullOrEmpty()]
+                [String]$metric,
+                [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The value to record on the metric being writen to the reporting backend.")]
+                [ValidateNotNullOrEmpty()]
+                [int]$metricValue,
+                [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The tags to set on the metric. Used to improve querying on the reporting backend. Provided as a Key/Value collection.")]
+                [ValidateNotNullOrEmpty()]
+                [hashtable]$tags
+            )
 
-        # Add repair status tag.
-        if ($RepairMetricValue -eq 1) {
-            $tags.Add("Status","RepairSucceeded")
+            #############
+            # Execution #
+            #############
+            # Debug logging
+            Write-Verbose -Message "The metric to report on is > $metric"
+            $log4netLoggerDebug.debug("The metric to report on is > $metric")
+            Write-Verbose -Message "It's value is > $metricValue"
+            $log4netLoggerDebug.debug("It's value is > $metricValue")
+            Write-Verbose -Message "The following tags is set on the metric > $($tags.values)"
+            $log4netLoggerDebug.debug("The following tags is set on the metric > $($tags.values)")
+
+            # Determine the reporting backend system to use & push the report
+            switch ($reportBackendSystem) {
+                { $_ -eq "OpenTSDB" } {
+                    Import-Module -name $PSScriptRoot/ReportHelpers/OpenTSDB/OpenTSDB -Force
+                    $result = write-metricToOpenTSDB -metric $metric -tagPairs $tags -metricValue $metricValue -verbose
+                }
+                Default {
+                    # TODO: Make sure that personnel is alarmed that reporting is not working!
+                    throw "The reporting backend could not be determined."
+                }
+            }
+
+            # Return
+            $result
+        }
+
+        <#
+            - Generates std. tags
+                > Declared here to avoid it being exposed outside Submit-EntityStateReport().
+        #>
+        function Get-StandardTagCollection() {
+        <#
+        .DESCRIPTION
+            Generates and returns standard tags
+        .INPUTS
+            <none>
+        .OUTPUTS
+            [HashTable]
+        .NOTES
+            General notes
+        .EXAMPLE
+            [Hashtable]$tags = Get-StandardTagCollection
+            > Generates and returns standard tags
+        #>
+
+            # Define parameters
+            [CmdletBinding()]
+            [OutputType([HashTable])]
+            param()
+
+            #############
+            # Execution #
+            #############
+            # Define tags in JSON
+            $tags = @{}
+            $tags.Add("node",(get-hostname))
+            $tags.Add("environment",$($HealOpsPackageConfig.environment))
+
+            # Return
+            $tags
+        }
+    }
+    Process {
+        if ($PSCmdlet.ParameterSetName -eq "Repair") {
+            # Get std. tags
+            [Hashtable]$tags = Get-StandardTagCollection
+
+            # Component tag
+            $tags.Add("component",$metric)
+
+            # Add repair status tag.
+            if ($RepairMetricValue -eq 1) {
+                $tags.Add("Status","RepairSucceeded")
+            } else {
+                $tags.Add("Status","RepairFailed")
+            }
+
+            # Set the metric name to use for repairs on the component being reported on.
+            $metric = ("HealOps.Repair")
+
+            # Report it
+            $result = Invoke-ReportIt -reportBackendSystem $reportBackendSystem -metric $metric -metricValue $RepairMetricValue -tags $tags
+
+            # Report that reporting failed
+            if (-not $result) {
+                #reportingFailed (content from End{})
+            }
         } else {
-            $tags.Add("Status","RepairFailed")
+            if ($TestData.GetType().Name -eq "Hashtable") {
+                # Iterate over each entry in the TestData Hashtable
+                $enumerator = $TestData.GetEnumerator()
+                foreach ($entry in $enumerator) {
+                    # Get std. tags
+                    [Hashtable]$tags = Get-StandardTagCollection
+
+                    # Component tag (Name == Key in the Hashtable)
+                    $tags.Add("component",$entry.Name)
+
+                    # Report it
+                    $result = Invoke-ReportIt -reportBackendSystem $reportBackendSystem -metric $metric -metricValue $entry.Value -tags $tags
+
+                    # Report that reporting failed
+                    if (-not $result) {
+                        #reportingFailed (content from End{})
+                    }
+                }
+            } else {
+                # Get std. tags
+                [Hashtable]$tags = Get-StandardTagCollection
+
+                # Report it
+                $result = Invoke-ReportIt -reportBackendSystem $reportBackendSystem -metric $metric -metricValue $TestData -tags $tags
+
+                # Report that reporting failed
+                if (-not $result) {
+                    #reportingFailed (content from End{})
+                }
+            }
         }
-
-        # Set the metric name to use for repairs on the component being reported on.
-        $metric = ("HealOps.Repair")
-    } else {
-        [int]$Value = $metricValue
     }
-
-    Write-Verbose -Message "The metric to is > $metric"
-    Write-Verbose -Message "It's value is > $metricValue"
-    Write-Verbose -Message "The following tags is set > $($tags.values)"
-
-    # Determine the reporting backend system to use & push the report
-    switch ($reportBackendSystem) {
-        { $_ -eq "OpenTSDB" } {
-            Import-Module -name $PSScriptRoot/ReportHelpers/OpenTSDB/OpenTSDB -Force
-            $result = write-metricToOpenTSDB -metric $metric -tagPairs $tags -metricValue $Value -verbose
-        }
-        Default {
-            # TODO: Make sure that personnel is alarmed that reporting is not working!
-            throw "The reporting backend could not be determined."
-        }
-    }
-
-    if ($result -eq $false) {
-        # TODO: Make sure that personnel is alarmed that reporting is not working!
-            ## Who to report to
-                ### Driften?
-                ### HealOps admins?
-    }
+    End {}
 }

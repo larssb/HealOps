@@ -45,33 +45,49 @@ function Test-EntityState() {
             # Set state semaphore
             $state = $true
 
-            if ($TestOutput.FailedCount -ge 1) {
-                $state = $false
-                # Transform the output from the failed test
-                $TestOutputTransformed = @{}
+            # Collection for storing failed or passed testdata
+            $testData = @{}
 
-                # Retrieve the failed test value to report to the backend (should always be numeric to support TSDB's)
+            if ($TestOutput.FailedCount -ge 1) {
+                # Set the state to report to false
+                $state = $false
+
+                # Retrieve the failed test value to report to the backend (HealOps requires the value to be numeric)
                 $log4netLoggerDebug.debug("The failuremessage in the Pester output is > $($TestOutput.TestResult.FailureMessage)")
                 if ((Get-Variable -Name failedTestResult -ErrorAction SilentlyContinue)) {
                     $testFailedValue = $failedTestResult # Uses the global variable set in the *.Tests.ps1 file to capture a numeric value to report to the reporting backend.
                     $log4netLoggerDebug.debug("failedTestResult value > $failedTestResult set in *.Tests.ps1 file > $TestFilePath")
                     Write-Verbose -Message "failedTestResult > $failedTestResult"
                 } else {
-                    $testFailedValue = -2 # Value indicating that the global variable failedTestResult was not set correctly in the *.Tests.ps1 file.
-
                     # TODO: Log IT and inform x!
+                    $testFailedValue = -2 # Value indicating that the global variable failedTestResult was not set correctly in the *.Tests.ps1 file.
                     $log4netLogger.error("The failedTestResult variable was NOT defined in the *.Tests.ps1 file > $TestFilePath <- this HAS to be done.")
                     Write-Verbose -Message "The failedTestResult variable was NOT defined in the *.Tests.ps1 file > $TestFilePath <- this HAS to be done."
                 }
 
                 # Add $testFailedValue to the HashTable
-                $TestOutputTransformed.add("FailureMessage",$testFailedValue)
+                $testData.add($testFailedValue)
+            } else {
+                # Retrieve the passed test value to report to the backend (HealOps requires the value to be numeric)
+                if ((Get-Variable -Name passedTestResult -ErrorAction SilentlyContinue)) {
+                    $testPassedValue = $passedTestResult # Uses the global variable set in the *.Tests.ps1 file to capture a numeric value to report to the reporting backend.
+                    $log4netLoggerDebug.debug("passedTestResult value > $passedTestResult set in *.Tests.ps1 file > $TestFilePath")
+                    Write-Verbose -Message "passedTestResult > $passedTestResult"
+                } else {
+                    # TODO: Log IT and inform x!
+                    $testPassedValue = -1 # Value indicating that the global variable passedTestResult was not set correctly in the *.Tests.ps1 file.
+                    $log4netLogger.error("The passedTestResult variable was NOT defined in the *.Tests.ps1 file > $TestFilePath <- this HAS to be done.")
+                    Write-Verbose -Message "The passedTestResult variable was NOT defined in the *.Tests.ps1 file > $TestFilePath <- this HAS to be done."
+                }
+
+                # Add $testPassedValue to the HashTable
+                $testData.add($testPassedValue)
             }
 
             # Collect the result
             $tempCollection = @{}
             $tempCollection.Add("state",$state)
-            $tempCollection.Add("testdata",$TestOutputTransformed)
+            $tempCollection.Add("testdata",$testData)
             $tempCollection.Add("metric",$($TestOutput.TestResult.Describe))
 
             # Return to caller
