@@ -61,7 +61,7 @@
 .PARAMETER HealOpsPackages
     An Array containing the names of the HealOps packages to install on the system.
 .PARAMETER JobType
-    The type of job to use for invoking HealOps.
+    The type of job to use when invoking HealOps.
 .PARAMETER PackageManagementURI
     The URI of the Package Management backend, where modules used by HealOps are stored.
 .PARAMETER reportingBackend
@@ -91,7 +91,7 @@
         [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="An Array containing the names of the HealOps packages to install on the system.")]
         [ValidateNotNullOrEmpty()]
         [Array]$HealOpsPackages,
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The type of job to use for invoking HealOps.")]
+        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The type of job to use when invoking HealOps.")]
         [ValidateSet('WinPSJob','WinScTask','LinCronJob')]
         [String]$JobType,
         [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The URI of the Package Management backend, where modules used by HealOps are stored.")]
@@ -163,7 +163,7 @@
         $tempDirPath = "$PSScriptRoot/Temp"
         if (-not (Test-Path -Path $tempDirPath)) {
             try {
-                New-Item -Path $PSScriptRoot -Name "Temp" -ItemType Directory -Force -ErrorAction Stop
+                New-Item -Path $PSScriptRoot -Name "Temp" -ItemType Directory -Force -ErrorAction Stop | Out-Null
             } catch {
                 throw "Failed to create the temp folder used for storing downloaded files. It failed with > $_. The script cannot continue."
             }
@@ -655,7 +655,9 @@
                                 "LinCronJob" {
 
                                 }
-                                Default {}
+                                Default {
+                                    Write-Output "None of the job types matched. The selected job type was > $JobType."
+                                }
                             }
                         }
                     } else {
@@ -690,9 +692,9 @@
             <#
                 - Info to installing person
             #>
-            write-host "========================================================================================" -ForegroundColor DarkYellow
-            write-host "                           ....HealOps was installed...."                                 -ForegroundColor Green
-            write-host "========================================================================================" -ForegroundColor DarkYellow
+            write-host "=============================" -ForegroundColor DarkYellow
+            write-host "....HealOps was installed...." -ForegroundColor Green
+            write-host "=============================" -ForegroundColor DarkYellow
         } else {
             throw "The HealOps module does not seem to be installed. So we have to stop."
         }

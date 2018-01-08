@@ -134,11 +134,24 @@ function Install-AvailableUpdate() {
                 }
 
                 if ($installationResult) {
-                    try {
-                        # Move the files from the extraction dir. to the root module dir.
-                        Get-ChildItem -Path $ModuleExtractionPath -Exclude "Artefacts","lib","$ModuleName.zip" -Force -ErrorAction Stop | Move-Item -Destination "$moduleRoot" -Force -ErrorAction Stop
-                    } catch {
-                        $log4netLogger.error("Moving module files to the correct dir failed with > $_")
+                    # Control that our destination exists
+                    if (-not (Test-Path -Path $moduleRoot)) {
+                        try {
+                            New-Item -Path "$psProgramFilesModulesPath" -Name "$ModuleName" -ItemType Directory -Force -ErrorAction Stop | Out-Null
+                        } catch {
+                            $log4netLogger.error("Failed to create the module root folder. The failure was > $_")
+                        }
+                    }
+
+                    if (Test-Path -Path $moduleRoot) {
+                        try {
+                            # Move the files from the extraction dir. to the root module dir.
+                            Get-ChildItem -Path $ModuleExtractionPath -Exclude "Artefacts","lib","$ModuleName.zip" -Force -ErrorAction Stop | Move-Item -Destination "$moduleRoot" -Force -ErrorAction Stop
+                        } catch {
+                            $log4netLogger.error("Moving module files to the correct dir failed with > $_")
+                            $installationResult = $false
+                        }
+                    } else {
                         $installationResult = $false
                     }
                 }

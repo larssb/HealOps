@@ -1,3 +1,13 @@
+<#
+    - Determine system specific values
+#>
+# PowerShell below 5 is not module versioning compatible. Reflect this.
+if($PSVersionTable.PSVersion.ToString() -gt 4) {
+    [Boolean]$global:psVersionAbove4 = $true
+} else {
+    [Boolean]$global:psVersionAbove4 = $false
+}
+
 # Define the foldernames
 $functionFolders = @('Public', 'Private', 'Classes')
 

@@ -51,16 +51,6 @@
     #############
     Begin {
         <#
-            - Determine system specific values
-        #>
-        # PowerShell below 5 is not module versioning compatible. Reflect this.
-        if($PSVersionTable.PSVersion.ToString() -gt 4) {
-            [Boolean]$global:psVersionAbove4 = $true
-        } else {
-            [Boolean]$global:psVersionAbove4 = $false
-        }
-
-        <#
             - Configure logging
         #>
         # Define log4net variables
@@ -82,7 +72,7 @@
         $log4netLoggerDebug.debug("------------- $((get-date).ToString()) -----------")
         $log4netLoggerDebug.debug("--------------------------------------------------")
 
-        # Note the version of PowerShell we are workin with.
+        # Note the version of PowerShell we are working with.
         $log4netLoggerDebug.debug("The PowerShell version is: $($PSVersionTable.PSVersion.ToString()). The value of psVersionAbove4 is $psVersionAbove4")
 
         <#
@@ -103,12 +93,10 @@
         if(-not (Test-Path -Path $HealOpsConfigPath)) {
             $message = "The file > $HealOpsConfigPath cannot be found. Please provide a HealOpsConfig.json file."
             Write-Verbose -Message $message
-
-            # Log it
             $log4netLogger.error("$message")
 
             # Exit
-            throw $_
+            throw $message
         } else {
             # Check file integrity & get config data
             if($psVersionAbove4) {
@@ -120,21 +108,17 @@
             if ($null -eq $healOpsConfig) {
                 $message = "The HealOpsConfig contains no data. Please generate a proper HealOpsConfig file. See the documentation."
                 Write-Verbose -Message $message
-
-                # Log it
                 $log4netLogger.error("$message")
 
                 # Exit
-                throw $_
+                throw $message
             } elseif(-not ($healOpsConfig.reportingBackend.Length -gt 1)) {
                 $message = "The HealOps config file is invalid. Please generate a proper HealOpsConfig file. See the documentation."
                 Write-Verbose -Message $message
-
-                # Log it
                 $log4netLogger.error("$message")
 
                 # Exit
-                throw $_
+                throw $message
             }
         }
 
