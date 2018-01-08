@@ -1,6 +1,6 @@
 <#PSScriptInfo
 
-.VERSION 0.0.0.20
+.VERSION 0.0.0.21
 
 .GUID bbf74424-f58d-42d1-9d5a-aeba44ccd545
 
@@ -100,7 +100,7 @@
         [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="Used to specify the software used as the reporting backend. For storing test result metrics.")]
         [ValidateSet('OpenTSDB')]
         [String]$reportingBackend,
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The execute mode that the self-update should use.")]
+        [Parameter(Mandatory=$false, ParameterSetName="Default", HelpMessage="The execute mode that the self-update should use.")]
         [ValidateSet("All","HealOpsPackages","HealOps")]
         [String]$UpdateMode
     )

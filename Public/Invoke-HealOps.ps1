@@ -19,6 +19,11 @@
         The name of the *.Tests.ps1 file to execute. The testsfile is part of the HealOps package specified with the HealOpsPackageName.
     .PARAMETER ForceUpdates
         Use this switch parameter to force an update of HealOps and its pre-requisites regardless of the values in the HealOps config json file.
+    .PARAMETER UpdateMode
+        The execute mode that the self-update should use.
+            > All = Everything will be updated. HealOps itself, its required modules and the HealOps packages on the system.
+            > HealOpsPackages = Only HealOps packages will be updated.
+            > HealOps = Only HealOps itself and its requird modules will be updated.
     #>
 
     # Define parameters
@@ -35,7 +40,10 @@
         [String]$TestsFileName,
         [Parameter(Mandatory=$false, ParameterSetName="File", HelpMessage="Use this switch parameter to force an update of HealOps and its pre-requisites regardless of the values in the HealOps config json file.")]
         [Parameter(Mandatory=$false, ParameterSetName="UpdateOnly", HelpMessage="Use this switch parameter to force an update of HealOps and its pre-requisites regardless of the values in the HealOps config json file.")]
-        [Switch]$ForceUpdates
+        [Switch]$ForceUpdates,
+        [Parameter(Mandatory=$false, ParameterSetName="UpdateOnly", HelpMessage="The execute mode that the self-update should use.")]
+        [ValidateSet("All","HealOpsPackages","HealOps")]
+        [String]$UpdateMode
     )
 
     #############
@@ -241,7 +249,7 @@
         <#
             - Check for updates. For the modules that HealOps has a dependency on and for HealOps itself
         #>
-        if($healOpsConfig.checkForUpdates -eq "True" -or $ForceUpdates) {
+        if($healOpsConfig.checkForUpdates -eq "True") {
             if (-not $ForceUpdates) {
                 $timeForUpdate = Confirm-TimeToUpdate -Config $HealOpsConfig
             }
@@ -253,10 +261,17 @@
                 }
 
                 try {
-                    $log4netLoggerDebug.debug("The value of > UpdateMode in the HealOps config json file > $($healOpsConfig.UpdateMode)")
+                    # Control if the -UpdateMode param. was set. If so use its value
+                    if ($PSBoundParameters.ContainsKey('UpdateMode')) {
+                        $log4netLoggerDebug.debug("The UpdateMode param. was used to overwrite the use of the UpdateMode property in the HealOps config file. UpdateMode was temporarily set to > $UpdateMode)")
+                        $actualUpdateMode = $UpdateMode
+                    } else {
+                        $log4netLoggerDebug.debug("The value of > UpdateMode in the HealOps config json file > $($healOpsConfig.UpdateMode)")
+                        $actualUpdateMode = $healOpsConfig.UpdateMode
+                    }
 
                     # Call Start-HealOpsUpdateCycle to execute the self-update feature
-                    Start-HealOpsUpdateCycle -UpdateMode $healOpsConfig.UpdateMode -Config $healOpsConfig
+                    Start-HealOpsUpdateCycle -UpdateMode $actualUpdateMode -Config $healOpsConfig
                 } catch {
                     $log4netLogger.error("Start-HealOpsUpdateCycle failed with: $_")
                 }
@@ -267,7 +282,6 @@
             }
         } else {
             $log4netLoggerDebug.debug("The self-update feature is disabled.")
-            $log4netLoggerDebug.debug("The value of > checkForUpdates in the HealOps config json file > $($healOpsConfig.checkForUpdates)")
         }
     }
     Process {
