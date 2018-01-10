@@ -480,7 +480,7 @@
                     $currentErrorActionPreference = $ErrorActionPreference
                     $ErrorActionPreference = "SilentlyContinue"
                     $HealOpsUser.Close()
-                    $AdministratorsGroup.Close
+                    $AdministratorsGroup.Close()
                     $ErrorActionPreference = $currentErrorActionPreference
                 }
             }
@@ -622,7 +622,7 @@
                                         $executeFileFullPath = "$HealOpsPackageModuleRootBase/TestsAndRepairs/execute.$TestsFileName"
                                         $Options = @{
                                             Username = $HealOpsUsername
-                                            Password = $password
+                                            Password = $clearTextPassword
                                             ToRun = "`"powershell.exe -NoLogo -NonInteractive -WindowStyle Hidden -File `"`"$executeFileFullPath`"`"`""
                                         }
 

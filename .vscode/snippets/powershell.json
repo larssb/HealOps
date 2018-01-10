@@ -109,7 +109,7 @@
 			"\tProcess {",
 			"\r",
 			"\t}",
-			"\tEnd{}",
+			"\tEnd {}",
 			"}"],
 		"description": "PowerShell advanced function template."
 	},
