@@ -1,7 +1,7 @@
 function Confirm-HealOpsUserExistence() {
 <#
 .DESCRIPTION
-    Simply confirms if the user, to use as the user for HealOps, exists locally.
+    Simply confirms if the user, to use for HealOps, exists locally.
 .INPUTS
     Inputs (if any)
 .OUTPUTS
@@ -10,7 +10,7 @@ function Confirm-HealOpsUserExistence() {
     Uses the HealOps global variable $psVersionAbove4
 .EXAMPLE
     $result = Confirm-HealOpsUserExistence
-        > Confirms if the user, to use as the user for HealOps, exists locally.
+        > Confirms if the user, to use for HealOps, exists locally.
 .PARAMETER UserName
     The username of the HealOps user.
 #>
@@ -33,9 +33,6 @@ function Confirm-HealOpsUserExistence() {
         if($psVersionAbove4) {
             $HealOpsUser = Get-LocalUser -Name $UserName -ErrorAction SilentlyContinue
         } else {
-            ####################
-            # ADSI METHODOLOGY #
-            ####################
             $ADSI = [ADSI]("WinNT://localhost")
             $currentErrorActionPreference = $ErrorActionPreference
             $ErrorActionPreference = "SilentlyContinue"

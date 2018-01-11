@@ -155,15 +155,16 @@ function Install-HealOpsPackage() {
         -Visibility Private -Scope Script
 
         # Password on the user
+        #### NOGET HER OMKRING PASSWORD TIL JOBS?????
         if ($psVersionAbove4) {
-            $secureStringPassword = New-Password -PasswordType "SecureString"
+            $Password = New-Password -PasswordType "SecureString"
         } else {
-            $clearTextPassword = New-Password -PasswordType "ClearText"
+            $Password = New-Password -PasswordType "ClearText"
         }
 
-        #
+        # Ensure that a local user for HealOps exists and works.
         try {
-            $healOpsUserOkay = Resolve-HealOpsUserRequirement
+            $healOpsUserOkay = Resolve-HealOpsUserRequirement -Password $Password -UserName $HealOpsUsername
         } catch {
             $log4netLogger.error("Resolve-HealOpsUserRequirement failed with > $_")
             $healOpsUserOkay = $false
@@ -401,7 +402,20 @@ function Install-HealOpsPackage() {
                     Write-Output "The HealOps package named $item is already installed on the local system."
                 }
             } # End of foreach over specified packages to install.
-        } # End of conditional control on HealOps user requierments check.
+
+            <#
+                - Now configure the HealOps jobs that existed before executing Install-HealOpsPackage.
+                    > We need to do this. If we don't, the jobs will not work as the password on the local HealOps user has been changed.
+                    > Doesn't matter if the user existed already.
+            #>
+
+
+            # Clean-up after messing with IT.........
+            #Remove-Variable Password -Force
+            #Remove-Variable credential -Force
+            #Remove-Variable clearTextPassword -Force
+            [System.GC]::Collect()
+        } # End of conditional control on HealOps user requirements check.
     }
     End {}
 }

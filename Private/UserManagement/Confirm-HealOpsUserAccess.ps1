@@ -1,16 +1,17 @@
 function Confirm-HealOpsUserAccess() {
 <#
 .DESCRIPTION
-    Long description
+    Confirms that the locally existing user has the access it requires.
 .INPUTS
-    Inputs (if any)
+    [String] representing the name of the HealOps user.
 .OUTPUTS
     [Boolean] relative to the result of controlling correct access for the local HealOps user.
 .NOTES
-    General notes
+    <none>
 .EXAMPLE
     $accessConfirmation = Confirm-HealOpsUserAccess
-    Calls Confirm-HealOpsUserAccess in order to verify if the HealOps user has the needed access.
+        > Calls Confirm-HealOpsUserAccess in order to verify if the HealOps user has the access it requires. In this example without the -UserName parameter used. As this parameter
+        has a default value.
 .PARAMETER UserName
     The username of the HealOps user.
 #>
@@ -29,19 +30,25 @@ function Confirm-HealOpsUserAccess() {
     #############
     Begin {}
     Process {
+        # Check if the HealOps user is a member of the Administrators group
         if ($psVersionAbove4) {
-            # Check if it is a member of the Administrators group
-            $result = (Get-LocalGroupMember -SID S-1-5-32-544).Name -match $Username -as [Bool]
+            try {
+                $result = (Get-LocalGroupMember -SID S-1-5-32-544 -ErrorAction Stop).Name -match $Username -as [Bool]
+            } catch {
+                throw "Verifying that the HealOps user has the correct access. Failed with > $_"
+            }
         } else {
             try {
                 $currentErrorActionPreference = $ErrorActionPreference
                 $ErrorActionPreference = "Stop"
+                $ADSI = [ADSI]("WinNT://localhost")
                 $AdministratorsGroup = $ADSI.PSBase.Children.Find("Administrators")
-                [Boolean]$alreadyMember = ($AdministratorsGroup.Invoke("Members") | ForEach-Object { $_[0].GetType().InvokeMember("Name", 'GetProperty', $null,$_, $null) }).contains("$HealOpsUsername")
+                [Boolean]$result = ($AdministratorsGroup.Invoke("Members") | ForEach-Object { $_[0].GetType().InvokeMember("Name", 'GetProperty', $null,$_, $null) }).contains("$UserName")
             } catch {
+                throw "Verifying that the HealOps user has the correct access. Failed with > $_"
+            } finally {
                 $ErrorActionPreference = $currentErrorActionPreference
-
-                throw ""
+                $AdministratorsGroup.Close()
             }
         }
     }

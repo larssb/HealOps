@@ -1,7 +1,7 @@
 function Set-PasswordOnLocalUser() {
 <#
 .DESCRIPTION
-    Long description
+    Sets the password for the locally existing HealOps user.
 .INPUTS
     [PSCustomObject] representing a local user. Either retrieved via the ADSI method or via cmdlets in the Microsoft.PowerShell.LocalAccounts module.
     [String] representing the password to set on the local user.
@@ -10,7 +10,7 @@ function Set-PasswordOnLocalUser() {
 .NOTES
     <none>
 .EXAMPLE
-    $result = Set-PasswordOnLocalUser -User $localUser -Password $password
+    $result = Set-PasswordOnLocalUser -User $User -Password $Password
     Explanation of what the example does
 .PARAMETER User
     A local user object. Retrieved via either ADSI or cmdlets in the Microsoft.PowerShell.LocalAccounts module.
@@ -21,6 +21,8 @@ function Set-PasswordOnLocalUser() {
     # Define parameters
     [CmdletBinding()]
     [OutputType([Boolean])]
+    [System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword","")]
+    [System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingUserNameAndPassWordParams","")]
     param(
         [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="A local user object. Retrieved via either ADSI or cmdlets in the Microsoft.PowerShell.LocalAccounts module.")]
         [ValidateNotNullOrEmpty()]
@@ -37,7 +39,7 @@ function Set-PasswordOnLocalUser() {
     Process {
         if ($psVersionAbove4) {
             try {
-                $User | Set-LocalUser -Password $password -ErrorAction Stop
+                $User | Set-LocalUser -Password $Password -ErrorAction Stop
             } catch {
                 throw "Could not set the generated password on the already existing HealOps user. Failed with > $_"
             }
@@ -45,7 +47,7 @@ function Set-PasswordOnLocalUser() {
             try {
                 $currentErrorActionPreference = $ErrorActionPreference
                 $ErrorActionPreference = "Stop"
-                $User.SetPassword($clearTextPassword)
+                $User.SetPassword($Password)
                 $User.SetInfo()
                 $ErrorActionPreference = $currentErrorActionPreference
             } catch {

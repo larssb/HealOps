@@ -68,25 +68,9 @@ function Start-HealOpsUpdateCycle() {
     }
     Process {
         if ($UpdateMode -eq "All" -or $UpdateMode -eq "HealOpsPackages") {
-            try {
-                # Get the installed HealOps packages
-                $InstalledHealOpsPackages = Get-Module -Name *HealOpsPackage* -ListAvailable -ErrorAction Stop
-            } catch {
-                $log4netLogger.error("Getting the installed HealOps packages failed with > $_")
-            }
 
-            if ($null -ne $InstalledHealOpsPackages) {
-                # Only 1 HealOpsPackage version per installed HealOps package.
-                $FilteredInstalledHealOpsPackages = $InstalledHealOpsPackages | Select-Object -Unique
-
-                # Iterate over each HealOps package installed on the system and call Start-HealOpsUpdateCycle
-                foreach ($installedHealOpsPackage in $FilteredInstalledHealOpsPackages) {
-                    # Add the module to the list
-                    $ModulesToUpdate.Add($installedHealOpsPackage)
-                }
-            } else {
-                $log4netLoggerDebug.debug("No HealOps packages found on the system. Searched on > '*HealOpsPackage*'")
-            }
+            ##### ! IS THIS CORRECT????
+            $ModulesToUpdate = Get-InstalledHealOpsPackage -All
         }
 
         if ($UpdateMode -eq "All" -or $UpdateMode -eq "HealOps") {
