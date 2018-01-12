@@ -67,10 +67,12 @@ function Start-HealOpsUpdateCycle() {
         [String]$HealOpsModuleName = "HealOps"
     }
     Process {
+        # HealOps packages
         if ($UpdateMode -eq "All" -or $UpdateMode -eq "HealOpsPackages") {
-
-            ##### ! IS THIS CORRECT????
             $ModulesToUpdate = Get-InstalledHealOpsPackage -All
+
+            # Get a password to set on the HealOps user
+
         }
 
         if ($UpdateMode -eq "All" -or $UpdateMode -eq "HealOps") {

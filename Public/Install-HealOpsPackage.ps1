@@ -148,274 +148,305 @@ function Install-HealOpsPackage() {
         }
 
         <#
-            - Other static variables
+            - Variables
         #>
         # The job user of HealOps ... its username
         New-Variable -Name HealOpsUsername -Value "HealOps" -Option Constant -Description "The username of the local administrator user, used by HealOps" `
         -Visibility Private -Scope Script
 
-        # Password on the user
-        #### NOGET HER OMKRING PASSWORD TIL JOBS?????
-        if ($psVersionAbove4) {
-            $Password = New-Password -PasswordType "SecureString"
-        } else {
-            $Password = New-Password -PasswordType "ClearText"
-        }
-
-        # Ensure that a local user for HealOps exists and works.
-        try {
-            $healOpsUserOkay = Resolve-HealOpsUserRequirement -Password $Password -UserName $HealOpsUsername
-        } catch {
-            $log4netLogger.error("Resolve-HealOpsUserRequirement failed with > $_")
-            $healOpsUserOkay = $false
-        }
+        # Semaphore. Used to ensure we only verify that a HealOps user exists and works on the local system.
+        [Bool]$healOpsUserConfirmed = $false
     }
     Process {
-        if ($healOpsUserOkay) {
-            foreach ($item in $Package) {
-                # Control if the HealOps package is already installed on the system
-                try {
-                    # Get the module. The newest version of it, if several is installed
-                    $module = Get-Module -ListAvailable -Name $item -ErrorAction Stop
-                } catch {
-                    $log4netLogger.error("Failed to get the module > $($item) on the system. It failed with > $_")
-                    Write-Output "Cannot continue.....because of the below error."
-                    throw "Controlling that the module > $item, is not installed already failed. It failed with > $_"
-                }
+        foreach ($item in $Package) {
+            # Control if the HealOps package is already installed on the system
+            try {
+                # Get the module. The newest version of it, if several is installed
+                $module = Get-Module -ListAvailable -Name $item -ErrorAction Stop
+            } catch {
+                $log4netLogger.error("Failed to get the module > $($item) on the system. It failed with > $_")
+                Write-Output "Cannot continue.....because of the below error."
+                throw "Controlling that the module > $item, is not installed already failed. It failed with > $_"
+            }
 
-                # Control that the HealOps package is not installed already
-                if (-not $module) {
-                    # Query the Package Management backend
-                    $moduleVersionToInstall = Get-LatestModuleVersion -PackageManagementURI $PackageManagementURI -FeedName $FeedName -ModuleName $item -APIKey $APIKey
+            # Control that the HealOps package is not installed already
+            if (-not $module) {
+                # Query the Package Management backend
+                $moduleVersionToInstall = Get-LatestModuleVersion -PackageManagementURI $PackageManagementURI -FeedName $FeedName -ModuleName $item -APIKey $APIKey
 
-                    if ($null -ne $moduleVersionToInstall) {
-                        $extractModulePath = Get-ModuleExtractionPath -ModuleName $item -Version $moduleVersionToInstall
+                if ($null -ne $moduleVersionToInstall) {
+                    $extractModulePath = Get-ModuleExtractionPath -ModuleName $item -Version $moduleVersionToInstall
 
-                        # Install the HealOps package
-                        try {
-                            $installResult = Install-AvailableUpdate -ModuleName $item -ModuleExtractionPath $extractModulePath -PackageManagementURI $PackageManagementURI -FeedName $FeedName -Version $moduleVersionToInstall
-                        } catch {
-                            $log4netLogger.error("Install-AvailableUpdate failed with > $_")
-                            Write-Output "Install-AvailableUpdate failed with > $_"
-                            Write-Host "The HealOps package named > $item was not installed." -ForegroundColor Red
+                    # Install the HealOps package
+                    try {
+                        $installResult = Install-AvailableUpdate -ModuleName $item -ModuleExtractionPath $extractModulePath -PackageManagementURI $PackageManagementURI -FeedName $FeedName -Version $moduleVersionToInstall
+                    } catch {
+                        $log4netLogger.error("Install-AvailableUpdate failed with > $_")
+                        Write-Output "Install-AvailableUpdate failed with > $_"
+                        Write-Host "The HealOps package named > $item was not installed." -ForegroundColor Red
+                    }
+
+                    if ($installResult) {
+                        $log4netLoggerDebug.debug("The HealOps package was installed successfully.")
+                        Write-Host "================================================================================================" -ForegroundColor Cyan
+                        Write-Host "....The HealOps package named $item was installed successfully...."                               -ForegroundColor Green
+                        Write-Host "================================================================================================" -ForegroundColor Cyan
+                        Write-Host ""
+                        Write-Host "================================================================================================" -ForegroundColor Cyan
+                        Write-Host "........configuring the $item."                               -ForegroundColor DarkGreen
+                        Write-Host "================================================================================================" -ForegroundColor Cyan
+                        Write-Host ""
+
+                        if (-not $healOpsUserConfirmed) {
+                            # Password on the user
+                            #### NOGET HER OMKRING PASSWORD TIL JOBS?????
+                            if ($psVersionAbove4) {
+                                $Password = New-Password -PasswordType "SecureString"
+                            } else {
+                                $Password = New-Password -PasswordType "ClearText"
+                                $clearTextPassword = $Password # !!!!!!!!!
+                            }
+
+                            # Ensure that a local user for HealOps exists and works.
+                            try {
+                                $healOpsUserOkay = Resolve-HealOpsUserRequirement -Password $Password -UserName $HealOpsUsername
+                            } catch {
+                                $log4netLogger.error("Resolve-HealOpsUserRequirement failed with > $_")
+                                $healOpsUserOkay = $false
+                            }
+
+                            # Set the semaphore. As we only need to confirm the HealOps user once and also > continue using the same password for the rest of this session
+                            $healOpsUserConfirmed = $true
                         }
 
-                        if ($installResult) {
-                            $log4netLoggerDebug.debug("The HealOps package was installed successfully.")
-                            Write-Host "================================================================================================" -ForegroundColor Cyan
-                            Write-Host "....The HealOps package named $item was installed successfully...."                               -ForegroundColor Green
-                            Write-Host "================================================================================================" -ForegroundColor Cyan
-                            Write-Host ""
-                            Write-Host "================================================================================================" -ForegroundColor Cyan
-                            Write-Host "........configuring the $item."                               -ForegroundColor DarkGreen
-                            Write-Host "================================================================================================" -ForegroundColor Cyan
-                            Write-Host ""
+# region
+                        # Get the HealOps package we just installed
+                        [System.Collections.Generic.List[PSModuleInfo]]$installedHealOpsPackage = Get-InstalledHealOpsPackage -Package $item
 
-                            # Setup jobs on the system. Foreach Test file in the HealOps package
-                            $HealOpsPackageModuleBase = (Get-Module -ListAvailable -Name $item).ModuleBase
-                            $log4netLoggerDebug.debug("HealOpsPackageModuleBase is > $HealOpsPackageModuleBase")
+                        if ($null -ne $installedHealOpsPackage -and $installedHealOpsPackage.Count -ge 1) {
+                            # Get the *.Tests.ps1 files in the HealOps package just installed.
+                            [Array]$TestsFiles = Get-HealOpsPackageTestFile -All -Package $installedHealOpsPackage
+                        }
 
-                            # Get the *.Tests.ps1 files in the provided directory
-                            $TestsFiles = Get-ChildItem -Path $HealOpsPackageModuleBase/TestsAndRepairs -Recurse -Force -Include "*.Tests.ps1"
+                        if ($TestsFiles.Count -ge 1) {
+                            # Get the config file of the HealOps package
+                            [Array]$HealOpsPackageConfig = Get-HealOpsPackageConfig -ModuleBase $Package.ModuleBase
 
-                            foreach ($testFile in $TestsFiles) {
-                                if($psVersionAbove4) {
-                                    [Array]$HealOpsPackageConfig = Get-Content -Path $HealOpsPackageModuleBase/Config/*.json -Encoding UTF8 | ConvertFrom-Json
-                                } else {
-                                    [Array]$HealOpsPackageConfig = Get-Content -Path $HealOpsPackageModuleBase/Config/*.json | out-string | ConvertFrom-Json
+                            if ($HealOpsPackageConfig.Count -ge 1) {
+                                $TestsFileJobInterval = Get-TestsFileJobInterval -HealOpsPackageConfig $HealOpsPackageConfig
+
+                                # Create a job per *.Tests.ps1 file in the current HealOps package
+                                foreach ($testFile in $TestsFiles) {
+                                    try {
+                                        New-HealOpsPackageJob -JobInterval $TestsFileJobInterval -JobType $JobType -Package $item -Password -UserName
+                                    } catch {
+                                        $log4netLogger.error("")
+                                    }
                                 }
+                            } else {
+                                $log4netLogger.error("No HealOps config file was returned. No HealOps jobs where created.")
+                            }
+                        } else {
+                            $log4netLogger.error("There seems to be no *.Tests.ps1 files in the HealOps package named > $item. No HealOps jobs where created.")
+                        }
 
-                                $TestsFileName = Split-Path -Path $testFile -Leaf
-                                $fileExt = [System.IO.Path]::GetExtension($TestsFileName)
-                                $fileNoExt = $TestsFileName -replace $fileExt,""
-                                $TestsFileJobInterval = $HealOpsPackageConfig.$fileNoExt.jobInterval
-                                Write-Verbose -Message "The job repetition interval will be > $TestsFileJobInterval"
 
-                                ################
-                                # JOB CREATION #
-                                ################
-                                [String]$ScriptBlockString = "Invoke-HealOps -TestsFileName '$fileNoExt' -HealOpsPackageName '$HealOpsPackage'"
-                                Write-Progress -Activity "Installing HealOps" -CurrentOperation "Creating a task to execute HealOps. For the *.Tests.ps1 file > $testFile" -Status "With the following task repetition interval > $TestsFileJobInterval" -Id 5
-                                switch ($JobType) {
-                                    # PowerShell Scheduled Job - WINDOWS
-                                    "WinPSJob" {
-                                        <#
+# region
+
+
+                        foreach ($testFile in $TestsFiles) {
+
+
+                            $TestsFileName = Split-Path -Path $testFile -Leaf
+                            $fileExt = [System.IO.Path]::GetExtension($TestsFileName)
+                            $fileNoExt = $TestsFileName -replace $fileExt,""
+                            $TestsFileJobInterval = $HealOpsPackageConfig.$fileNoExt.jobInterval
+                            Write-Verbose -Message "The job repetition interval will be > $TestsFileJobInterval"
+
+                            ################
+                            # JOB CREATION #
+                            ################
+                            [String]$ScriptBlockString = "Invoke-HealOps -TestsFileName '$fileNoExt' -HealOpsPackageName '$HealOpsPackage'"
+                            Write-Progress -Activity "Installing HealOps" -CurrentOperation "Creating a task to execute HealOps. For the *.Tests.ps1 file > $testFile" -Status "With the following task repetition interval > $TestsFileJobInterval" -Id 5
+                            switch ($JobType) {
+                                # PowerShell Scheduled Job - WINDOWS
+                                "WinPSJob" {
+                                    <#
+                                    The settings explained:
+                                    - Be shown in the Windows Task Scheduler
+                                    - Start if the computer is on batteries
+                                    - Continue if the computer is on batteries
+                                    - If the job is tried started manually and it is already executing, the new manually triggered job will queued
+                                    #>
+                                    $Options = @{
+                                        StartIfOnBattery = $true;
+                                        MultipleInstancePolicy = "Queue";
+                                        RunElevated = $true;
+                                        ContinueIfGoingOnBattery = $true;
+                                    }
+
+                                    <#
                                         The settings explained:
-                                        - Be shown in the Windows Task Scheduler
-                                        - Start if the computer is on batteries
-                                        - Continue if the computer is on batteries
-                                        - If the job is tried started manually and it is already executing, the new manually triggered job will queued
-                                        #>
+                                        - The trigger will schedule the job to run the first time at current date and time + 5min.
+                                        - The task will be repeated with the incoming minute interval.
+                                        - It will keep repeating forever.
+                                    #>
+                                    $kickOffJobDateTimeRandom = get-random -Minimum 2 -Maximum 6
+                                    $Trigger = @{
+                                        At = (Get-date).AddMinutes(1).AddMinutes(($kickOffJobDateTimeRandom))
+                                        RepetitionInterval = (New-TimeSpan -Minutes $TestsFileJobInterval)
+                                        RepeatIndefinitely = $true
+                                        Once = $true
+                                    }
+                                    try {
+                                        New-ScheduledJob -TaskName $fileNoExt -TaskOptions $Options -TaskTriggerOptions $Trigger -TaskPayload "ScriptBlock" -ScriptBlock $ScriptBlockString -credential $credential -verbose
+                                    } catch {
+                                        throw $_
+                                    }
+
+                                    # Semaphore
+                                    $jobResult = $true
+                                }
+                                # Scheduled Task - WINDOWS
+                                "WinScTask" {
+                                    # Control if we can use the PowerShell module 'ScheduledTasks' to create the task.
+                                    if ($null -ne (Get-Module -Name ScheduledTasks -ListAvailable) ) {
+                                        # The options for the task to be registered.
                                         $Options = @{
-                                            StartIfOnBattery = $true;
-                                            MultipleInstancePolicy = "Queue";
-                                            RunElevated = $true;
-                                            ContinueIfGoingOnBattery = $true;
+                                            AllowStartIfOnBatteries = $true
+                                            DontStopIfGoingOnBatteries = $true
+                                            DontStopOnIdleEnd = $true
+                                            MultipleInstances = "Queue"
+                                            Password = $clearTextPassword
+                                            PowerShellExeCommand = "$ScriptBlockString"
+                                            RunLevel = "Highest"
+                                            StartWhenAvailable = $true
+                                            User = $HealOpsUsername
+                                        }
+
+                                        <#
+                                            Task trigger. The settings explained:
+                                                - RepetitionInterval: How often the task will be repeated.
+                                                - RepetitionDuration: For how long the task will keep on repeating. As programmed it will keep on going for over 9000 days.
+                                        #>
+                                        $kickOffJobDateTimeRandom = get-random -Minimum 2 -Maximum 6
+                                        $currentDate = ([DateTime]::Now)
+                                        $taskRunDration = $currentDate.AddYears(25) - $currentDate
+                                        $Trigger = @{
+                                            At = (Get-date).AddMinutes(1).AddMinutes(($kickOffJobDateTimeRandom))
+                                            RepetitionInterval = (New-TimeSpan -Minutes $TestsFileJobInterval)
+                                            RepetitionDuration  = $taskRunDration
+                                            Once = $true
+                                        }
+
+                                        # Create the task via the PowerShell ScheduledTasks module.
+                                        try {
+                                            Add-ScheduledTask -TaskName $fileNoExt -TaskOptions $Options -TaskTrigger $Trigger -Method "ScheduledTasks"
+                                        } catch {
+                                            throw "Creating the scheduled task via the ScheduledTasks PowerShell module failed with > $_"
+                                        }
+
+                                        # Semaphore
+                                        $jobResult = $true
+                                    } else {
+                                        # Use the classic schtasks cmd.
+                                        <#
+                                            The settings explained:
+                                                - ToRun: The value to hand to the /TR parameter of the schtasks cmd. Everything after powershell.exe will be taken as parameters.
+                                        #>
+                                        $executeFileFullPath = "$HealOpsPackageModuleBase/TestsAndRepairs/execute.$TestsFileName"
+                                        $Options = @{
+                                            Username = $HealOpsUsername
+                                            Password = $clearTextPassword
+                                            ToRun = "`"powershell.exe -NoLogo -NonInteractive -WindowStyle Hidden -File `"`"$executeFileFullPath`"`"`""
                                         }
 
                                         <#
                                             The settings explained:
-                                            - The trigger will schedule the job to run the first time at current date and time + 5min.
-                                            - The task will be repeated with the incoming minute interval.
-                                            - It will keep repeating forever.
+                                                - RepetitionInterval: How often the task will be repeated.
                                         #>
-                                        $kickOffJobDateTimeRandom = get-random -Minimum 2 -Maximum 6
                                         $Trigger = @{
-                                            At = (Get-date).AddMinutes(1).AddMinutes(($kickOffJobDateTimeRandom))
-                                            RepetitionInterval = (New-TimeSpan -Minutes $TestsFileJobInterval)
-                                            RepeatIndefinitely = $true
-                                            Once = $true
+                                            RepetitionInterval = $TestsFileJobInterval
                                         }
+
+                                        # Create a CMD file for the scheduled task to execute. In order to avoid the limitation of the /TR parameter on the schtasks cmd. It cannot be longer than 261 chars.
                                         try {
-                                            New-ScheduledJob -TaskName $fileNoExt -TaskOptions $Options -TaskTriggerOptions $Trigger -TaskPayload "ScriptBlock" -ScriptBlock $ScriptBlockString -credential $credential -verbose
+                                            Set-Content -Path "$executeFileFullPath" -Value "$ScriptBlockString" -Force -NoNewline -ErrorAction Stop
                                         } catch {
-                                            throw $_
+                                            Write-Output "Failed to set content in the script for the scheduled task to execute. The task could there not be created for the Tests file > $TestsFileName > You'll have to create a task manually for this test."
+                                        }
+
+                                        if (Test-Path -Path "$executeFileFullPath") {
+                                            try {
+                                                # Create the task with the schtasks cmd.
+                                                Add-ScheduledTask -TaskName $fileNoExt -TaskOptions $Options -TaskTrigger $Trigger -Method "schtasks"
+                                            } catch {
+                                                throw $_
+                                            }
                                         }
 
                                         # Semaphore
                                         $jobResult = $true
-                                    }
-                                    # Scheduled Task - WINDOWS
-                                    "WinScTask" {
-                                        # Control if we can use the PowerShell module 'ScheduledTasks' to create the task.
-                                        if ($null -ne (Get-Module -Name ScheduledTasks -ListAvailable) ) {
-                                            # The options for the task to be registered.
-                                            $Options = @{
-                                                AllowStartIfOnBatteries = $true
-                                                DontStopIfGoingOnBatteries = $true
-                                                DontStopOnIdleEnd = $true
-                                                MultipleInstances = "Queue"
-                                                Password = $clearTextPassword
-                                                PowerShellExeCommand = "$ScriptBlockString"
-                                                RunLevel = "Highest"
-                                                StartWhenAvailable = $true
-                                                User = $HealOpsUsername
-                                            }
-
-                                            <#
-                                                Task trigger. The settings explained:
-                                                    - RepetitionInterval: How often the task will be repeated.
-                                                    - RepetitionDuration: For how long the task will keep on repeating. As programmed it will keep on going for over 9000 days.
-                                            #>
-                                            $kickOffJobDateTimeRandom = get-random -Minimum 2 -Maximum 6
-                                            $currentDate = ([DateTime]::Now)
-                                            $taskRunDration = $currentDate.AddYears(25) - $currentDate
-                                            $Trigger = @{
-                                                At = (Get-date).AddMinutes(1).AddMinutes(($kickOffJobDateTimeRandom))
-                                                RepetitionInterval = (New-TimeSpan -Minutes $TestsFileJobInterval)
-                                                RepetitionDuration  = $taskRunDration
-                                                Once = $true
-                                            }
-
-                                            # Create the task via the PowerShell ScheduledTasks module.
-                                            try {
-                                                Add-ScheduledTask -TaskName $fileNoExt -TaskOptions $Options -TaskTrigger $Trigger -Method "ScheduledTasks"
-                                            } catch {
-                                                throw "Creating the scheduled task via the ScheduledTasks PowerShell module failed with > $_"
-                                            }
-
-                                            # Semaphore
-                                            $jobResult = $true
-                                        } else {
-                                            # Use the classic schtasks cmd.
-                                            <#
-                                                The settings explained:
-                                                    - ToRun: The value to hand to the /TR parameter of the schtasks cmd. Everything after powershell.exe will be taken as parameters.
-                                            #>
-                                            $executeFileFullPath = "$HealOpsPackageModuleBase/TestsAndRepairs/execute.$TestsFileName"
-                                            $Options = @{
-                                                Username = $HealOpsUsername
-                                                Password = $clearTextPassword
-                                                ToRun = "`"powershell.exe -NoLogo -NonInteractive -WindowStyle Hidden -File `"`"$executeFileFullPath`"`"`""
-                                            }
-
-                                            <#
-                                                The settings explained:
-                                                    - RepetitionInterval: How often the task will be repeated.
-                                            #>
-                                            $Trigger = @{
-                                                RepetitionInterval = $TestsFileJobInterval
-                                            }
-
-                                            # Create a CMD file for the scheduled task to execute. In order to avoid the limitation of the /TR parameter on the schtasks cmd. It cannot be longer than 261 chars.
-                                            try {
-                                                Set-Content -Path "$executeFileFullPath" -Value "$ScriptBlockString" -Force -NoNewline -ErrorAction Stop
-                                            } catch {
-                                                Write-Output "Failed to set content in the script for the scheduled task to execute. The task could there not be created for the Tests file > $TestsFileName > You'll have to create a task manually for this test."
-                                            }
-
-                                            if (Test-Path -Path "$executeFileFullPath") {
-                                                try {
-                                                    # Create the task with the schtasks cmd.
-                                                    Add-ScheduledTask -TaskName $fileNoExt -TaskOptions $Options -TaskTrigger $Trigger -Method "schtasks"
-                                                } catch {
-                                                    throw $_
-                                                }
-                                            }
-
-                                            # Semaphore
-                                            $jobResult = $true
-                                        }
-                                    }
-                                    # Cron job - LINUX
-                                    "LinCronJob" {
-                                        # Semaphore
-                                        $jobResult = $true
-                                    }
-                                    Default {
-                                        $log4netLogger.error("None of the job types matched. Not good <> bad.")
-                                        Write-Output "None of the job types matched. The selected job type was > $JobType. Select a proper job type via the JobType parameter & try again."
                                     }
                                 }
+                                # Cron job - LINUX
+                                "LinCronJob" {
+                                    # Semaphore
+                                    $jobResult = $true
+                                }
+                                Default {
+                                    $log4netLogger.error("None of the job types matched. Not good <> bad.")
+                                    Write-Output "None of the job types matched. The selected job type was > $JobType. Select a proper job type via the JobType parameter & try again."
+                                }
                             }
+                        }
 
-                            # Remove the contents of the download temp dir.
-                            try {
-                                Get-ChildItem -Path $tempDirPath -Force -Recurse -ErrorAction Stop | Remove-Item -Force -Recurse -ErrorAction Stop
-                            } catch {
-                                $log4netLogger.error("Cleaning up the download temp dir > $tempDirPath faild with > $_")
-                                Write-Output "Cleaning up the download temp dir > $tempDirPath faild with > $_"
-                            }
+                        # Remove the contents of the download temp dir.
+                        try {
+                            Get-ChildItem -Path $tempDirPath -Force -Recurse -ErrorAction Stop | Remove-Item -Force -Recurse -ErrorAction Stop
+                        } catch {
+                            $log4netLogger.error("Cleaning up the download temp dir > $tempDirPath faild with > $_")
+                            Write-Output "Cleaning up the download temp dir > $tempDirPath faild with > $_"
+                        }
 
-                            <#
-                                - Info to installing person
-                            #>
-                            if ($jobResult) {
-                                Write-Host "================================================================================================" -ForegroundColor DarkYellow
-                                Write-Host "....The HealOps package named $item was setup successfully...."                               -ForegroundColor Green
-                                Write-Host "================================================================================================" -ForegroundColor DarkYellow
-                                Write-Host ""
-                            } else {
-                                Write-Host "================================================================================================" -ForegroundColor DarkYellow
-                                Write-Host "....Failed to setup the HealOps package named $item...."                               -ForegroundColor Green
-                                Write-Host "================================================================================================" -ForegroundColor DarkYellow
-                                Write-Host ""
-                            }
-                        } # End of conditional control on $installResult. Verifying that the HealOps package was installed correctly.
-                    } else {
-                        $log4netLoggerDebug.debug("The module > $item was no found on the Package Management backend > $PackageManagementURI.")
-                        Write-Output "The module > $item was no found on the Package Management backend > $PackageManagementURI."
-                    }
+                        <#
+                            - Info to installing person
+                        #>
+                        if ($jobResult) {
+                            Write-Host "================================================================================================" -ForegroundColor DarkYellow
+                            Write-Host "....The HealOps package named $item was setup successfully...."                               -ForegroundColor Green
+                            Write-Host "================================================================================================" -ForegroundColor DarkYellow
+                            Write-Host ""
+                        } else {
+                            Write-Host "================================================================================================" -ForegroundColor DarkYellow
+                            Write-Host "....Failed to setup the HealOps package named $item...."                               -ForegroundColor Green
+                            Write-Host "================================================================================================" -ForegroundColor DarkYellow
+                            Write-Host ""
+                        }
+                    } # End of conditional control on $installResult. Verifying that the HealOps package was installed correctly.
                 } else {
-                    # The HealOps package is already installed
-                    $log4netLoggerDebug.debug("The HealOps package named $item is already installed on the local system.")
-                    Write-Output "The HealOps package named $item is already installed on the local system."
+                    $log4netLoggerDebug.debug("The module > $item was no found on the Package Management backend > $PackageManagementURI.")
+                    Write-Output "The module > $item was no found on the Package Management backend > $PackageManagementURI."
                 }
-            } # End of foreach over specified packages to install.
+            } else {
+                # The HealOps package is already installed
+                $log4netLoggerDebug.debug("The HealOps package named $item is already installed on the local system.")
+                Write-Output "The HealOps package named $item is already installed on the local system."
+            }
+        } # End of foreach over specified packages to install.
 
-            <#
-                - Now configure the HealOps jobs that existed before executing Install-HealOpsPackage.
-                    > We need to do this. If we don't, the jobs will not work as the password on the local HealOps user has been changed.
-                    > Doesn't matter if the user existed already.
-            #>
+        <#
+            - Now configure the HealOps jobs that existed before executing Install-HealOpsPackage.
+                > We need to do this. If we don't, the jobs will not work as the password on the local HealOps user has been changed.
+                > Doesn't matter if the user existed already.
+        #>
 
 
-            # Clean-up after messing with IT.........
-            #Remove-Variable Password -Force
-            #Remove-Variable credential -Force
-            #Remove-Variable clearTextPassword -Force
-            [System.GC]::Collect()
-        } # End of conditional control on HealOps user requirements check.
+        # Clean-up after messing with IT.........
+        #Remove-Variable Password -Force
+        #Remove-Variable credential -Force
+        #Remove-Variable clearTextPassword -Force
+        [System.GC]::Collect()
     }
     End {}
 }

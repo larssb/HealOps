@@ -10,8 +10,11 @@ function Get-InstalledHealOpsPackage() {
 .NOTES
     <none>
 .EXAMPLE
-    [ArrayList]$list = Get-InstalledHealOpsPackage -Package "My.HealOpsPackage","MyOther.HealOpsPackage"
+    [System.Collections.Generic.List[PSModuleInfo]]$list = Get-InstalledHealOpsPackage -Package "My.HealOpsPackage","MyOther.HealOpsPackage"
         > Specifies that all locally installed HealOps packages should be retrieved.
+.EXAMPLE
+    [System.Collections.Generic.List[PSModuleInfo]]$list = Get-InstalledHealOpsPackage -Package "My.HealOpsPackage"
+        > My.HealOpsPackage will be retrieved from the local system. If it is found/installed.
 .PARAMETER All
     Indicates that all HealOps packages should be retrieved.
 .PARAMETER NotIn
@@ -41,22 +44,23 @@ function Get-InstalledHealOpsPackage() {
             - Variables
         #>
         $packageList = New-Object System.Collections.Generic.List[PSModuleInfo]
+        $packageSearchString = "*HealOpsPackage*"
     }
     Process {
         if ($PSCmdlet.ParameterSetName -eq 'Specific') {
             # Retrieve specific HealOps package/s
             if ($NotIn) {
                 # NotIn was used. Filter the HealOps packages retrieved
-                $Packages = Get-Module -Name *HealOpsPackage* -ListAvailable -ErrorAction Stop | Where-Object { $_.Name -notin $Package }
+                $Packages = Get-Module -Name $packageSearchString -ListAvailable -ErrorAction Stop | Where-Object { $_.Name -notin $Package }
             } else {
                 # Get the HealOps packages specified via the Package parameter
-                $Packages = Get-Module -Name *HealOpsPackage* -ListAvailable -ErrorAction Stop | Where-Object { $_.Name -in $Package }
+                $Packages = Get-Module -Name $packageSearchString -ListAvailable -ErrorAction Stop | Where-Object { $_.Name -in $Package }
             }
         } else {
             # Retrieve all HealOps packages
             try {
                 # Get the installed HealOps packages
-                $Packages = Get-Module -Name *HealOpsPackage* -ListAvailable -ErrorAction Stop
+                $Packages = Get-Module -Name $packageSearchString -ListAvailable -ErrorAction Stop
             } catch {
                 $log4netLogger.error("Getting the installed HealOps packages failed with > $_")
             }
@@ -68,11 +72,11 @@ function Get-InstalledHealOpsPackage() {
             $filteredPackages = $Packages | Select-Object -Unique
 
             # Add the retrieved HealOps packages to the list
-            foreach ($Package in $filteredPackages) {
-                $packageList.Add($package)
+            foreach ($filteredPackage in $filteredPackages) {
+                $packageList.Add($filteredPackage)
             }
         } else {
-            $log4netLoggerDebug.debug("No HealOps packages found on the system. Searched on > '*HealOpsPackage*'")
+            $log4netLoggerDebug.debug("No HealOps packages found on the system. Search string > $packageSearchString")
         }
     }
     End {
