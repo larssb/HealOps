@@ -239,7 +239,7 @@ function Install-HealOpsPackage() {
                                         try {
                                             $currentErrorActionPreference = $ErrorActionPreference
                                             $ErrorActionPreference = "Stop"
-                                            [int]$TestsFileJobInterval = $HealOpsPackageConfig.$fileNoExt.jobInterval -as [int]
+                                            [int]$TestsFileJobInterval = $HealOpsPackageConfig.$baseFileName.jobInterval -as [int]
                                         } catch {
                                             $log4netLogger.error("Failed to determine the jobInterval value. Failed with > $_")
                                         } finally {
@@ -311,17 +311,98 @@ function Install-HealOpsPackage() {
                 > Doesn't matter if the user existed already or not.
         #>
         if ($healOpsUserConfirmed) {
-            # Inform the user about what is going on!
+            Write-Host "==================================================================================================" -ForegroundColor DarkYellow
+            Write-Host "- Now configuring HealOps packages that was on the system before running Install-HealOpsPackage."                               -ForegroundColor Green
+            Write-Host "==================================================================================================" -ForegroundColor DarkYellow
+            Write-Host ""
 
-            # Get all packages -not in Packages to Install-HealOpsPackage()
-                ## use [System.Collections.Generic.List[PSModuleInfo]]$HealOpsPackagesToUpdate = Get-InstalledHealOpsPackage -Package $Package -NotIn
-            # foreach package > get all tests files
-                ## use > $TestsFiles = Get-HealOpsPackageTestsFile -Package "My.HealOpsPackage" <<- when foreach'ing
-            # foreach testsfile > find/match the job (Scheduled Task) relative to the *.Tests.ps1 file
-                ## Create functions that supports the ScheduledTasks PS module.
-            #  Set the updated $Password on each found job
+            # Get all packages not in $Packages
+            [System.Collections.Generic.List[PSModuleInfo]]$HealOpsPackagesToUpdate = Get-InstalledHealOpsPackage -NotIn -Package $Package
 
-            ## Could create a job for a *.Tests.ps1 in a package that isn't created a job for. But think about it!!
+            if ($HealOpsPackagesToUpdate.Count -ge 1) {
+                foreach ($packageToUpdate in $HealOpsPackagesToUpdate) {
+                    # Get the config file of the HealOps package
+                    [Array]$HealOpsPackageConfig = Get-HealOpsPackageConfig -ModuleBase $packageToUpdate.ModuleBase
+
+                    if ($HealOpsPackageConfig.Count -ge 1) {
+                        # Get the *.Tests.ps1 files in the HealOps package
+                        [Array]$TestsFiles = Get-HealOpsPackageTestsFile -Package $packageToUpdate
+
+                        if ($TestsFiles.Count -ge 1) {
+                            foreach ($testsFile in $TestsFiles) {
+                                # Get the BaseName of the *.Tests.ps1 file. Needed as this is the name of the task/job to get.
+                                $baseFileName = Get-TestsFileBaseName -HealOpsPackageConfig $HealOpsPackageConfig -TestsFile $testsFile
+
+                                if ($nulle -ne $baseFileName) {
+                                    # Get the Scheduled task
+                                    try {
+                                        [CimInstance]$task = Get-xScheduledTask -TaskName $baseFileName
+                                    } catch {
+                                        $log4netLogger.error("")
+                                    }
+
+                                    if ($null -ne $task) {
+                                        # Set the password on the job
+                                        try {
+                                            Set-xScheduledTask -InputObject $task -Password $clearTextJobPassword
+                                        } catch {
+                                            Write-Output "$_ <-- you will have to set the password manually on the job named > $baseFileName"
+                                            $log4netLogger.error("$_")
+                                        }
+                                    } else {
+                                        Write-Output "No job exists for the *.Tests.ps1 file named > $baseFileName. Creating one!"
+                                        $log4netLoggerDebug.Debug("No job exists for the *.Tests.ps1 file named > $baseFileName. Creating one!")
+
+                                        # Get the jobInterval to use
+                                        try {
+                                            $currentErrorActionPreference = $ErrorActionPreference
+                                            $ErrorActionPreference = "Stop"
+                                            [int]$TestsFileJobInterval = $HealOpsPackageConfig.$baseFileName.jobInterval -as [int]
+                                        } catch {
+                                            $log4netLogger.error("Failed to determine the jobInterval value. Failed with > $_")
+                                        } finally {
+                                            $ErrorActionPreference = $currentErrorActionPreference
+                                        }
+
+                                        # Create a task for the *.Tests.ps1 file as no one currently exists
+                                        try {
+                                            $jobCreationResult = New-HealOpsPackageJob -TestsBaseFileName $baseFileName -JobInterval $TestsFileJobInterval -JobType $JobType -Package $packageToUpdate -Password $clearTextJobPassword -UserName $HealOpsUsername
+                                        } catch {
+                                            $log4netLogger.error("Failed to create a job for the *.Tests.ps1 file named > $baseFileName. Failed with > $_")
+                                        }
+
+                                        <#
+                                            - Info to installing person
+                                        #>
+                                        if ($jobCreationResult) {
+                                            Write-Host "================================================================================================" -ForegroundColor DarkYellow
+                                            Write-Host "....The job was created successfully...."                               -ForegroundColor Green
+                                            Write-Host "================================================================================================" -ForegroundColor DarkYellow
+                                            Write-Host ""
+                                        } else {
+                                            Write-Host "================================================================================================" -ForegroundColor DarkYellow
+                                            Write-Host "....Failed to create the job....see the log for reasons."                               -ForegroundColor Green
+                                            Write-Host "================================================================================================" -ForegroundColor DarkYellow
+                                            Write-Host ""
+                                        }
+                                    }
+                                } else {
+                                    Write-Output "Failed to get the BaseName of the *.Tests.ps1 file named > $testsFile. <-- you will have to set the password manually on the job."
+                                    $log4netLogger.error("Failed to get the BaseName of the *.Tests.ps1 file named > $testsFile.")
+                                }
+                            } # End of foreach *.Tests.ps1 file in the HealOps package to update.
+                        } else {
+                            Write-Output "No *.Tests.ps1 files was found in the package named > $($packageToUpdate.Name). Please control that this package is a proper HealOps package."
+                            $log4netLogger.error("No *.Tests.ps1 files was found in the package named > $($packageToUpdate.Name).")
+                        }
+                    } else {
+                        Write-Output "Failed to get the HealOps package config file. For the package named > $($packageToUpdate.Name). <-- you will have to set a password manually on the jobs for the *.Tests.ps1 files in this package."
+                        $log4netLogger.error("Failed to get the HealOps package config file. For the package named > $($packageToUpdate.Name)")
+                    } # End of conditional control on the HealOpsPackage config file.
+                } # End of foreach on HealOps packages to update.
+            } else {
+                $log4netLoggerDebug.Debug("There seems to have been no HealOps packages installed on the system prior to running Install-HealOpsPackage.")
+            }
 
             <#
                 - not foR HERE buT
@@ -340,7 +421,12 @@ function Install-HealOpsPackage() {
                         >> How do you lock a file in PowerShell?
                     > Write to the HealOps config file early early > so that other jobs on 'x' self-update property can
                     control if they should back of from self-updating. As another job is already doing that.
+                    > Touch a HealOps.SelfUpdate.lck file on disk.
+                        >> If it exists == an update is on-going. Do nothing.
+                        >> It not == you are free to self-update.
             #>
+        } else {
+            $log4netLoggerDebug.Debug("As the HealOps user was not changed, HealOps packages installed prior to running Install-HealOpsPackage was not touched.")
         }
 
         # Clean-up after messing with IT.........
