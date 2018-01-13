@@ -18,7 +18,7 @@ function Get-InstalledHealOpsPackage() {
 .PARAMETER All
     Indicates that all HealOps packages should be retrieved.
 .PARAMETER NotIn
-    Indicates that the HealOps packages to retrieve are those NOT specified via the Package parameter.
+    Indicates that the HealOps packages to retrieve are NOT the ones specified via the Package parameter.
 .PARAMETER Package
     One or more HealOps packages to retrieve.
 #>
@@ -29,7 +29,7 @@ function Get-InstalledHealOpsPackage() {
     param(
         [Parameter(Mandatory=$false, ParameterSetName="All", HelpMessage="Indicates that all HealOps packages should be retrieved.")]
         [Switch]$All,
-        [Parameter(Mandatory=$false, ParameterSetName="Specific", HelpMessage="Indicates that the HealOps packages to retrieve are those NOT specified via the Package parameter.")]
+        [Parameter(Mandatory=$false, ParameterSetName="Specific", HelpMessage="Indicates that the HealOps packages to retrieve are NOT the ones specified via the Package parameter.")]
         [Switch]$NotIn,
         [Parameter(Mandatory=$true, ParameterSetName="Specific", HelpMessage="One or more HealOps packages to retrieve.")]
         [ValidateNotNullOrEmpty()]

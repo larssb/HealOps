@@ -1,4 +1,4 @@
-function Get-HealOpsPackageTestFile() {
+function Get-HealOpsPackageTestsFile() {
 <#
 .DESCRIPTION
     Retrieves *.Tests.ps1 files in the TestsAndRepairs folder in a HealOps package.
@@ -9,7 +9,7 @@ function Get-HealOpsPackageTestFile() {
 .NOTES
     <none>
 .EXAMPLE
-    $TestsFiles = Get-HealOpsPackageTestFile -Package "My.HealOpsPackage"
+    $TestsFiles = Get-HealOpsPackageTestsFile -Package "My.HealOpsPackage"
         > Retrieves all the *.Tests.ps1 files in the HealOps package named "My.HealOpsPackage"
 .PARAMETER All
     Use this parameter to specify that you want all the *.Tests.ps1 files in the HealOps package.
@@ -40,20 +40,20 @@ function Get-HealOpsPackageTestFile() {
     #############
     Begin {}
     Process {
-        $log4netLoggerDebug.debug("Get-HealOpsPackageTestFile > The module base of the HealOps package named $Package is > $($Package.ModuleBase)")
+        $log4netLoggerDebug.debug("Get-HealOpsPackageTestsFile > The module base of the HealOps package named $Package is > $($Package.ModuleBase)")
         if ($PSCmdlet.ParameterSetName -eq "Specific") {
             # Get the specified *.Tests.ps1 file
             try {
-                [Array]$TestsFiles = Get-ChildItem -Path "$($Package.ModuleBase)/TestsAndRepairs" -Recurse -Force -Include "$TestsFileName"
+                [Array]$TestsFiles = Get-ChildItem -Path "$($Package.ModuleBase)/TestsAndRepairs" -File -Recurse -Force -Include "$TestsFileName"
             } catch {
-                $log4netLogger.error("Get-HealOpsPackageTestFile > Getting the specific *.Tests.ps1 file, named > $TestsFileName, failed with > $_")
+                $log4netLogger.error("Get-HealOpsPackageTestsFile > Getting the specific *.Tests.ps1 file, named > $TestsFileName, failed with > $_")
             }
         } else {
             # Get all the *.Tests.ps1 files in the HealOps package
             try {
-                [Array]$TestsFiles = Get-ChildItem -Path "$($Package.ModuleBase)/TestsAndRepairs" -Recurse -Force -Include "*.Tests.ps1"
+                [Array]$TestsFiles = Get-ChildItem -Path "$($Package.ModuleBase)/TestsAndRepairs" -File -Recurse -Force -Include "*.Tests.ps1"
             } catch {
-                $log4netLogger.error("Get-HealOpsPackageTestFile > Getting *.Tests.ps1 file failed with > $_")
+                $log4netLogger.error("Get-HealOpsPackageTestsFile > Getting *.Tests.ps1 file failed with > $_")
             }
         }
 
