@@ -189,10 +189,13 @@ function New-HealOpsPackageJob() {
                 throw "not implemented yet.....Linux."
             }
             Default {
-                $log4netLogger.error("None of the job types matched. Not good <> bad.")
+                $log4netLogger.error("None of the job types matched. Not good....so > bad.")
                 throw "None of the job types matched. The selected job type was > $JobType. Select a proper job type via the JobType parameter & try again."
             }
         }
     }
-    End {}
+    End {
+        # Return
+        $jobResult
+    }
 } # End of function declaration.

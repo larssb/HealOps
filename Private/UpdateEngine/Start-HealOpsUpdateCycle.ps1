@@ -206,13 +206,25 @@ function Start-HealOpsUpdateCycle() {
                         [System.Collections.Generic.List[PSModuleInfo]]$installedHealOpsPackage = Get-InstalledHealOpsPackage -Package $module.Name
 
                         # Get the *.Tests.ps1 files in the HealOps package just installed.
-                        if ($null -ne $installedHealOpsPackage -and $installedHealOpsPackage.Count -ge 1) {
-                            [Array]$TestsFiles = Get-HealOpsPackageTestsFile -All -Package $installedHealOpsPackage
+                        if ($null -ne $installedHealOpsPackage -and $installedHealOpsPackage.Count -eq 1) {
+                            try {
+                                # Get the package in the List´1 collection
+                                $enumerator = $installedHealOpsPackage.GetEnumerator()
+                                $enumerator.MoveNext() | Out-Null
+                                [PSModuleInfo]$tempPackage = $enumerator.Current
+
+                                [Array]$TestsFiles = Get-HealOpsPackageTestsFile -All -Package $tempPackage
+                            } catch {
+                                $log4netLogger.error("Failed with > $_")
+                            }
+                        } else {
+                            $log4netLogger.error("More than one version of the package named > $($module.name) was retrieved. Only one should have been returned. Cannot continue configuring this package.")
+                            $log4netLoggerDebug.Debug("HealOps package count retrieved > $($installedHealOpsPackage.Count) - when trying to get the package named > $($module.name)")
                         }
 
                         if ($TestsFiles.Count -ge 1) {
                             # Get the config file of the HealOps package
-                            [Array]$HealOpsPackageConfig = Get-HealOpsPackageConfig -ModuleBase $installedHealOpsPackage.ModuleBase
+                            [Array]$HealOpsPackageConfig = Get-HealOpsPackageConfig -ModuleBase $tempPackage.ModuleBase
 
                             if ($HealOpsPackageConfig.Count -ge 1) {
                                 # Create a job per *.Tests.ps1 file in the current HealOps package
@@ -234,7 +246,7 @@ function Start-HealOpsUpdateCycle() {
                                     # Create a job to execute the retrieved *.Tests.ps1 file.
                                     if ($null -ne $TestsFileJobInterval) {
                                         try {
-                                            New-HealOpsPackageJob -TestsBaseFileName $baseFileName -JobInterval $TestsFileJobInterval -JobType $Config.JobType -Package $installedHealOpsPackage -Password $clearTextJobPassword -UserName $HealOpsUsername
+                                            New-HealOpsPackageJob -TestsBaseFileName $baseFileName -JobInterval $TestsFileJobInterval -JobType $Config.JobType -Package $tempPackage -Password $clearTextJobPassword -UserName $HealOpsUsername
                                         } catch {
                                             $log4netLogger.error("Failed to create a job for the *.Tests.ps1 file named > $baseFileName. Failed with > $_")
                                         }
@@ -272,7 +284,11 @@ function Start-HealOpsUpdateCycle() {
 
                         if ($HealOpsPackageConfig.Count -ge 1) {
                             # Get the *.Tests.ps1 files in the HealOps package
-                            [Array]$TestsFiles = Get-HealOpsPackageTestsFile -Package $packageToUpdate
+                            try {
+                                [Array]$TestsFiles = Get-HealOpsPackageTestsFile -All -Package $packageToUpdate
+                            } catch {
+                                $log4netLogger.error("Failed with > $_")
+                            }
 
                             if ($TestsFiles.Count -ge 1) {
                                 foreach ($testsFile in $TestsFiles) {
@@ -290,7 +306,7 @@ function Start-HealOpsUpdateCycle() {
                                         if ($null -ne $task) {
                                             # Set the password on the job
                                             try {
-                                                Set-xScheduledTask -InputObject $task -UserName $HealOpsUsername -Password $clearTextJobPassword
+                                                Set-xScheduledTask -InputObject $task -UserName $HealOpsUsername -Password $clearTextJobPassword | Out-Null
                                             } catch {
                                                 $log4netLogger.error("$_")
                                             }
@@ -340,22 +356,14 @@ function Start-HealOpsUpdateCycle() {
         } # End of conditional amount control on $ModulesToUpdate
     }
     End {
-        <#
-            - Register that an update cycle ran
-        #>
-        try {
-            # Refresh info on the latest version of the HealOps module after having ran an update cycle
-            $MainModule = Get-LatestModuleVersionLocally -ModuleName $HealOpsModuleName
-        } catch {
-            $log4netLogger.error("Failed to get the latest module version of $HealOpsModuleName. It failed with > $_")
-        }
-
-        if($null -ne $MainModule.ModuleBase) {
-            # Register that the main module was updated.
-            $registerResult = Register-UpdateCycle -Config $Config -ModuleBase $MainModule.ModuleBase
-
-            if ($registerResult -eq $false) {
-                $log4netLogger.error("Failed to register that an update cycle ran.")
+        # Clean-up
+        if ($UpdateMode -eq "All" -or $UpdateMode -eq "HealOpsPackages") {
+            try {
+                Remove-Variable Password -Force -ErrorAction Stop
+                Remove-Variable clearTextJobPassword -Force -ErrorAction Stop
+                [System.GC]::Collect()
+            } catch {
+                $log4netLogger.error("Start-HealOpsUpdateCycle | Failed to clean-up. Failed with > $_")
             }
         }
     }

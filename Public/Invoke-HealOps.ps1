@@ -260,8 +260,8 @@
         <#
             - Check for updates. For the modules that HealOps has a dependency on and for HealOps itself
         #>
-        if($healOpsConfig.checkForUpdates -eq "True") {
-            if ($canRunUpdate) {
+        if ($canRunUpdate) {
+            if($healOpsConfig.checkForUpdates -eq "True") {
                 if (-not $ForceUpdates) {
                     $timeForUpdate = Confirm-TimeToUpdate -Config $HealOpsConfig
                 }
@@ -293,12 +293,12 @@
                     Write-Verbose -Message "The update cycle did not run. It is not the time for updating."
                 }
             } else {
-                $log4netLoggerDebug.Debug("canRunUpdate has a value of $canRunUpdate. Therefore the self-update feature was halted before it got started. In order to avoid conflicting
-                with other instances of HealOps already in a self-update cycle.")
-            } # End of confitional control on canRunUpdate. This semaphore needs to be true. If false another process is already in the proces of running a self-update cycle.
+                $log4netLoggerDebug.debug("The self-update feature is disabled.")
+            }
         } else {
-            $log4netLoggerDebug.debug("The self-update feature is disabled.")
-        }
+            $log4netLoggerDebug.Debug("canRunUpdate has a value of $canRunUpdate. Therefore the self-update feature, if enabled, will be denied executing. In order to avoid conflicting
+            with other instances of HealOps already in a self-update cycle.")
+        } # End of confitional control on canRunUpdate. This semaphore needs to be true. If false another process is already in the proces of running a self-update cycle.
     }
     Process {
         if ($PSCmdlet.ParameterSetName -eq "File") {
@@ -396,6 +396,27 @@
                 $log4netLoggerDebug.Debug("canRunUpdate was $canRunUpdate. Successfully closed the HealOps config lock & read resources.")
             } catch {
                 $log4netLogger.error("canRunUpdate was $canRunUpdate. Couldn't clean-up the HealOps config lock & read resources. Failed with > $_")
+            }
+
+            if ($timeForUpdate -eq $true -or $ForceUpdates -eq $true) {
+                <#
+                - Register that an update cycle ran
+                #>
+                try {
+                    # Refresh info on the latest version of the HealOps module after having ran an update cycle
+                    $MainModule = Get-LatestModuleVersionLocally -ModuleName "HealOps"
+                } catch {
+                    $log4netLogger.error("Failed to get the latest module version of HealOps. It failed with > $_")
+                }
+
+                if($null -ne $MainModule.ModuleBase) {
+                    # Register that the main module was updated.
+                    $registerResult = Register-UpdateCycle -Config $HealOpsConfig -ModuleBase $MainModule.ModuleBase
+
+                    if ($registerResult -eq $false) {
+                        $log4netLogger.error("Failed to register that an update cycle ran.")
+                    }
+                }
             }
         }
     }

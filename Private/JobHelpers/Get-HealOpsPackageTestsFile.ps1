@@ -14,7 +14,7 @@ function Get-HealOpsPackageTestsFile() {
 .PARAMETER All
     Use this parameter to specify that you want all the *.Tests.ps1 files in the HealOps package.
 .PARAMETER Package
-    The name of a package or packages to install on a system.
+    The name of a package in which to get HealOps *.Tests.ps1 files in.
         > [PSModuleInfo]
 .PARAMETER TestsFileName
     The name of the specific *.Tests.ps1 file you wish to retrieve.
@@ -26,8 +26,8 @@ function Get-HealOpsPackageTestsFile() {
     param(
         [Parameter(Mandatory=$false, ParameterSetName="All", HelpMessage="Use this parameter to specify that you want all the *.Tests.ps1 files in the HealOps package.")]
         [switch]$All,
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The name of a package or packages to install on a system.")]
-        [Parameter(Mandatory=$true, ParameterSetName="Specific", HelpMessage="The name of a package or packages to install on a system.")]
+        [Parameter(Mandatory=$true, ParameterSetName="All", HelpMessage="The name of a package in which to get HealOps *.Tests.ps1 files in.")]
+        [Parameter(Mandatory=$true, ParameterSetName="Specific", HelpMessage="The name of a package in which to get HealOps *.Tests.ps1 files in.")]
         [ValidateNotNullOrEmpty()]
         [PSModuleInfo]$Package,
         [Parameter(Mandatory=$true, ParameterSetName="Specific", HelpMessage="The name of the specific *.Tests.ps1 file you wish to retrieve.")]

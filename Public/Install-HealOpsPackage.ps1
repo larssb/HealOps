@@ -177,9 +177,11 @@ function Install-HealOpsPackage() {
         <#
             - Variables
         #>
-        # The job user of HealOps ... its username
-        New-Variable -Name HealOpsUsername -Value "HealOps" -Option Constant -Description "The username of the local administrator user, used by HealOps" `
-        -Visibility Private -Scope Script
+        if (-not (Get-Variable -Name HealOpsUsername -ErrorAction SilentlyContinue) -eq $true) {
+            # The job user of HealOps ... its username
+            New-Variable -Name HealOpsUsername -Value "HealOps" -Option Constant -Description "The username of the local administrator user, used by HealOps" `
+            -Visibility Private -Scope Script
+        }
 
         # Semaphore. Used to ensure we only verify that a HealOps user exists and works on the local system.
         [Bool]$healOpsUserConfirmed = $false
@@ -249,13 +251,26 @@ function Install-HealOpsPackage() {
                                 [System.Collections.Generic.List[PSModuleInfo]]$installedHealOpsPackage = Get-InstalledHealOpsPackage -Package $item
 
                                 # Get the *.Tests.ps1 files in the HealOps package just installed.
-                                if ($null -ne $installedHealOpsPackage -and $installedHealOpsPackage.Count -ge 1) {
-                                    [Array]$TestsFiles = Get-HealOpsPackageTestsFile -All -Package $installedHealOpsPackage
+                                if ($null -ne $installedHealOpsPackage -and $installedHealOpsPackage.Count -eq 1) {
+                                    try {
+                                        # Get the package in the List´1 collection
+                                        $enumerator = $installedHealOpsPackage.GetEnumerator()
+                                        $enumerator.MoveNext() | Out-Null
+                                        [PSModuleInfo]$tempPackage = $enumerator.Current
+
+                                        [Array]$TestsFiles = Get-HealOpsPackageTestsFile -All -Package $tempPackage
+                                    } catch {
+                                        $log4netLogger.error("Failed with > $_")
+                                    }
+                                } else {
+                                    Write-Output "More than one version of the package named > $item was retrieved. Only one should have been returned. Cannot continue configuring this package."
+                                    $log4netLogger.error("More than one version of the package named > $item was retrieved. Only one should have been returned. Cannot continue configuring this package.")
+                                    $log4netLoggerDebug.Debug("HealOps package count retrieved > $($installedHealOpsPackage.Count) - when trying to get the package named > $item")
                                 }
 
                                 if ($TestsFiles.Count -ge 1) {
                                     # Get the config file of the HealOps package
-                                    [Array]$HealOpsPackageConfig = Get-HealOpsPackageConfig -ModuleBase $installedHealOpsPackage.ModuleBase
+                                    [Array]$HealOpsPackageConfig = Get-HealOpsPackageConfig -ModuleBase $tempPackage.ModuleBase
 
                                     if ($HealOpsPackageConfig.Count -ge 1) {
                                         # Create a job per *.Tests.ps1 file in the current HealOps package
@@ -277,7 +292,7 @@ function Install-HealOpsPackage() {
                                             # Create a job to execute the retrieved *.Tests.ps1 file.
                                             if ($null -ne $TestsFileJobInterval) {
                                                 try {
-                                                    $jobCreationResult = New-HealOpsPackageJob -TestsBaseFileName $baseFileName -JobInterval $TestsFileJobInterval -JobType $JobType -Package $installedHealOpsPackage -Password $clearTextJobPassword -UserName $HealOpsUsername
+                                                    $jobCreationResult = New-HealOpsPackageJob -TestsBaseFileName $baseFileName -JobInterval $TestsFileJobInterval -JobType $JobType -Package $tempPackage -Password $clearTextJobPassword -UserName $HealOpsUsername
                                                 } catch {
                                                     $log4netLogger.error("Failed to create a job for the *.Tests.ps1 file named > $baseFileName. Failed with > $_")
                                                 }
@@ -295,7 +310,7 @@ function Install-HealOpsPackage() {
                                     Get-ChildItem -Path $tempDirPath -Force -Recurse -ErrorAction Stop | Remove-Item -Force -Recurse -ErrorAction Stop
                                 } catch {
                                     $log4netLogger.error("Cleaning up the download temp dir > $tempDirPath faild with > $_")
-                                    Write-Output "Cleaning up the download temp dir > $tempDirPath faild with > $_"
+                                    Write-Output "Cleaning up the download temp dir > $tempDirPath failed with > $_"
                                 }
 
                                 <#
@@ -303,12 +318,12 @@ function Install-HealOpsPackage() {
                                 #>
                                 if ($jobCreationResult) {
                                     Write-Host "================================================================================================" -ForegroundColor DarkYellow
-                                    Write-Host "....The HealOps package named $item was setup successfully...."                               -ForegroundColor Green
+                                    Write-Host "....The HealOps package named $item was successfully configured...."                               -ForegroundColor Green
                                     Write-Host "================================================================================================" -ForegroundColor DarkYellow
                                     Write-Host ""
                                 } else {
                                     Write-Host "================================================================================================" -ForegroundColor DarkYellow
-                                    Write-Host "....Failed to setup the HealOps package named $item...."                               -ForegroundColor Green
+                                    Write-Host "....Failed to setup the HealOps package named $item...."                               -ForegroundColor Red
                                     Write-Host "================================================================================================" -ForegroundColor DarkYellow
                                     Write-Host ""
                                 }
@@ -354,7 +369,11 @@ function Install-HealOpsPackage() {
 
                         if ($HealOpsPackageConfig.Count -ge 1) {
                             # Get the *.Tests.ps1 files in the HealOps package
-                            [Array]$TestsFiles = Get-HealOpsPackageTestsFile -Package $packageToUpdate
+                            try {
+                                [Array]$TestsFiles = Get-HealOpsPackageTestsFile -All -Package $packageToUpdate
+                            } catch {
+                                $log4netLogger.error("Failed with > $_")
+                            }
 
                             if ($TestsFiles.Count -ge 1) {
                                 foreach ($testsFile in $TestsFiles) {
@@ -371,8 +390,9 @@ function Install-HealOpsPackage() {
 
                                         if ($null -ne $task) {
                                             # Set the password on the job
+                                            $log4netLoggerDebug.Debug("A job exists for the *.Tests.ps1 file named > $baseFileName. Configuring it.")
                                             try {
-                                                Set-xScheduledTask -InputObject $task -Password $clearTextJobPassword
+                                                Set-xScheduledTask -InputObject $task -UserName $HealOpsUsername -Password $clearTextJobPassword | Out-Null
                                             } catch {
                                                 Write-Output "$_ <-- you will have to set the password manually on the job named > $baseFileName"
                                                 $log4netLogger.error("$_")
@@ -409,7 +429,7 @@ function Install-HealOpsPackage() {
                                                 Write-Host ""
                                             } else {
                                                 Write-Host "================================================================================================" -ForegroundColor DarkYellow
-                                                Write-Host "....Failed to create the job....see the log for reasons."                               -ForegroundColor Green
+                                                Write-Host "....Failed to create the job....see the log for reasons."                               -ForegroundColor Red
                                                 Write-Host "================================================================================================" -ForegroundColor DarkYellow
                                                 Write-Host ""
                                             }
@@ -434,21 +454,6 @@ function Install-HealOpsPackage() {
             } else {
                 $log4netLoggerDebug.Debug("As the HealOps user was not changed, HealOps packages installed prior to running Install-HealOpsPackage was not touched.")
             }
-
-            # Clean-up after messing with IT.........
-            if ($canRunInstall) {
-                try {
-                    $HealOpsConfigFile.Close()
-                    $HealOpsConfigReader.Close()
-                    $log4netLoggerDebug.Debug("canRunInstall was $canRunInstall. Successfully closed the HealOps config lock & read resources.")
-                } catch {
-                    $log4netLogger.error("canRunInstall was $canRunInstall. Couldn't clean-up the HealOps config lock & read resources. Failed with > $_")
-                }
-            }
-            Remove-Variable Password -Force
-            #Remove-Variable credential -Force
-            Remove-Variable clearTextPassword -Force
-            [System.GC]::Collect()
         } else {
             $log4netLoggerDebug.Debug("canRunInstall has a value of $canRunInstall. Therefore Install-HealOpsPackage was halted before it got started. In order to avoid conflicting with an instance of HealOps
             already in the proces of executing a self-update cycle.")
@@ -460,5 +465,20 @@ function Install-HealOpsPackage() {
                 - See the Install-HealOpsPackage log for more info....."
         } # End of conditional control on canRunInstall. If this is not $true we should not fully execute Install-HealOpsPackage as HealOps is running a self-update cycle that Install-HealOpsPackage could conflict with.
     }
-    End {}
+    End {
+        # Clean-up after messing with IT.........
+        if ($canRunInstall) {
+            try {
+                $HealOpsConfigFile.Close()
+                $HealOpsConfigReader.Close()
+                $log4netLoggerDebug.Debug("canRunInstall was $canRunInstall. Successfully closed the HealOps config lock & read resources.")
+            } catch {
+                $log4netLogger.error("canRunInstall was $canRunInstall. Couldn't clean-up the HealOps config lock & read resources. Failed with > $_")
+            }
+        }
+        Remove-Variable Password -Force
+        #Remove-Variable credential -Force
+        Remove-Variable clearTextJobPassword -Force
+        [System.GC]::Collect()
+    }
 }
