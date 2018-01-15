@@ -4,7 +4,7 @@ function Set-PasswordOnLocalUser() {
     Sets the password for the locally existing HealOps user.
 .INPUTS
     [PSCustomObject] representing a local user. Either retrieved via the ADSI method or via cmdlets in the Microsoft.PowerShell.LocalAccounts module.
-    [String] representing the password to set on the local user.
+    A password. In either cleartext or as a Secure.String. Representing the password to set on the local HealOps user.
 .OUTPUTS
     [Boolean] relative to the result of setting the password on the local user.
 .NOTES
@@ -29,7 +29,7 @@ function Set-PasswordOnLocalUser() {
         [PSCustomObject]$User,
         [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The password to set on the local user.")]
         [ValidateNotNullOrEmpty()]
-        [String]$Password
+        $Password
     )
 
     #############
@@ -41,7 +41,7 @@ function Set-PasswordOnLocalUser() {
             try {
                 $User | Set-LocalUser -Password $Password -ErrorAction Stop
             } catch {
-                throw "Could not set the generated password on the already existing HealOps user. Failed with > $_"
+                throw "Set-PasswordOnLocalUser | Could not set the generated password on the already existing HealOps user. Failed with > $_"
             }
         } else {
             try {
@@ -51,7 +51,7 @@ function Set-PasswordOnLocalUser() {
                 $User.SetInfo()
                 $ErrorActionPreference = $currentErrorActionPreference
             } catch {
-                throw "Could not set the generated password on the already existing HealOps user. Failed with > $_"
+                throw "Set-PasswordOnLocalUser | Could not set the generated password on the already existing HealOps user. Failed with > $_"
             }
         }
     }

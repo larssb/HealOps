@@ -38,11 +38,11 @@ function Lock-HealOpsConfig() {
     Process {
         try {
             # Lock the file.
-            $file = [System.IO.File]::Open($path, $mode, $access, $share)
+            $file = [System.IO.File]::Open($HealOpsConfigPath, $mode, $access, $share)
         } catch [System.IO.IOException] {
             throw "The file could not be locked. Exception > $_"
         } catch {
-            throw "An unexpected error occurred"
+            throw "An unexpected error occurred > $_"
         }
     }
     End {
