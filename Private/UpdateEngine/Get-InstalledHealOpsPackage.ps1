@@ -9,7 +9,7 @@ function Get-InstalledHealOpsPackage() {
     [Switch] indicating that the HealOps packages to retrieve are those NOT specified via the Package parameter.
     [Switch] -All to simply declare that all locally installed HealOps packages should be retrieved.
 .OUTPUTS
-    [System.Collections.Generic.List[PSModuleInfo] containing HealOps packages installed locally. Relative to the input to this functions parameters.
+    [System.Collections.Generic.List[PSModuleInfo]] containing HealOps packages installed locally. Relative to the input to this functions parameters.
 .NOTES
     <none>
 .EXAMPLE

@@ -69,7 +69,7 @@ function Start-HealOpsUpdateCycle() {
     Process {
         # HealOps packages
         if ($UpdateMode -eq "All" -or $UpdateMode -eq "HealOpsPackages") {
-            $ModulesToUpdate = Get-InstalledHealOpsPackage -All
+            [System.Collections.Generic.List[PSModuleInfo]]$ModulesToUpdate = Get-InstalledHealOpsPackage -All
 
             # The job user of HealOps ... its username
             New-Variable -Name HealOpsUsername -Value "HealOps" -Option Constant -Description "The username of the local administrator user, used by HealOps" `
@@ -106,7 +106,7 @@ function Start-HealOpsUpdateCycle() {
                 try {
                     $ModulesToUpdate.Add($HealOpsModule)
                 } catch {
-                    $log4netLogger.error("Failed to add the $HealOpsModuleName to the ModulesToUpdate collection. Failed with > $_")
+                    $log4netLogger.error("Failed to add the $HealOpsModuleName module to the ModulesToUpdate collection. Failed with > $_")
                 }
             } else {
                 $log4netLoggerDebug.debug("The main module > $HealOpsModuleName, could not be found on the system.")
