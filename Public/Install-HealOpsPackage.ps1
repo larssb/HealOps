@@ -366,7 +366,7 @@ function Install-HealOpsPackage() {
                                         try {
                                             [CimInstance]$task = Get-xScheduledTask -TaskName $baseFileName
                                         } catch {
-                                            $log4netLogger.error("")
+                                            $log4netLogger.error("Install-HealOpsPackage | Getting the scheduled task for $baseFileName failed with > $_")
                                         }
 
                                         if ($null -ne $task) {

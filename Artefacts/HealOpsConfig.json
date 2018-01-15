@@ -1,10 +1,11 @@
 ﻿{
-    "reportingBackend":  "OpenTSDB",
     "checkForUpdates":  "True",
     "checkForUpdatesInterval_Hours": "",
     "checkForUpdatesNext":  "",
-    "PackageManagementURI":  "",
     "FeedName":  "HealOps",
+    "JobType": "",
     "PackageManagementAPIKey":  "",
+    "PackageManagementURI":  "",
+    "reportingBackend":  "OpenTSDB",
     "UpdateMode": ""
 }
