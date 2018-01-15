@@ -98,22 +98,49 @@
             # Exit
             throw $message
         } else {
-            # Check file integrity & get config data
-            if($psVersionAbove4) {
-                [PSCustomObject]$healOpsConfig = Get-Content -Path $HealOpsConfigPath -Encoding UTF8 | ConvertFrom-Json
-            } else {
-                [PSCustomObject]$healOpsConfig = Get-Content -Path $HealOpsConfigPath | out-string | ConvertFrom-Json
+            try {
+                # Obtain a lock on the HealOps config file
+                [System.IO.FileStream]$HealOpsConfigFile = Lock-HealOpsConfig -HealOpsConfigPath $HealOpsConfigPath
+
+                # Read the config
+                $HealOpsConfigReader = New-Object System.IO.StreamReader($HealOpsConfigFile)
+                $HealOpsConfigText = $HealOpsConfigReader.ReadToEnd()
+
+                # To array type object for easy of reading
+                if ($psVersionAbove4) {
+                    [PSCustomObject]$HealOpsConfig = $HealOpsConfigText | ConvertFrom-Json
+                } else {
+                    [PSCustomObject]$HealOpsConfig = $HealOpsConfigText | out-string | ConvertFrom-Json
+                }
+
+                # Mark semaphore signaling that we are a' okay! to run a self-update cycle.
+                $canRunUpdate = $true
+            } catch {
+                $log4netLoggerDebug.Debug("The HealOps config file could not be locked. It is already being used. An update cyclus might therefore be occurring.")
+
+                # Mark semaphore to signal that we should not run an update as another process is potentially doing that already.
+                $canRunUpdate = $false
             }
 
-            if ($null -eq $healOpsConfig) {
-                $message = "The HealOpsConfig contains no data. Please generate a proper HealOpsConfig file. See the documentation."
+            if (-not $canRunUpdate) {
+                # Failed to lock the HealOps config as another process is using it. Still need to read the config for this session to run is *.Tests.ps1 and *.Repairs.ps1 files.
+                if($psVersionAbove4) {
+                    [PSCustomObject]$HealOpsConfig = Get-Content -Path $HealOpsConfigPath -Encoding UTF8 | ConvertFrom-Json
+                } else {
+                    [PSCustomObject]$HealOpsConfig = Get-Content -Path $HealOpsConfigPath | out-string | ConvertFrom-Json
+                }
+
+            }
+
+            if ($null -eq $HealOpsConfig) {
+                $message = "The HealOpsConfig contains no data. Please generate a proper HealOps config file. See the documentation."
                 Write-Verbose -Message $message
                 $log4netLogger.error("$message")
 
                 # Exit
                 throw $message
             } elseif(-not ($healOpsConfig.reportingBackend.Length -gt 1)) {
-                $message = "The HealOps config file is invalid. Please generate a proper HealOpsConfig file. See the documentation."
+                $message = "The HealOps config file is invalid. Please generate a proper HealOps config file. See the documentation."
                 Write-Verbose -Message $message
                 $log4netLogger.error("$message")
 
@@ -234,36 +261,41 @@
             - Check for updates. For the modules that HealOps has a dependency on and for HealOps itself
         #>
         if($healOpsConfig.checkForUpdates -eq "True") {
-            if (-not $ForceUpdates) {
-                $timeForUpdate = Confirm-TimeToUpdate -Config $HealOpsConfig
-            }
-
-            if ($timeForUpdate -eq $true -or $ForceUpdates -eq $true) {
-                # Debug info - register that forceupdate was used.
-                if ($ForceUpdates -eq $true) {
-                    $log4netLoggerDebug.debug("The force update parameter was used.")
+            if ($canRunUpdate) {
+                if (-not $ForceUpdates) {
+                    $timeForUpdate = Confirm-TimeToUpdate -Config $HealOpsConfig
                 }
 
-                try {
-                    # Control if the -UpdateMode param. was set. If so use its value
-                    if ($PSBoundParameters.ContainsKey('UpdateMode')) {
-                        $log4netLoggerDebug.debug("The UpdateMode param. was used to overwrite the use of the UpdateMode property in the HealOps config file. UpdateMode was temporarily set to > $UpdateMode)")
-                        $actualUpdateMode = $UpdateMode
-                    } else {
-                        $log4netLoggerDebug.debug("The value of > UpdateMode in the HealOps config json file > $($healOpsConfig.UpdateMode)")
-                        $actualUpdateMode = $healOpsConfig.UpdateMode
+                if ($timeForUpdate -eq $true -or $ForceUpdates -eq $true) {
+                    # Debug info - register that forceupdate was used.
+                    if ($ForceUpdates -eq $true) {
+                        $log4netLoggerDebug.debug("The force update parameter was used.")
                     }
 
-                    # Call Start-HealOpsUpdateCycle to execute the self-update feature
-                    Start-HealOpsUpdateCycle -UpdateMode $actualUpdateMode -Config $healOpsConfig
-                } catch {
-                    $log4netLogger.error("Start-HealOpsUpdateCycle failed with: $_")
+                    try {
+                        # Control if the -UpdateMode param. was set. If so use its value
+                        if ($PSBoundParameters.ContainsKey('UpdateMode')) {
+                            $log4netLoggerDebug.debug("The UpdateMode param. was used to overwrite the use of the UpdateMode property in the HealOps config file. UpdateMode was temporarily set to > $UpdateMode)")
+                            $actualUpdateMode = $UpdateMode
+                        } else {
+                            $log4netLoggerDebug.debug("The value of > UpdateMode in the HealOps config json file > $($healOpsConfig.UpdateMode)")
+                            $actualUpdateMode = $healOpsConfig.UpdateMode
+                        }
+
+                        # Call Start-HealOpsUpdateCycle to execute the self-update feature
+                        Start-HealOpsUpdateCycle -UpdateMode $actualUpdateMode -Config $healOpsConfig
+                    } catch {
+                        $log4netLogger.error("Start-HealOpsUpdateCycle failed with: $_")
+                    }
+                } else {
+                    # The update cycle did not run.
+                    $log4netLoggerDebug.debug("The update cycle did not run. It is not the time for updating.")
+                    Write-Verbose -Message "The update cycle did not run. It is not the time for updating."
                 }
             } else {
-                # The update cycle did not run.
-                $log4netLoggerDebug.debug("The update cycle did not run. It is not the time for updating.")
-                Write-Verbose -Message "The update cycle did not run. It is not the time for updating."
-            }
+                $log4netLoggerDebug.Debug("canRunUpdate has a value of $canRunUpdate. Therefore the self-update feature was halted before it got started. In order to avoid conflicting
+                with other instances of HealOps already in a self-update cycle.")
+            } # End of confitional control on canRunUpdate. This semaphore needs to be true. If false another process is already in the proces of running a self-update cycle.
         } else {
             $log4netLoggerDebug.debug("The self-update feature is disabled.")
         }
@@ -354,5 +386,17 @@
             }
         } # End of conditional check on ParameterSetName -eq "File"
     } # End of Process {} declaration
-    End {}
+    End {
+        # Clean-up
+        if ($canRunUpdate) {
+            # Close the resources used to read and lock the HealOps config file
+            try {
+                $HealOpsConfigFile.Close()
+                $HealOpsConfigReader.Close()
+                $log4netLoggerDebug.Debug("canRunUpdate was $canRunUpdate. Successfully closed the HealOps config lock & read resources.")
+            } catch {
+                $log4netLogger.error("canRunUpdate was $canRunUpdate. Couldn't clean-up the HealOps config lock & read resources. Failed with > $_")
+            }
+        }
+    }
 }

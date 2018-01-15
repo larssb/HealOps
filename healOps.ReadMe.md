@@ -246,3 +246,6 @@ The std. is:
         > HealOpsPackages = Only HealOps packages will be updated.
         > HealOps = Only HealOps itself and its requird modules will be updated.
     - It is controlled by setting it to one of the above three values in the HealOpsConfig json file or when installing HealOps with the Install-HealOps deploy script.
+
+    ''On HealOps packages''
+    - These cannot AS IN CAN NOT! have required modules that are other HealOps packages. As of 180115.

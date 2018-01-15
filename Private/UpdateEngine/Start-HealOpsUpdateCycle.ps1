@@ -71,8 +71,26 @@ function Start-HealOpsUpdateCycle() {
         if ($UpdateMode -eq "All" -or $UpdateMode -eq "HealOpsPackages") {
             $ModulesToUpdate = Get-InstalledHealOpsPackage -All
 
-            # Get a password to set on the HealOps user
+            # The job user of HealOps ... its username
+            New-Variable -Name HealOpsUsername -Value "HealOps" -Option Constant -Description "The username of the local administrator user, used by HealOps" `
+            -Visibility Private -Scope Script
 
+            # Password on the user
+            if ($psVersionAbove4) {
+                $Password = New-Password -PasswordType "SecureString"
+                $clearTextJobPassword = [System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($Password))
+            } else {
+                $Password = New-Password -PasswordType "ClearText"
+                $clearTextJobPassword = $Password
+            }
+
+            # Ensure that a local user for HealOps exists and works.
+            try {
+                $healOpsUserConfirmed = Resolve-HealOpsUserRequirement -Password $Password -UserName $HealOpsUsername
+            } catch {
+                $log4netLogger.error("Resolve-HealOpsUserRequirement failed with > $_")
+                $healOpsUserConfirmed = $false
+            }
         }
 
         if ($UpdateMode -eq "All" -or $UpdateMode -eq "HealOps") {
@@ -85,7 +103,11 @@ function Start-HealOpsUpdateCycle() {
 
             if ($null -ne $HealOpsModule) {
                 # Add the module to the list
-                $ModulesToUpdate.Add($HealOpsModule)
+                try {
+                    $ModulesToUpdate.Add($HealOpsModule)
+                } catch {
+                    $log4netLogger.error("Failed to add the $HealOpsModuleName to the ModulesToUpdate collection. Failed with > $_")
+                }
             } else {
                 $log4netLoggerDebug.debug("The main module > $HealOpsModuleName, could not be found on the system.")
             }
@@ -174,7 +196,162 @@ function Start-HealOpsUpdateCycle() {
                 } else {
                     $log4netLoggerDebug.debug("There was no newer version of the module: $($module.Name) - on the Package Management backend.")
                 }
+
+                <#
+                    - Handle HealOps package specifics
+                #>
+                if ($module.Name -match "*HealOpsPackage") {
+                    if ($healOpsUserConfirmed) {
+                        # Get the HealOps package we just installed
+                        [System.Collections.Generic.List[PSModuleInfo]]$installedHealOpsPackage = Get-InstalledHealOpsPackage -Package $module.Name
+
+                        # Get the *.Tests.ps1 files in the HealOps package just installed.
+                        if ($null -ne $installedHealOpsPackage -and $installedHealOpsPackage.Count -ge 1) {
+                            [Array]$TestsFiles = Get-HealOpsPackageTestsFile -All -Package $installedHealOpsPackage
+                        }
+
+                        if ($TestsFiles.Count -ge 1) {
+                            # Get the config file of the HealOps package
+                            [Array]$HealOpsPackageConfig = Get-HealOpsPackageConfig -ModuleBase $installedHealOpsPackage.ModuleBase
+
+                            if ($HealOpsPackageConfig.Count -ge 1) {
+                                # Create a job per *.Tests.ps1 file in the current HealOps package
+                                foreach ($testsFile in $TestsFiles) {
+                                    # Determine the base FileName for the *.Tests.ps1 file
+                                    $baseFileName = Get-TestsFileBaseName -HealOpsPackageConfig $HealOpsPackageConfig -TestsFile $testsFile
+
+                                    # Get the jobInterval for the current job
+                                    try {
+                                        $currentErrorActionPreference = $ErrorActionPreference
+                                        $ErrorActionPreference = "Stop"
+                                        [int]$TestsFileJobInterval = $HealOpsPackageConfig.$baseFileName.jobInterval -as [int]
+                                    } catch {
+                                        $log4netLogger.error("Failed to determine the jobInterval value. Failed with > $_")
+                                    } finally {
+                                        $ErrorActionPreference = $currentErrorActionPreference
+                                    }
+
+                                    # Create a job to execute the retrieved *.Tests.ps1 file.
+                                    if ($null -ne $TestsFileJobInterval) {
+                                        try {
+                                            New-HealOpsPackageJob -TestsBaseFileName $baseFileName -JobInterval $TestsFileJobInterval -JobType $Config.JobType -Package $installedHealOpsPackage -Password $clearTextJobPassword -UserName $HealOpsUsername
+                                        } catch {
+                                            $log4netLogger.error("Failed to create a job for the *.Tests.ps1 file named > $baseFileName. Failed with > $_")
+                                        }
+                                    }
+                                }
+                            } else {
+                                $log4netLogger.error("No HealOps config file was returned. No HealOps jobs where created.")
+                            }
+                        } else {
+                            $log4netLogger.error("There seems to be no *.Tests.ps1 files in the HealOps package named > $($module.name). No HealOps jobs where created.")
+                        }
+                    } else {
+                        $log4netLogger.error("A HealOps package has been updated. However the HealOps user was not confirmed. This is bad! Jobs will likely not be able to execute now!`
+                        The HealOps package that was updated is > $($module.Name)")
+                        # TODO: Inform about this! Some handling of this situation is required!
+                    }
+                } # End of conditional control on $module being a HealOps package.
             } # End of foreach iteration over $ModulesToUpdate
+
+            <#
+                - Now configure the HealOps jobs that existed before executing this self-update cycle.
+                    > We need to do this. If we don't, the jobs will not work as the password on the local HealOps user has been changed.
+                    > Doesn't matter if the user existed already or not.
+            #>
+            if ($healOpsUserConfirmed) {
+                $log4netLoggerDebug.Debug("- Now configuring HealOps packages that was on the system before executing this self-update cycle.")
+
+                # Get all packages not in $Packages
+                [System.Collections.Generic.List[PSModuleInfo]]$HealOpsPackagesToUpdate = Get-InstalledHealOpsPackage -NotIn -PackageList $ModulesToUpdate
+
+                if ($HealOpsPackagesToUpdate.Count -ge 1) {
+                    foreach ($packageToUpdate in $HealOpsPackagesToUpdate) {
+                        # Get the config file of the HealOps package
+                        [Array]$HealOpsPackageConfig = Get-HealOpsPackageConfig -ModuleBase $packageToUpdate.ModuleBase
+
+                        if ($HealOpsPackageConfig.Count -ge 1) {
+                            # Get the *.Tests.ps1 files in the HealOps package
+                            [Array]$TestsFiles = Get-HealOpsPackageTestsFile -Package $packageToUpdate
+
+                            if ($TestsFiles.Count -ge 1) {
+                                foreach ($testsFile in $TestsFiles) {
+                                    # Get the BaseName of the *.Tests.ps1 file. Needed as this is the name of the task/job to get.
+                                    $baseFileName = Get-TestsFileBaseName -HealOpsPackageConfig $HealOpsPackageConfig -TestsFile $testsFile
+
+                                    if ($nulle -ne $baseFileName) {
+                                        # Get the Scheduled task
+                                        try {
+                                            [CimInstance]$task = Get-xScheduledTask -TaskName $baseFileName
+                                        } catch {
+                                            $log4netLogger.error("")
+                                        }
+
+                                        if ($null -ne $task) {
+                                            # Set the password on the job
+                                            try {
+                                                Set-xScheduledTask -InputObject $task -Password $clearTextJobPassword
+                                            } catch {
+                                                Write-Output "$_ <-- you will have to set the password manually on the job named > $baseFileName"
+                                                $log4netLogger.error("$_")
+                                            }
+                                        } else {
+                                            Write-Output "No job exists for the *.Tests.ps1 file named > $baseFileName. Creating one!"
+                                            $log4netLoggerDebug.Debug("No job exists for the *.Tests.ps1 file named > $baseFileName. Creating one!")
+
+                                            # Get the jobInterval to use
+                                            try {
+                                                $currentErrorActionPreference = $ErrorActionPreference
+                                                $ErrorActionPreference = "Stop"
+                                                [int]$TestsFileJobInterval = $HealOpsPackageConfig.$baseFileName.jobInterval -as [int]
+                                            } catch {
+                                                $log4netLogger.error("Failed to determine the jobInterval value. Failed with > $_")
+                                            } finally {
+                                                $ErrorActionPreference = $currentErrorActionPreference
+                                            }
+
+                                            # Create a task for the *.Tests.ps1 file as no one currently exists
+                                            try {
+                                                $jobCreationResult = New-HealOpsPackageJob -TestsBaseFileName $baseFileName -JobInterval $TestsFileJobInterval -JobType $JobType -Package $packageToUpdate -Password $clearTextJobPassword -UserName $HealOpsUsername
+                                            } catch {
+                                                $log4netLogger.error("Failed to create a job for the *.Tests.ps1 file named > $baseFileName. Failed with > $_")
+                                            }
+
+                                            <#
+                                                - Info to installing person
+                                            #>
+                                            if ($jobCreationResult) {
+                                                Write-Host "================================================================================================" -ForegroundColor DarkYellow
+                                                Write-Host "....The job was created successfully...."                               -ForegroundColor Green
+                                                Write-Host "================================================================================================" -ForegroundColor DarkYellow
+                                                Write-Host ""
+                                            } else {
+                                                Write-Host "================================================================================================" -ForegroundColor DarkYellow
+                                                Write-Host "....Failed to create the job....see the log for reasons."                               -ForegroundColor Green
+                                                Write-Host "================================================================================================" -ForegroundColor DarkYellow
+                                                Write-Host ""
+                                            }
+                                        }
+                                    } else {
+                                        Write-Output "Failed to get the BaseName of the *.Tests.ps1 file named > $testsFile. <-- you will have to set the password manually on the job."
+                                        $log4netLogger.error("Failed to get the BaseName of the *.Tests.ps1 file named > $testsFile.")
+                                    }
+                                } # End of foreach *.Tests.ps1 file in the HealOps package to update.
+                            } else {
+                                Write-Output "No *.Tests.ps1 files was found in the package named > $($packageToUpdate.Name). Please control that this package is a proper HealOps package."
+                                $log4netLogger.error("No *.Tests.ps1 files was found in the package named > $($packageToUpdate.Name).")
+                            }
+                        } else {
+                            Write-Output "Failed to get the HealOps package config file. For the package named > $($packageToUpdate.Name). <-- you will have to set a password manually on the jobs for the *.Tests.ps1 files in this package."
+                            $log4netLogger.error("Failed to get the HealOps package config file. For the package named > $($packageToUpdate.Name)")
+                        } # End of conditional control on the HealOpsPackage config file.
+                    } # End of foreach on HealOps packages to update.
+                } else {
+                    $log4netLoggerDebug.Debug("There seems to have been no HealOps packages installed on the system prior to running Install-HealOpsPackage.")
+                }
+            } else {
+                $log4netLoggerDebug.Debug("As the HealOps user was not changed, HealOps packages installed prior to running Install-HealOpsPackage was not touched.")
+            }
         } else {
             $log4netLoggerDebug.debug("No modules where found. So no modules was updated. The update mode was set to > $UpdateMode.")
         } # End of conditional amount control on $ModulesToUpdate
