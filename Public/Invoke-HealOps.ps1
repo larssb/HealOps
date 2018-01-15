@@ -115,6 +115,7 @@
 
                 # Mark semaphore signaling that we are a' okay! to run a self-update cycle.
                 $canRunUpdate = $true
+                $log4netLoggerDebug.Debug("The HealOps config file was successfully locked.")
             } catch {
                 $log4netLoggerDebug.Debug("The HealOps config file could not be locked. It is already being used. An update cyclus might therefore be occurring.")
 
