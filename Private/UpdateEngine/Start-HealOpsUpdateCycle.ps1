@@ -200,7 +200,7 @@ function Start-HealOpsUpdateCycle() {
                 <#
                     - Handle HealOps package specifics
                 #>
-                if ($module.Name -match "*HealOpsPackage") {
+                if ($module.Name -match "\*HealOpsPackage") {
                     if ($healOpsUserConfirmed) {
                         # Get the HealOps package we just installed
                         [System.Collections.Generic.List[PSModuleInfo]]$installedHealOpsPackage = Get-InstalledHealOpsPackage -Package $module.Name
@@ -260,7 +260,7 @@ function Start-HealOpsUpdateCycle() {
                     > Doesn't matter if the user existed already or not.
             #>
             if ($healOpsUserConfirmed) {
-                $log4netLoggerDebug.Debug("- Now configuring HealOps packages that was on the system before executing this self-update cycle.")
+                $log4netLoggerDebug.Debug("Now configuring HealOps packages that was on the system before executing this self-update cycle.")
 
                 # Get all packages not in $Packages
                 [System.Collections.Generic.List[PSModuleInfo]]$HealOpsPackagesToUpdate = Get-InstalledHealOpsPackage -NotIn -PackageList $ModulesToUpdate
@@ -290,7 +290,7 @@ function Start-HealOpsUpdateCycle() {
                                         if ($null -ne $task) {
                                             # Set the password on the job
                                             try {
-                                                Set-xScheduledTask -InputObject $task -Password $clearTextJobPassword
+                                                Set-xScheduledTask -InputObject $task -UserName $HealOpsUsername -Password $clearTextJobPassword
                                             } catch {
                                                 $log4netLogger.error("$_")
                                             }
@@ -355,7 +355,7 @@ function Start-HealOpsUpdateCycle() {
             $registerResult = Register-UpdateCycle -Config $Config -ModuleBase $MainModule.ModuleBase
 
             if ($registerResult -eq $false) {
-                $log4netLogger.error("Failed to register that an update cycle ran. See any possible [ERROR] in the log.")
+                $log4netLogger.error("Failed to register that an update cycle ran.")
             }
         }
     }
