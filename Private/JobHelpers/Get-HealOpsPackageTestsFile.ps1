@@ -65,6 +65,6 @@ function Get-HealOpsPackageTestsFile() {
     }
     End {
         # Return
-        $TestsFiles
+        ,$TestsFiles
     }
 }

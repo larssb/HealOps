@@ -86,6 +86,9 @@
             -Visibility Private -Scope Script
         }
 
+        # The name of the HealOps module.
+        New-Variable -Name mainModuleName -Value "HealOps" -Option Constant -Description "The name of the HealOps module" -Visibility Private -Scope Script
+
         <#
             - Sanity tests
         #>
@@ -408,6 +411,23 @@
                     $MainModule = Get-LatestModuleVersionLocally -ModuleName "HealOps"
                 } catch {
                     $log4netLogger.error("Failed to get the latest module version of HealOps. It failed with > $_")
+                }
+
+                <#
+                    - Remove and import the latest version. If not we cannot properly update the HealOps config file with potential changes as the updated functions to compare and so forth has
+                    not been read into memory.
+                        > This should therefore reload the HealOps module so that the Register-UpdateCycle and the functions it uses are of their latest version in mem.
+                #>
+                try {
+                    Remove-Module -Name $mainModuleName -Force -ErrorAction Stop
+                } catch {
+                    $log4netLogger.error("Failed to remove the $mainModuleName module. Failed with > $_")
+                }
+
+                try {
+                    Import-Module -Name $mainModuleName -Force -ErrorAction Stop
+                } catch {
+                    $log4netLogger.error("Failed to import the $mainModuleName module. Failed with > $_")
                 }
 
                 if($null -ne $MainModule.ModuleBase) {

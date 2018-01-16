@@ -197,9 +197,9 @@ function Start-HealOpsUpdateCycle() {
                     $log4netLoggerDebug.debug("There was no newer version of the module: $($module.Name) - on the Package Management backend.")
                 }
 
-                <#
-                    - Handle HealOps package specifics
-                #>
+                <###########################################
+                    - Handle HealOps package specifics -
+                ############################################>
                 if ($module.Name -match "\*HealOpsPackage") {
                     if ($healOpsUserConfirmed) {
                         # Get the HealOps package we just installed

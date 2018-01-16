@@ -47,6 +47,6 @@ function Get-HealOpsPackageConfig() {
     }
     End {
         # Return
-        $HealOpsPackageConfig
+        ,$HealOpsPackageConfig
     }
 }
