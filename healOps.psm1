@@ -8,6 +8,9 @@ if($PSVersionTable.PSVersion.ToString() -gt 4) {
     [Boolean]$global:psVersionAbove4 = $false
 }
 
+# RunMode global variable
+[Boolean]$global:runMode = test-powershellRunMode -Interactive
+
 # Define the foldernames
 $functionFolders = @('Public', 'Private', 'Classes')
 

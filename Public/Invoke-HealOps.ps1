@@ -9,7 +9,9 @@
     .OUTPUTS
         <none>
     .NOTES
-        <none>
+        - Uses the global variables:
+            -- psVersionAbove4 > Used to execte either 'A' or 'B' set of code, in relation to the current PowerShell runtime version.
+            -- runMode > Used to test on, in order to know if we should output to an interactive session.
     .EXAMPLE
         Invoke-HealOps -TestsFileName Citrix.Services.ps1 -HealOpsPackage Citrix.HealOpsPackage
         Executes HealOps on a specific *.Tests.ps1 file. Sending in the HealOps package config file wherein HealOps will read configuration and tags.
@@ -302,6 +304,10 @@
         } else {
             $log4netLoggerDebug.Debug("canRunUpdate has a value of $canRunUpdate. Therefore the self-update feature, if enabled, will be denied executing. In order to avoid conflicting
             with other instances of HealOps already in a self-update cycle.")
+            if($runMode) {
+                Write-Output "canRunUpdate has a value of $canRunUpdate. Therefore the self-update feature, if enabled, will be denied executing. In order to avoid conflicting
+                with other instances of HealOps already in a self-update cycle."
+            }
         } # End of confitional control on canRunUpdate. This semaphore needs to be true. If false another process is already in the proces of running a self-update cycle.
     }
     Process {
