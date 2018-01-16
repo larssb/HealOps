@@ -410,11 +410,11 @@
 
             if ($timeForUpdate -eq $true -or $ForceUpdates -eq $true) {
                 <#
-                - Register that an update cycle ran
+                    - Register that an update cycle ran
                 #>
                 try {
                     # Refresh info on the latest version of the HealOps module after having ran an update cycle
-                    $MainModule = Get-LatestModuleVersionLocally -ModuleName "HealOps"
+                    [PSModuleInfo]$MainModule = Get-LatestModuleVersionLocally -ModuleName $mainModuleName
                 } catch {
                     $log4netLogger.error("Failed to get the latest module version of HealOps. It failed with > $_")
                 }
@@ -438,11 +438,14 @@
 
                 if($null -ne $MainModule.ModuleBase) {
                     # Register that the main module was updated.
+                    . $MainModule.ModuleBase/Private/UpdateEngine/Register-UpdateCycle.ps1
                     $registerResult = Register-UpdateCycle -Config $HealOpsConfig -ModuleBase $MainModule.ModuleBase
 
                     if ($registerResult -eq $false) {
                         $log4netLogger.error("Failed to register that an update cycle ran.")
                     }
+                } else {
+                    $log4netLogger.error("The main module > $mainModuleName was not returned properly. Result > Failed to register that an update cycle ran. Value of MainModule.Mobulebase > $($MainModule.ModuleBase)")
                 }
             }
         }
