@@ -89,7 +89,9 @@
         }
 
         # The name of the HealOps module.
-        New-Variable -Name mainModuleName -Value "HealOps" -Option Constant -Description "The name of the HealOps module" -Visibility Private -Scope Script
+        if(-not (Get-variable -Name mainModuleName -ErrorAction SilentlyContinue) -eq $true) {
+            New-Variable -Name mainModuleName -Value "HealOps" -Option Constant -Description "The name of the HealOps module" -Visibility Private -Scope Script
+        }
 
         <#
             - Sanity tests
@@ -401,7 +403,9 @@
         if ($canRunUpdate) {
             # Close the resources used to read and lock the HealOps config file
             try {
+                $HealOpsConfigFile.Dispose()
                 $HealOpsConfigFile.Close()
+                $HealOpsConfigReader.Dispose()
                 $HealOpsConfigReader.Close()
                 $log4netLoggerDebug.Debug("canRunUpdate was $canRunUpdate. Successfully closed the HealOps config lock & read resources.")
             } catch {
@@ -438,11 +442,13 @@
 
                 if($null -ne $MainModule.ModuleBase) {
                     # Register that the main module was updated.
-                    . $MainModule.ModuleBase/Private/UpdateEngine/Register-UpdateCycle.ps1
+                    . "$($MainModule.ModuleBase)/Private/UpdateEngine/Register-UpdateCycle.ps1"
                     $registerResult = Register-UpdateCycle -Config $HealOpsConfig -ModuleBase $MainModule.ModuleBase
 
                     if ($registerResult -eq $false) {
                         $log4netLogger.error("Failed to register that an update cycle ran.")
+                    } else {
+                        $log4netLoggerDebug.Debug("UpdateCycle registered")
                     }
                 } else {
                     $log4netLogger.error("The main module > $mainModuleName was not returned properly. Result > Failed to register that an update cycle ran. Value of MainModule.Mobulebase > $($MainModule.ModuleBase)")

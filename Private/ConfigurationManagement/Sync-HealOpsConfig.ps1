@@ -1,22 +1,22 @@
 function Sync-HealOpsConfig() {
-<#
-.DESCRIPTION
-    Syncs changes from the current HealOps config and an updated HealOps config to the HealOps config file to be used going forward.
-.INPUTS
-    [System.Array] representing the changes between the current and an updated version of the HealOps config file.
-.OUTPUTS
-    [PSCustomObject] representing the data to write to the HealOps config file to be used going forward.
-.NOTES
-    - This function will likely have to be updated regularly. Or in other words, as often as you update/change the HealOps config file.
-.EXAMPLE
-    [PSCustombObject]$syncedConfig = Sync-HealOpsConfig -configChanges $configChanges -currentConfig $currentConfig
-        > Syncs the changes that was found the current HealOps config file and the one from an updated version of HealOps.
-        > The changes are returned as a PSCustomObject that can be written to the HealOps config file to be used going forward.
-.PARAMETER currentConfig
-    The current HealOps config file. To be compared with the HealOps config file coming in from an updated version of HealOps.
-.PARAMETER configChanges
-    The changes between the current HealOps config and an HealOps config from an updated version of HealOps.
-#>
+    <#
+    .DESCRIPTION
+        Syncs changes from the current HealOps config and an updated HealOps config to the HealOps config file to be used going forward.
+    .INPUTS
+        [System.Array] representing the changes between the current and an updated version of the HealOps config file.
+    .OUTPUTS
+        [PSCustomObject] representing the data to write to the HealOps config file to be used going forward.
+    .NOTES
+        - This function will likely have to be updated regularly. Or in other words, as often as you update/change the HealOps config file.
+    .EXAMPLE
+        [PSCustombObject]$syncedConfig = Sync-HealOpsConfig -configChanges $configChanges -currentConfig $currentConfig
+            > Syncs the changes that was found the current HealOps config file and the one from an updated version of HealOps.
+            > The changes are returned as a PSCustomObject that can be written to the HealOps config file to be used going forward.
+    .PARAMETER currentConfig
+        The current HealOps config file. To be compared with the HealOps config file coming in from an updated version of HealOps.
+    .PARAMETER configChanges
+        The changes between the current HealOps config and an HealOps config from an updated version of HealOps.
+    #>
 
     # Define parameters
     [CmdletBinding()]
@@ -53,6 +53,7 @@ function Sync-HealOpsConfig() {
         $ErrorActionPreference = "Stop"
     }
     Process {
+        $log4netLoggerDebug.Debug("configChanges holds > $configChanges")
         foreach ($item in $configChanges) {
             switch ($item) {
                 { $_ -match "checkForUpdatesInterval_*" } {
@@ -140,7 +141,8 @@ function Sync-HealOpsConfig() {
                     }
                 }
                 Default {
-                    throw "Sync-HealOpsConfig | $item in the configChanges Array did not match any of the options."
+                    $log4netLoggerDebug.debug("Sync-HealOpsConfig | The item > $item, in the configChanges Array did not match any of the options.")
+                    Write-Verbose -Message "Sync-HealOpsConfig | The item > $item, in the configChanges Array did not match any of the options."
                 }
             }
         } # End of foreach item in the configChanges Array
