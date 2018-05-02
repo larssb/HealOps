@@ -227,7 +227,7 @@
 			"}"
 		]
 	},
-	"": {
+	"dscResource": {
 		"prefix": "dscResource",
 		"body": [
 			"<#",
@@ -288,6 +288,23 @@
 			"\t# DSC RESOURCE HELPER METHODS #",
 			"\t###############################",
 			"\r",
+			"}"
+		]
+	},
+	"pesterTest": {
+		"prefix": "pesterTest",
+		"body":[
+			"Describe \"TEST_NAME\" {",
+			"\t<#",
+			"\t\t- TEST_DESCRIPTION",
+			"\t#>",
+			"\tIt \"EXACTLY_WHAT_IT_TESTS\" {",
+			"\t\t# A_COMMENT",
+			"\r",
+			"\r",
+			"\t\t# Assertion",
+			"\t\t\\$X | Should ....",
+			"\t}",
 			"}"
 		]
 	}

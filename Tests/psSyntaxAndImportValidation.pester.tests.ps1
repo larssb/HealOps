@@ -1,12 +1,9 @@
 # Include: Settings
-Import-Module -name $PSScriptRoot/settings.pester.tests.psm1 -Force;
+Import-Module -name $PSScriptRoot/settings.pester.tests.psm1 -Force
 
-<#
-    -
-#>
 # Define vars
-$moduleName = $($Settings.moduleName);
-$moduleRoot = $($Settings.moduleRoot);
+$moduleName = $($Settings.moduleName)
+$moduleRoot = $($Settings.moduleRoot)
 Describe "General project validation: $moduleName" {
     $scripts = Get-ChildItem $moduleRoot -Include *.ps1, *.psm1, *.psd1 -Recurse
 

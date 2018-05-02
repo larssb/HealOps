@@ -60,4 +60,12 @@ task publish {
     Publish-Module -Name $buildOutputRoot -Repository HealOps -NuGetApiKey "" -ErrorAction Stop
 }
 
+task runAllTests {
+    #
+}
+
+task runConfigurationManagementTests {
+    #
+}
+
 task BuildPublish build, publish

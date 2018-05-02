@@ -1,21 +1,21 @@
 function Compare-HealOpsConfig() {
-    <#
-    .DESCRIPTION
-        Compares the current HealOps config file with the one in an updated version of HealOps. In order to find the properties that might have been changed or added.
-    .INPUTS
-        [PSCustomObject] one for each HealOps config file.
-    .OUTPUTS
-        [System.Array] Representing the changes, if any, between the current and the updated HealOps config file.
-    .NOTES
-        - It is assumed that the reference object (the correct) is the HealOps config from an updated version of HealOps. The thinking being > this is what is updated so that is the master.
-    .EXAMPLE
-        [Array]$configCompare = Compare-HealOpsConfig -currentConfig $currentHealOpsConfig -updatedConfig $updatedHealOpsConfig
-            > Compares the current and the updated HealOps config files and returns the result.
-    .PARAMETER currentConfig
-        The current HealOps config file. To be compared with the HealOps config file coming in from an updated version of HealOps.
-    .PARAMETER updatedConfig
-        The updated HealOps config file. To be compared with the current HealOps config file
-    #>
+<#
+.DESCRIPTION
+    Compares the current HealOps config file with the one in an updated version of HealOps. In order to find the properties that might have been changed or added.
+.INPUTS
+    [PSCustomObject] one for each HealOps config file.
+.OUTPUTS
+    [System.Array] Representing the changes, if any, between the current and the updated HealOps config file.
+.NOTES
+    - It is assumed that the reference object (the correct) is the HealOps config from an updated version of HealOps. The thinking being > this is what is updated so that is the master.
+.EXAMPLE
+    [Array]$configCompare = Compare-HealOpsConfig -currentConfig $currentHealOpsConfig -updatedConfig $updatedHealOpsConfig
+        > Compares the current and the updated HealOps config files and returns the result.
+.PARAMETER currentConfig
+    The current HealOps config file. To be compared with the HealOps config file coming in from an updated version of HealOps.
+.PARAMETER updatedConfig
+    The updated HealOps config file. To be compared with the current HealOps config file
+#>
 
     # Define parameters
     [CmdletBinding()]
