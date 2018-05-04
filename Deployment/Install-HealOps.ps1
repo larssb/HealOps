@@ -44,11 +44,11 @@
 .NOTES
     <none>
 .EXAMPLE
-    "PATH_TO_THIS_FILE"/Instal-HealOps.ps1 -reportingBackend 'OpenTSDB' -checkForUpdatesInterval_Hours 3 -PackageManagementURI https://proget.danskespil.dk -FeedName HealOps `
+    "PATH_TO_THIS_FILE"/Instal-HealOps.ps1 -reportingBackend 'OpenTSDB' -checkForUpdatesInterval_Hours 3 -PackageManagementURI https://My.PackageManagementServer.com -FeedName HealOps `
     -APIKey "API_KEY" -HealOpsPackages Citrix.HealOpsPackage -JobType WinScTask
 
     >> Executes Installs HealOps on the node where it is executed. Sets the reporting backend to use OpenTSDB. Updates will be checked for every third day. The PackageManagement system `
-    is accessed via https://proget.danskespil.dk. The feed on the Package Management system is named HealOps. The HealOps packages that will be installed is named Citrix.HealOpsPackage `
+    is accessed via https://My.PackageManagementServer.com. The feed on the Package Management system is named HealOps. The HealOps packages that will be installed is named Citrix.HealOpsPackage `
     The type of the job that will invoke HealOps will be a Windows Scheduled Task.
 .PARAMETER AnonymousNotAllowed
     Used to specify that the package management backend does not allow anonymous access. This will make the script prompt for credentials.

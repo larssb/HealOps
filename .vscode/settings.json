@@ -9,5 +9,10 @@
 
     // Use a custom PowerShell Script Analyzer settings file for this workspace.
     // Relative paths for this setting are always relative to the workspace root dir.
-    "powershell.scriptAnalysis.settingsPath": "PSScriptAnalyzer/ScriptAnalyzerSettings.psd1"
+    "powershell.scriptAnalysis.settingsPath": "PSScriptAnalyzer/ScriptAnalyzerSettings.psd1",
+
+    //-------- Workbench settings --------
+    "workbench.colorCustomizations": {
+        "editorIndentGuide.activeBackground": "#f10ed3fa"
+    }
 }

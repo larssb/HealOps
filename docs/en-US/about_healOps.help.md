@@ -1,5 +1,5 @@
-# healOps
-## about_healOps
+# HealOps
+## about_HealOps
 
 ```
 ABOUT TOPIC NOTE:

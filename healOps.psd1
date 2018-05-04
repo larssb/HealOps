@@ -1,6 +1,6 @@
 @{
     # Script module or binary module file associated with this manifest.
-    RootModule = 'HealOps'
+    RootModule = 'HealOps.psm1'
 
     # Version number of this module.
     ModuleVersion = '0.0.0.51'
@@ -22,7 +22,7 @@
 
     # Modules that must be imported into the global environment prior to importing this module
     RequiredModules = @(@{ModuleName = 'Pester'; ModuleVersion = '4.1.0'; },
-                        @{ModuleName = 'powerShellTooling'; ModuleVersion = '0.0.12'; })
+                        @{ModuleName = 'PowerShellTooling'; ModuleVersion = '0.0.12'; })
 
     # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
     FunctionsToExport = @(
