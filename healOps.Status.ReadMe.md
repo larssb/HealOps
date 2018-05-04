@@ -63,6 +63,7 @@
             * to metric x.y.z that > we look at in Grafana
     * Think about deleting old version of an updated module. Cannot be done in the same session that updated HealOps itself.
         Maybe do a contorl on $MyInvocation --> if latest version --> remove older than newest/current. If not latest do nothing as we likely just updated.
+    * Make the Git pre-commit compatible with version 5.1 and 6+. Where the executable in v5.1- is PowerShell and v6+ is PWSH.
 
 ## Think about
 
