@@ -14,5 +14,11 @@
     //-------- Workbench settings --------
     "workbench.colorCustomizations": {
         "editorIndentGuide.activeBackground": "#f10ed3fa"
-    }
+    },
+    "spellright.language": "en",
+    "spellright.documentTypes": [
+        "markdown",
+        "latex",
+        "plaintext"
+    ]
 }
