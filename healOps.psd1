@@ -15,7 +15,7 @@
     CompanyName = 'Bengtsson Driven Development'
 
     # Copyright statement for this module
-    Copyright = '(C) 2018, Lars S. Bengtsson. All rights reserved.'
+    Copyright = '(C) 2018, Lars S. Bengtsson, licensed under Apache 2.0 License.'
 
     # Description of the functionality provided by this module
     Description = 'A self-healing monitoring system. Uses Pester tests (TDD) to determine the state of a system entity. Then, if the entity is in a faulted state HealOps will try to repair it. All along HealOps reports metrics to a backend report system and HealOps status is sent to stakeholders. In order to e.g. trigger alarms and get on-call personnel on an issue that could not be repaired.'

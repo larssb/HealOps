@@ -1,6 +1,4 @@
-# HealOps ReadMe
-
-## Synopsis
+# Synopsis
 
 I (Lars Bengtsson) started developing HealOps in early 2017. From the ideas and thoughts that it had to be possible to make life as a DevOps Engineer and as a member of the on-call team at work easier. By:
 
@@ -20,7 +18,7 @@ I (Lars Bengtsson) started developing HealOps in early 2017. From the ideas and 
 
 The above is the motivation for developing HealOps.
 
-## Deploying/Installing HealOps
+# Deploying/Installing HealOps
 
 1 When deploying HealOps to a node you will need to deploy:
 
