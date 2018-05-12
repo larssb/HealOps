@@ -1,7 +1,7 @@
 Import-Module -name $PSScriptRoot/../healops -force
 
 InModuleScope healops {
-    Describe "Get-HealOpsConfig" {
+    Describe "Lock-HealOpsConfig" {
 
         It "Executes cleanly" {
             # Call Get-HealOpsConfig to get the HealOps config file.

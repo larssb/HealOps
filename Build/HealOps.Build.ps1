@@ -37,7 +37,7 @@ $runmode = [Environment]::UserInteractive
     Simply because it is the first declared task in this build file.
 #>
 $folderToInclude = @('Artefacts','docs','Private','Public')
-task build {
+task Build {
     # Copy folders to buildOutputRoot
     ForEach ($folder in $folderToInclude) {
         Write-Verbose "Folder info: $ModuleRoot$folder"
@@ -55,17 +55,21 @@ task build {
     }
 }
 
-task publish {
+task Publish {
     # Publish the module
     Publish-Module -Name $buildOutputRoot -Repository HealOps -NuGetApiKey "" -ErrorAction Stop
 }
 
-task runAllTests {
+task RunAllTests {
+    # First import the Pester Tests Settings module
+    Import-Module -Name $PSScriptRoot/../Tests/Pester.Tests.Settings.psm1 -Force
+
+    # Execute the tests
+    Invoke-Pester $PSScriptRoot/../Tests/
+}
+
+task RunConfigurationManagementTests {
     #
 }
 
-task runConfigurationManagementTests {
-    #
-}
-
-task BuildPublish build, publish
+task BuildPublish Build, Publish

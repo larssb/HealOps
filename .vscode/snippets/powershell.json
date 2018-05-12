@@ -25,7 +25,7 @@
 			"\t[CmdletBinding()]",
 			"\t[OutputType([SPECIFY_THE_RETURN_TYPE_OF_THE_FUNCTION_HERE])]",
 			"\tparam(",
-			"\t\t[Parameter(Mandatory=\\$true, ParameterSetName=\"NAME\", HelpMessage=\"MESSAGE\")]",
+			"\t\t[Parameter(Mandatory, ParameterSetName=\"NAME\", ValueFromPipeline=\\$false)]",
 			"\t\t[ValidateNotNullOrEmpty()]",
 			"\t\t\\$NAMEOFPARAMETER",
 			"\t)",
@@ -62,7 +62,7 @@
 			"\t#############",
 			"\tBegin {}",
 			"\tProcess {",
-			"\r",
+			"\rUSE_THE_DYNAMIC_PARAM_BY > $psboundparameters.param_name",
 			"\t}",
 			"\tEnd{}",
 			"}",
@@ -97,7 +97,7 @@
 			"\t[CmdletBinding()]",
 			"\t[OutputType([SPECIFY_THE_RETURN_TYPE_OF_THE_FUNCTION_HERE])]",
 			"\tparam(",
-			"\t\t[Parameter(Mandatory=\\$true, ParameterSetName=\"NAME\", HelpMessage=\"MESSAGE\")]",
+			"\t\t[Parameter(Mandatory, ParameterSetName=\"NAME\", ValueFromPipeline=\\$false)]",
 			"\t\t[ValidateNotNullOrEmpty()]",
 			"\t\t\\$NAMEOFPARAMETER",
 			"\t)",
@@ -129,7 +129,7 @@
 			"\t[CmdletBinding()]",
 			"\t[OutputType([SPECIFY_THE_RETURN_TYPE_OF_THE_FUNCTION_HERE])]",
 			"\tparam(",
-			"\t\t[Parameter(Mandatory=\\$true, ParameterSetName=\"NAME\", HelpMessage=\"MESSAGE\")]",
+			"\t\t[Parameter(Mandatory, ParameterSetName=\"NAME\", ValueFromPipeline=\\$false)]",
 			"\t\t[ValidateNotNullOrEmpty()]",
 			"\t\t\\$NAMEOFPARAMETER",
 			"\t)",
@@ -291,8 +291,8 @@
 			"}"
 		]
 	},
-	"pesterTest": {
-		"prefix": "pesterTest",
+	"pesterTest_General": {
+		"prefix": "pesterTestGeneral",
 		"body":[
 			"Describe \"TEST_NAME\" {",
 			"\t<#",
@@ -306,6 +306,36 @@
 			"\t\t\\$X | Should ....",
 			"\t}",
 			"}"
+		]
+	},
+	"pesterTest_UsingPesterTestsSettingsModule": {
+		"prefix": "pesterTestUsingPesterTestsSettingsModule",
+		"body":[
+			"# Define variables",
+			"\\$moduleName = \\$(\\$Settings.moduleName)",
+			"\\$moduleRoot = \\$(\\$Settings.moduleRoot)",
+			"\r",
+			"# Tests",
+			"Describe \"TEST_NAME\" {",
+				"\t<#",
+				"\t\t- TEST_DESCRIPTION",
+				"\t#>",
+				"\tIt \"EXACTLY_WHAT_IT_TESTS\" {",
+				"\t\t# A_COMMENT",
+				"\r",
+				"\r",
+				"\t\t# Assertion",
+				"\t\t\\$X | Should ....",
+				"\t}",
+				"}"
+		]
+	},
+	"param": {
+		"prefix": "param",
+		"body":[
+			"[Parameter(Mandatory=true_OR_false, ParameterSetName=\"NAME\", HelpMessage=\"HELP_MESSAGE\", ValueFromPipeline=\\$false)]",
+			"[ValidateNotNullOrEmpty()]",
+			"[PARAM_TYPE]\\$PARAM_NAME"
 		]
 	}
 }

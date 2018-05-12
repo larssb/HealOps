@@ -7,7 +7,7 @@ function Lock-HealOpsConfig() {
 .OUTPUTS
     [System.IO.FileStream] representing the file being locked and therefore ready to stream.
 .NOTES
-    Throw if a lock is not possible to obtain.
+    Throws if a lock is not possible to obtain.
 .EXAMPLE
     [System.IO.FileStream]$FileStream = Lock-HealOpsConfig -HealOpsConfigPath $HealOpsConfigPath
         > Calls Lock-HealOpsConfig in order to lock the HealOps config file at -HealOpsConfigPath.
@@ -31,9 +31,9 @@ function Lock-HealOpsConfig() {
         <#
             - Variables
         #>
-        $mode = "Open"
-        $access = "ReadWrite"
-        $share = "Read"
+        [String]$mode = "Open"
+        [String]$access = "ReadWrite"
+        [String]$share = "Read"
     }
     Process {
         try {

@@ -1,21 +1,18 @@
-# Include: Settings
-Import-Module -name $PSScriptRoot/settings.pester.tests.psm1 -Force
-
 # Define the folders to look through
 $functionFolders = @('Deployment','Private','Public')
 
 # Define vars
 $moduleName = $($Settings.moduleName)
 $moduleRoot = $($Settings.moduleRoot)
-Describe "General project validation: $moduleName" {
+Describe "PowerShell code is syntax valid: $moduleName" {
     ForEach ($folder in $functionFolders) {
         $folderPath = Join-Path -Path $moduleRoot -ChildPath $folder
-        $scripts = Get-ChildItem $folderPath -Include *.ps1, *.psm1, *.psd1 -Recurse
+        $files = Get-ChildItem $folderPath -Include *.ps1, *.psm1, *.psd1 -Recurse
 
-        if ($null -ne $scripts) {
+        if ($null -ne $files) {
             # TestCases are splatted to the script so we need hashtables
-            $testCase = $scripts | Foreach-Object {@{file = $_}}
-            It "Script <file> should be valid powershell" -TestCases $testCase {
+            $testCase = $files | Foreach-Object {@{file = $_}}
+            It "<file> should be valid powershell" -TestCases $testCase {
                 param($file)
 
                 $file.fullname | Should Exist
@@ -26,9 +23,5 @@ Describe "General project validation: $moduleName" {
                 $errors.Count | Should Be 0
             }
         }
-    }
-
-    It "Module '$moduleName' can import cleanly" {
-        {Import-Module (Join-Path $moduleRoot "$moduleName.psm1") -force -ErrorAction Stop } | Should Not Throw
     }
 }
