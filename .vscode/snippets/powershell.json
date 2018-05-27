@@ -22,10 +22,10 @@
 			"#>",
 			"\r",
 			"\t# Define parameters",
-			"\t[CmdletBinding()]",
+			"\t[CmdletBinding(DefaultParameterSetName = \"Default\")]",
 			"\t[OutputType([SPECIFY_THE_RETURN_TYPE_OF_THE_FUNCTION_HERE])]",
 			"\tparam(",
-			"\t\t[Parameter(Mandatory, ParameterSetName=\"NAME\", ValueFromPipeline)]",
+			"\t\t[Parameter(Mandatory)]",
 			"\t\t[ValidateNotNullOrEmpty()]",
 			"\t\t\\$NAMEOFPARAMETER",
 			"\t)",
@@ -93,10 +93,10 @@
 			"#>",
 			"\r",
 			"\t# Define parameters",
-			"\t[CmdletBinding()]",
+			"\t[CmdletBinding(DefaultParameterSetName = \"Default\")]",
 			"\t[OutputType([SPECIFY_THE_RETURN_TYPE_OF_THE_FUNCTION_HERE])]",
 			"\tparam(",
-			"\t\t[Parameter(Mandatory, ParameterSetName=\"NAME\", ValueFromPipeline)]",
+			"\t\t[Parameter(Mandatory)]",
 			"\t\t[ValidateNotNullOrEmpty()]",
 			"\t\t\\$NAMEOFPARAMETER",
 			"\t)",
@@ -125,10 +125,10 @@
 			"####################",
 			"function \"FUNCTION_NAME\"() {",
 			"\t# Define parameters",
-			"\t[CmdletBinding()]",
+			"\t[CmdletBinding(DefaultParameterSetName = \"Default\")]",
 			"\t[OutputType([SPECIFY_THE_RETURN_TYPE_OF_THE_FUNCTION_HERE])]",
 			"\tparam(",
-			"\t\t[Parameter(Mandatory, ParameterSetName=\"NAME\", ValueFromPipeline)]",
+			"\t\t[Parameter(Mandatory)]",
 			"\t\t[ValidateNotNullOrEmpty()]",
 			"\t\t\\$NAMEOFPARAMETER",
 			"\t)",
@@ -341,6 +341,12 @@
 		"prefix": "arraylist",
 		"body":[
 			"[System.Collections.ArrayList]\\$VARIABLE_NAME = New-Object System.Collections.ArrayList"
+		]
+	},
+	"PSScriptAnalyzer_SuppressMessage": {
+		"prefix": "AnalyzerSuppress",
+		"body":[
+			"[System.Diagnostics.CodeAnalysis.SuppressMessageAttribute(\"RULE_NAME","\")]"
 		]
 	}
 }
