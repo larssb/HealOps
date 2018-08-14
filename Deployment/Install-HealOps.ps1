@@ -1,32 +1,17 @@
 <#PSScriptInfo
-
 .VERSION 0.0.0.21
-
 .GUID bbf74424-f58d-42d1-9d5a-aeba44ccd545
-
 .AUTHOR Lars Bengtsson
-
 .COMPANYNAME
-
 .COPYRIGHT
-
 .TAGS HealOps Installation Bootstrap
-
 .LICENSEURI
-
 .PROJECTURI
-
 .ICONURI
-
 .EXTERNALMODULEDEPENDENCIES
-
 .REQUIREDSCRIPTS
-
 .EXTERNALSCRIPTDEPENDENCIES
-
 .RELEASENOTES
-
-
 #>
 
 <#
@@ -74,33 +59,33 @@
 #>
 
     # Define parameters
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName="Default")]
     [OutputType([Void])]
     param(
-        [Parameter(Mandatory=$false, ParameterSetName="Default", HelpMessage="Used to specify that the package management backend does not allow anonymous access. This will make the script prompt for credentials.")]
+        [Parameter()]
         [Switch]$AnonymousNotAllowed,
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The API key to used when communicatnig with the Package Management backend.")]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [String]$APIKey,
-        [Parameter(Mandatory=$false, ParameterSetName="Default", HelpMessage="The interval in hours between checking for updates. If you don't set this the self-update feature will not be activated.")]
+        [Parameter()]
         [ValidateNotNullOrEmpty()]
         [Int]$checkForUpdatesInterval_Hours,
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The name of the feed on the Package Management backend, in which modules used by HealOps are stored.")]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [String]$FeedName,
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="An Array containing the names of the HealOps packages to install on the system.")]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [Array]$HealOpsPackages,
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The type of job to use when invoking HealOps.")]
+        [Parameter(Mandatory)]
         [ValidateSet('WinPSJob','WinScTask','LinCronJob')]
         [String]$JobType,
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The URI of the Package Management backend, where modules used by HealOps are stored.")]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [String]$PackageManagementURI,
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="Used to specify the software used as the reporting backend. For storing test result metrics.")]
+        [Parameter(Mandatory)]
         [ValidateSet('OpenTSDB')]
         [String]$reportingBackend,
-        [Parameter(Mandatory=$false, ParameterSetName="Default", HelpMessage="The execute mode that the self-update should use.")]
+        [Parameter()]
         [ValidateSet("All","HealOpsPackages","HealOps")]
         [String]$UpdateMode
     )

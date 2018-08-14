@@ -18,10 +18,10 @@ function Test-EntityState() {
     #>
 
         # Define parameters
-        [CmdletBinding()]
+        [CmdletBinding(DefaultParameterSetName="Default")]
         [OutputType([Hashtable])]
-        param(
-            [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="A file containig the Pester tests to run. This should be a full-path to a file.")]
+        Param(
+            [Parameter(Mandatory)]
             [ValidateNotNullOrEmpty()]
             [String]$TestFilePath
         )
