@@ -1,44 +1,42 @@
 function Submit-EntityStateReport() {
-    <#
-    .DESCRIPTION
-        Long description
-    .INPUTS
-        <none>
-    .OUTPUTS
-        <none>
-    .NOTES
-        General notes
-    .EXAMPLE
-        Submit-EntityStateReport -
-        Explanation of what the example does
-    .PARAMETER reportBackendSystem
-        Used to specify the software used as the reporting backend. For storing test result metrics.
-    .PARAMETER metric
-        The name of the metric, in a format supported by the reporting backend.
-    .PARAMETER TestData
-        A Hashtable or Int32 type object. Containing testdata.
-    .PARAMETER RepairMetricValue
-        With this parameter you specify the TestData to report for a repair, relative to the result of Repair-EntityState().
-    #>
+<#
+.DESCRIPTION
+    Long description
+.INPUTS
+    <none>
+.OUTPUTS
+    <none>
+.NOTES
+    General notes
+.EXAMPLE
+    Submit-EntityStateReport -
+    Explanation of what the example does
+.PARAMETER reportBackendSystem
+    Used to specify the software used as the reporting backend. For storing test result metrics.
+.PARAMETER metric
+    The name of the metric, in a format supported by the reporting backend.
+.PARAMETER TestData
+    A Hashtable or Int32 type object. Containing testdata.
+.PARAMETER RepairMetricValue
+    With this parameter you specify the TestData to report for a repair, relative to the result of Repair-EntityState().
+#>
 
     # Define parameters
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName="Default")]
     [OutputType([Void])]
     param(
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="Used to specify the software used as the reporting backend. For storing test result metrics.")]
-        [Parameter(Mandatory=$true, ParameterSetName="Repair", HelpMessage="Used to specify the software used as the reporting backend. For storing test result metrics.")]
-        [ValidateNotNullOrEmpty()]
+        [Parameter(Mandatory)]
+        [Parameter(Mandatory, ParameterSetName="Repair")]
         [ValidateSet("OpenTSDB")]
         [String]$reportBackendSystem,
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The name of the metric, in a format supported by the reporting backend.")]
-        [Parameter(Mandatory=$true, ParameterSetName="Repair", HelpMessage="The name of the metric, in a format supported by the reporting backend.")]
+        [Parameter(Mandatory)]
+        [Parameter(Mandatory, ParameterSetName="Repair")]
         [ValidateNotNullOrEmpty()]
         [String]$metric,
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="A Hashtable or Int32 type object. Containing testdata.")]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         $TestData,
-        [Parameter(Mandatory=$true, ParameterSetName="Repair", HelpMessage="With this parameter you specify the TestData to report for a repair, relative to the result of Repair-EntityState.")]
-        [ValidateNotNullOrEmpty()]
+        [Parameter(Mandatory, ParameterSetName="Repair")]
         [ValidateSet(0,1)]
         [int]$RepairMetricValue
     )
@@ -68,47 +66,47 @@ function Submit-EntityStateReport() {
                 into the mother function (Submit-EntityStateReport).
         #>
         function Invoke-ReportIt () {
-            <#
-            .DESCRIPTION
-                Private function used to report to a reporting backend.
-            .INPUTS
-                <none>
-            .OUTPUTS
-                [Bool] relative to success/failure in regards to reporting to the report backend.
-            .NOTES
-                <none>
-            .EXAMPLE
-                $result = Invoke-ReportIt -reportBackendSystem $reportBackendSystem -metric $metric -metricValue $RepairMetricValue -tags $tags
-                    > Calles Invoke-ReportIt to report to the report backend system specified in the $reportBackendSystem variable. With the data in the metric, metricvalue and tags variables.
-            .PARAMETER reportBackendSystem
-                Used to specify the software used as the reporting backend. For storing test result metrics.
-            .PARAMETER metric
-                The name of the metric, in a format supported by the reporting backend.
-            .PARAMETER metricValue
-                The value to record on the metric being writen to the reporting backend.
-            .PARAMETER tags
-                The tags to set on the metric. Used to improve querying on the reporting backend. Provided as a Key/Value collection.
-            .PARAMETER log4netLoggerDebug
-                The log4net debug log object.
-            #>
+        <#
+        .DESCRIPTION
+            Private function used to report to a reporting backend.
+        .INPUTS
+            <none>
+        .OUTPUTS
+            [Bool] relative to success/failure in regards to reporting to the report backend.
+        .NOTES
+            <none>
+        .EXAMPLE
+            $result = Invoke-ReportIt -reportBackendSystem $reportBackendSystem -metric $metric -metricValue $RepairMetricValue -tags $tags
+                > Calles Invoke-ReportIt to report to the report backend system specified in the $reportBackendSystem variable. With the data in the metric, metricvalue and tags variables.
+        .PARAMETER reportBackendSystem
+            Used to specify the software used as the reporting backend. For storing test result metrics.
+        .PARAMETER metric
+            The name of the metric, in a format supported by the reporting backend.
+        .PARAMETER metricValue
+            The value to record on the metric being writen to the reporting backend.
+        .PARAMETER tags
+            The tags to set on the metric. Used to improve querying on the reporting backend. Provided as a Key/Value collection.
+        .PARAMETER log4netLoggerDebug
+            The log4net debug log object.
+        #>
 
             # Define parameters
-            [CmdletBinding()]
+            [CmdletBinding(DefaultParameterSetName="Default")]
             [OutputType([Boolean])]
             param(
-                [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="Used to specify the software used as the reporting backend. For storing test result metrics.")]
+                [Parameter(Mandatory)]
                 [ValidateSet("OpenTSDB")]
                 [String]$reportBackendSystem,
-                [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The name of the metric, in a format supported by the reporting backend.")]
+                [Parameter(Mandatory)]
                 [ValidateNotNullOrEmpty()]
                 [String]$metric,
-                [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The value to record on the metric being writen to the reporting backend.")]
+                [Parameter(Mandatory)]
                 [ValidateNotNullOrEmpty()]
                 [int]$metricValue,
-                [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The tags to set on the metric. Used to improve querying on the reporting backend. Provided as a Key/Value collection.")]
+                [Parameter(Mandatory)]
                 [ValidateNotNullOrEmpty()]
                 [hashtable]$tags,
-                [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The log4net debug log object.")]
+                [Parameter(Mandatory)]
                 $log4netLoggerDebug
             )
 
@@ -130,7 +128,6 @@ function Submit-EntityStateReport() {
                     $result = write-metricToOpenTSDB -metric $metric -tagPairs $tags -metricValue $metricValue -verbose
                 }
                 Default {
-                    # TODO: Make sure that personnel is alarmed that reporting is not working!
                     throw "The reporting backend could not be determined."
                 }
             }
@@ -161,10 +158,10 @@ function Submit-EntityStateReport() {
         #>
 
             # Define parameters
-            [CmdletBinding()]
+            [CmdletBinding(DefaultParameterSetName="Default")]
             [OutputType([HashTable])]
             param(
-                [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The content of the config file in the HealOps package.")]
+                [Parameter(Mandatory)]
                 [ValidateNotNullOrEmpty()]
                 [PSCustomObject]$HealOpsPackageConfig
             )
@@ -200,11 +197,10 @@ function Submit-EntityStateReport() {
             $metric = ("HealOps.Repair")
 
             # Report it
-            $result = Invoke-ReportIt -reportBackendSystem $reportBackendSystem -metric $metric -metricValue $RepairMetricValue -tags $tags -log4netLoggerDebug $log4netLoggerDebug
-
-            # Report that reporting failed
-            if (-not $result) {
-                #reportingFailed (content from End{})
+            try {
+                $result = Invoke-ReportIt -reportBackendSystem $reportBackendSystem -metric $metric -metricValue $RepairMetricValue -tags $tags -log4netLoggerDebug $log4netLoggerDebug -ErrorAction Stop
+            } catch {
+                # TODO: Alarm that state data could be reported
             }
         } else {
             if ($TestData.GetType().Name -eq "Hashtable") {
@@ -218,11 +214,10 @@ function Submit-EntityStateReport() {
                     $tags.Add("component",$entry.Name)
 
                     # Report it
-                    $result = Invoke-ReportIt -reportBackendSystem $reportBackendSystem -metric $metric -metricValue $entry.Value -tags $tags -log4netLoggerDebug $log4netLoggerDebug
-
-                    # Report that reporting failed
-                    if (-not $result) {
-                        #reportingFailed (content from End{})
+                    try {
+                        $result = Invoke-ReportIt -reportBackendSystem $reportBackendSystem -metric $metric -metricValue $entry.Value -tags $tags -log4netLoggerDebug $log4netLoggerDebug -ErrorAction Stop
+                    } catch {
+                        # TODO: Alarm that state data could be reported
                     }
                 }
             } else {
@@ -230,11 +225,10 @@ function Submit-EntityStateReport() {
                 [Hashtable]$tags = Get-StandardTagCollection -HealOpsPackageConfig $HealOpsPackageConfig
 
                 # Report it
-                $result = Invoke-ReportIt -reportBackendSystem $reportBackendSystem -metric $metric -metricValue $TestData -tags $tags -log4netLoggerDebug $log4netLoggerDebug
-
-                # Report that reporting failed
-                if (-not $result) {
-                    #reportingFailed (content from End{})
+                try {
+                    $result = Invoke-ReportIt -reportBackendSystem $reportBackendSystem -metric $metric -metricValue $TestData -tags $tags -log4netLoggerDebug $log4netLoggerDebug -ErrorAction Stop
+                } catch {
+                    # TODO: Alarm that state data could be reported
                 }
             }
         }

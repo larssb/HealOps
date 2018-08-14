@@ -1,49 +1,53 @@
 ﻿function Invoke-HealOps() {
-    <#
-    .DESCRIPTION
-        Invoke-HealOps is the function you call to initiate the *.Tests.ps1 and *.Repairs.ps1 files in "X" HealOps package.
-            - The Pester tests in the *.Test.ps1 file will executed
-            - If the component being tested is in a filed state it will be tried remediated via a *.Tests.ps1 corresponding *.Repairs.ps1 file.
-    .INPUTS
-        <none>
-    .OUTPUTS
-        <none>
-    .NOTES
-        - Uses the global variables:
-            -- psVersionAbove4 > Used to execte either 'A' or 'B' set of code, in relation to the current PowerShell runtime version.
-            -- runMode > Used to test on, in order to know if we should output to an interactive session.
-    .EXAMPLE
-        Invoke-HealOps -TestsFileName Citrix.Services.ps1 -HealOpsPackage Citrix.HealOpsPackage
-        Executes HealOps on a specific *.Tests.ps1 file. Sending in the HealOps package config file wherein HealOps will read configuration and tags.
-    .PARAMETER HealOpsPackageName
-        The name of the HealOps package that the TestsFileName belong to.
-    .PARAMETER TestsFileName
-        The name of the *.Tests.ps1 file to execute. The testsfile is part of the HealOps package specified with the HealOpsPackageName.
-    .PARAMETER ForceUpdates
-        Use this switch parameter to force an update of HealOps and its pre-requisites regardless of the values in the HealOps config json file.
-    .PARAMETER UpdateMode
-        The execute mode that the self-update should use.
-            > All = Everything will be updated. HealOps itself, its required modules and the HealOps packages on the system.
-            > HealOpsPackages = Only HealOps packages will be updated.
-            > HealOps = Only HealOps itself and its requird modules will be updated.
-    #>
+<#
+.DESCRIPTION
+    Invoke-HealOps is the function you call to initiate the *.Tests.ps1 and *.Repairs.ps1 files in "X" HealOps package.
+        - The Pester tests in the *.Test.ps1 file will executed
+        - If the component being tested is in a filed state it will be tried remediated via a *.Tests.ps1 corresponding *.Repairs.ps1 file.
+.INPUTS
+    <none>
+.OUTPUTS
+    <none>
+.NOTES
+    - Uses the global variables:
+        -- psVersionAbove4 > Used to execte either 'A' or 'B' set of code, in relation to the current PowerShell runtime version.
+        -- runMode > Used to test on, in order to know if we should output to an interactive session.
+.EXAMPLE
+    Invoke-HealOps -TestsFileName Citrix.Services.ps1 -HealOpsPackage Citrix.HealOpsPackage
+    Executes HealOps on a specific *.Tests.ps1 file. Sending in the HealOps package config file wherein HealOps will read configuration and tags.
+.PARAMETER ForceUpdates
+    Use this switch parameter to force an update of HealOps and its pre-requisites regardless of the values in the HealOps config json file.
+.PARAMETER HealOpsPackageName
+    The name of the HealOps package that the TestsFileName belong to.
+.PARAMETER ReportOnly
+    Used to indicate that HealOps should run in "ReportOnly" mode. Having the effect that a failed state will only be reported and not tried repaired.
+.PARAMETER TestsFileName
+    The name of the *.Tests.ps1 file to execute. The testsfile is part of the HealOps package specified with the HealOpsPackageName.
+.PARAMETER UpdateMode
+    The execute mode that the self-update should use.
+        > All = Everything will be updated. HealOps itself, its required modules and the HealOps packages on the system.
+        > HealOpsPackages = Only HealOps packages will be updated.
+        > HealOps = Only HealOps itself and its requird modules will be updated.
+#>
 
     # Define parameters
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName="Default")]
     [OutputType([Void])]
     [System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidGlobalVars","")]
     [System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseDeclaredVarsMoreThanAssignments","")]
     param(
-        [Parameter(Mandatory=$true, ParameterSetName="File", HelpMessage="The name of the HealOps package that the TestsFileName belong to.")]
+        [Parameter(ParameterSetName="File")]
+        [Parameter(ParameterSetName="UpdateOnly")]
+        [Switch]$ForceUpdates,
+        [Parameter(Mandatory, ParameterSetName="File")]
         [ValidateNotNullOrEmpty()]
         [String]$HealOpsPackageName,
-        [Parameter(Mandatory=$true, ParameterSetName="File", HelpMessage="The name of the *.Tests.ps1 file to execute. Relative to the HealOps package.")]
+        [Parameter(ParameterSetName="File")]
+        [Switch]$ReportOnly,
+        [Parameter(Mandatory, ParameterSetName="File")]
         [ValidateNotNullOrEmpty()]
         [String]$TestsFileName,
-        [Parameter(Mandatory=$false, ParameterSetName="File", HelpMessage="Use this switch parameter to force an update of HealOps and its pre-requisites regardless of the values in the HealOps config json file.")]
-        [Parameter(Mandatory=$false, ParameterSetName="UpdateOnly", HelpMessage="Use this switch parameter to force an update of HealOps and its pre-requisites regardless of the values in the HealOps config json file.")]
-        [Switch]$ForceUpdates,
-        [Parameter(Mandatory=$false, ParameterSetName="UpdateOnly", HelpMessage="The execute mode that the self-update should use.")]
+        [Parameter(ParameterSetName="UpdateOnly")]
         [ValidateSet("All","HealOpsPackages","HealOps")]
         [String]$UpdateMode
     )
@@ -317,18 +321,17 @@
             # Test execution
             Write-Verbose -Message "Executing the test"
             try {
-                $testResult = Test-EntityState -TestFilePath $TestsFile.FullName -ErrorAction Stop
+                $TestResult = Test-EntityState -TestFilePath $TestsFile.FullName -ErrorAction Stop
             } catch {
                 $log4netLogger.error("Test-EntityState failed with: $_")
             }
 
-            if ($testResult.state -eq $false) {
+            if ($TestResult.state -eq $false -and -not ($PSBoundParameters.ContainsKey('ReportOnly'))) {
                 ###################
                 # The test failed #
                 ###################
                 Write-Verbose -Message "Trying to repair the 'Failed' test/s."
                 $log4netLoggerDebug.debug("Trying to repair the 'Failed' test/s.")
-
                 try {
                     # Invoke repairs matching the failed test
                     $resultOfRepair = Repair-EntityState -TestFilePath $TestsFile.FullName -TestData $testResult.testdata -ErrorAction Stop @commonParms
@@ -395,8 +398,8 @@
                     $log4netLogger.error("Submit-EntityStateReport failed with: $_")
                     Write-Verbose "Submit-EntityStateReport failed with: $_"
                 }
-            }
-        } # End of conditional check on ParameterSetName -eq "File"
+            } # End of conditional control on failed state and not in ReportOnly mode.
+        } # End of conditional control on ParameterSetName -eq "File". If not it is a Update execution  of HealOps.
     } # End of Process {} declaration
     End {
         # Clean-up

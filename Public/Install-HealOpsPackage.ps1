@@ -27,27 +27,27 @@ function Install-HealOpsPackage() {
 #>
 
     # Define parameters
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName="Default")]
     [OutputType([Boolean])]
     [System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidGlobalVars","")]
     param(
-        [Parameter(Mandatory=$false, ParameterSetName="SelfUpdateDisabled", HelpMessage="Used to specify that the package management backend does not allow anonymous access. This will make the script prompt for credentials.")]
+        [Parameter(ParameterSetName="SelfUpdateDisabled")]
         [Switch]$AnonymousNotAllowed,
-        [Parameter(Mandatory=$true, ParameterSetName="SelfUpdateDisabled", HelpMessage="The API key to used when communicatnig with the Package Management backend.")]
+        [Parameter(Mandatory, ParameterSetName="SelfUpdateDisabled")]
         [ValidateNotNullOrEmpty()]
         [String]$APIKey,
-        [Parameter(Mandatory=$true, ParameterSetName="SelfUpdateDisabled", HelpMessage="The name of the feed on the Package Management backend, in which modules used by HealOps are stored.")]
+        [Parameter(Mandatory, ParameterSetName="SelfUpdateDisabled")]
         [ValidateNotNullOrEmpty()]
         [String]$FeedName,
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The type of job to use when invoking HealOps.")]
-        [Parameter(Mandatory=$true, ParameterSetName="SelfUpdateDisabled", HelpMessage="The type of job to use when invoking HealOps.")]
+        [Parameter(Mandatory)]
+        [Parameter(Mandatory, ParameterSetName="SelfUpdateDisabled")]
         [ValidateSet('WinPSJob','WinScTask','LinCronJob')]
         [String]$JobType,
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The name of a package or packages to install on a system.")]
-        [Parameter(Mandatory=$true, ParameterSetName="SelfUpdateDisabled", HelpMessage="The name of a package or packages to install on a system.")]
+        [Parameter(Mandatory)]
+        [Parameter(Mandatory, ParameterSetName="SelfUpdateDisabled")]
         [ValidateNotNullOrEmpty()]
         [String[]]$Package,
-        [Parameter(Mandatory=$true, ParameterSetName="SelfUpdateDisabled", HelpMessage="The URI of the Package Management backend, where modules used by HealOps are stored.")]
+        [Parameter(Mandatory, ParameterSetName="SelfUpdateDisabled")]
         [ValidateNotNullOrEmpty()]
         [String]$PackageManagementURI
     )
@@ -58,7 +58,7 @@ function Install-HealOpsPackage() {
     Begin {
         $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator");
         if (-not ($isAdmin)) {
-            throw "You need to execute PowerShell as admin/sudo/root in order to Install HealOps."
+            throw "You need to execute PowerShell as admin/sudo/root in order to Install a HealOps Package."
         }
 
         <#

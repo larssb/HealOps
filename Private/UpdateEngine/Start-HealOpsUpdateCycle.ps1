@@ -22,13 +22,13 @@ function Start-HealOpsUpdateCycle() {
 #>
 
     # Define parameters
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName="Default")]
     [OutputType([Void])]
     param(
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The HealOps (main module) config file. That holds package management repository info. A PSCustomObject type")]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [PSCustomObject]$Config,
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The execute mode that the self-update should use.")]
+        [Parameter(Mandatory)]
         [ValidateSet("All","HealOpsPackages","HealOps")]
         [String]$UpdateMode
     )

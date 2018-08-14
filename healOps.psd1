@@ -41,17 +41,24 @@
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
     PrivateData = @{
-
         PSData = @{
 
             # Tags applied to this module. These help with module discovery in online galleries.
-            # Tags = @()
+            Tags = @(
+                'HealOps'
+                'Monitoring'
+                'Healing'
+                'Incident management'
+                'TDD'
+                'Test driven development'
+                'Pester'
+            )
 
             # A URL to the license for this module.
-            # LicenseUri = ''
+            LicenseUri = 'https://github.com/larssb/HealOps/blob/master/LICENSE'
 
             # A URL to the main website for this project.
-            # ProjectUri = ''
+            ProjectUri = 'https://github.com/larssb/HealOps'
 
             # A URL to an icon representing this module.
             # IconUri = ''
@@ -60,12 +67,11 @@
             # ReleaseNotes = ''
 
             # Flag to indicate whether the module requires explicit user acceptance for install/update/save
-            # RequireLicenseAcceptance = False
+            RequireLicenseAcceptance = False
 
             # External dependent modules of this module
             # ExternalModuleDependencies = ''
 
         } # End of PSData hashtable
-
     } # End of PrivateData hashtable
 }
