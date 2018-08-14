@@ -1,0 +1,19 @@
+        # Control the systems system level PSModule path.
+        $currentPSModulePath = [Environment]::GetEnvironmentVariable("PSModulePath", "Machine")
+
+        if(-not ($currentPSModulePath.contains($ProgramFilesModulesPath) ) ) {
+            # Define the new PSModulePath to add to the system level PSModule path
+            $newPSModulePath = $currentPSModulePath+';'+$ProgramFilesModulesPath
+
+            # Add the defined PSModulePath to the system level PSModulepath for future PowerShell sessions
+            #### TRY / CATCH HERE
+            [Environment]::SetEnvironmentVariable("PSModulePath", $newPSModulePath, "Machine")
+
+            # Add the specified PSModulePath to the current session path for this to work right now
+            $env:PSModulePath += ";$newPSModulePath"
+        }
+
+
+>> The above could be necessary .... if install-healops where not used
+or another way of deploying was used.... <<-- if so use the above in the
+deployment procedure.
