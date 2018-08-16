@@ -22,7 +22,7 @@
 
     # Modules that must be imported into the global environment prior to importing this module
     RequiredModules = @(@{ModuleName = 'Pester'; ModuleVersion = '4.1.0'; },
-                        @{ModuleName = 'PowerShellTooling'; ModuleVersion = '0.0.12'; })
+                        @{ModuleName = 'PowerShellTooling'; ModuleVersion = '1.0.0'; })
 
     # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
     FunctionsToExport = @(
@@ -67,7 +67,7 @@
             # ReleaseNotes = ''
 
             # Flag to indicate whether the module requires explicit user acceptance for install/update/save
-            RequireLicenseAcceptance = False
+            RequireLicenseAcceptance = $False
 
             # External dependent modules of this module
             # ExternalModuleDependencies = ''

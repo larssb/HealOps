@@ -47,6 +47,7 @@
         [Parameter(Mandatory, ParameterSetName="File")]
         [ValidateNotNullOrEmpty()]
         [String]$TestsFileName,
+        [Parameter(ParameterSetName="File")]
         [Parameter(ParameterSetName="UpdateOnly")]
         [ValidateSet("All","HealOpsPackages","HealOps")]
         [String]$UpdateMode
@@ -86,15 +87,15 @@
         #>
         if ($PSCmdlet.ParameterSetName -eq "File") {
             # Constant for reporting on Repair status of "X" component og an IT service.
-            New-Variable -Name repairSuccessValue -Value 1 -Option Constant -Description "Represent truthy in relation to the result of repairing 'X' component of an IT service" `
-            -Visibility Private -Scope Script
-            New-Variable -Name repairFailedValue -Value 0 -Option Constant -Description "Represent falsy in relation to the result of repairing 'X' component of an IT service" `
-            -Visibility Private -Scope Script
+            New-Variable -Name RepairSuccessValue -Value 1 -Option Private -Description "Represent truthy in relation to the result of repairing 'X' component of an IT service" `
+            -Visibility Private -Scope Script -Force
+            New-Variable -Name RepairFailedValue -Value 0 -Option Private -Description "Represent falsy in relation to the result of repairing 'X' component of an IT service" `
+            -Visibility Private -Scope Script -Force
         }
 
         # The name of the HealOps module.
         if(-not (Get-variable -Name mainModuleName -ErrorAction SilentlyContinue) -eq $true) {
-            New-Variable -Name mainModuleName -Value "HealOps" -Option Constant -Description "The name of the HealOps module" -Visibility Private -Scope Script
+            New-Variable -Name mainModuleName -Value "HealOps" -Option Private -Description "The name of the HealOps module" -Visibility Private -Scope Script -Force
         }
 
         <#
@@ -326,7 +327,7 @@
                 $log4netLogger.error("Test-EntityState failed with: $_")
             }
 
-            if ($TestResult.state -eq $false -and -not ($PSBoundParameters.ContainsKey('ReportOnly'))) {
+            if (($TestResult.state -eq $false) -and (-not ($PSBoundParameters.ContainsKey('ReportOnly')))) {
                 ###################
                 # The test failed #
                 ###################
@@ -353,7 +354,7 @@
 
                     try {
                         # Report that the repair failed on the component
-                        Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -RepairMetricValue $repairFailedValue @commonParms -ErrorAction Stop
+                        Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -RepairMetricValue $RepairFailedValue @commonParms -ErrorAction Stop
                     } catch {
                         $log4netLogger.error("Submit-EntityStateReport failed with: $_")
                         Write-Verbose "Submit-EntityStateReport failed with: $_"
@@ -379,7 +380,7 @@
 
                     try {
                         # Report that the repair succeeded on the component
-                        Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -RepairMetricValue $repairSuccessValue @commonParms -ErrorAction Stop
+                        Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -RepairMetricValue $RepairSuccessValue @commonParms -ErrorAction Stop
                     } catch {
                         $log4netLogger.error("Submit-EntityStateReport failed with: $_")
                         Write-Verbose "Submit-EntityStateReport failed with: $_"

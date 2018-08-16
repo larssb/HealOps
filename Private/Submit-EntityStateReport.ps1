@@ -25,15 +25,15 @@ function Submit-EntityStateReport() {
     [CmdletBinding(DefaultParameterSetName="Default")]
     [OutputType([Void])]
     param(
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, ParameterSetName="Default")]
         [Parameter(Mandatory, ParameterSetName="Repair")]
         [ValidateSet("OpenTSDB")]
         [String]$reportBackendSystem,
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, ParameterSetName="Default")]
         [Parameter(Mandatory, ParameterSetName="Repair")]
         [ValidateNotNullOrEmpty()]
         [String]$metric,
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, ParameterSetName="Default")]
         [ValidateNotNullOrEmpty()]
         $TestData,
         [Parameter(Mandatory, ParameterSetName="Repair")]

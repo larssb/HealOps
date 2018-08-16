@@ -277,9 +277,8 @@
             throw "HealOps seems not to be installed. The Install-HealOps script cannot continue."
         }
 
-        # Installation of HealOps required modules
+        # Install the modules that HealOps requires.
         if ($null -ne $requiredModules) {
-            # Install the modules
             foreach ($requiredModule in $requiredModules) {
                 # Remove the requiredModule from the current runspace if it is loaded.
                 Remove-Module -Name $requiredModule -Force -ErrorAction SilentlyContinue # Ok to continue silently > if it failed the module was not there to remove and that is what we want.

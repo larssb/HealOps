@@ -52,7 +52,7 @@ Rules of thumb and design of the *.Repairs.ps1 file
 
 1 Is functionless.
 
-2 However still has parames.
+2 However, it can still have parameters.
 
     - E.g. of a *.Repairs.ps1 functionless parameter filled file.
     `
