@@ -71,7 +71,12 @@ Rules of thumb and design of the *.Repairs.ps1 file
         CODE_TO_REMEDATE_FAILED_IT_SERVICE_/_ENTITY
     `
 
-### The *.Tests.ps1 file
+### The *.Stats.PS1 file
+
+1. Is used for gathering stats on an component of an IT system.
+2. The stats file will __NOT__ be invoked by Pester.
+
+### The *.Tests.PS1 file
 
 1 An global variable named ' passedTestResult ' has to be used for cases of state okay. This global variable is used to report to the backend the okay state of "X" IT Service/Entity
 
@@ -173,6 +178,10 @@ The std. is:
     - Required PowerShell modules
         * PowerShellGet
             - Minumum viable version: v1.5.0.0. If not errors like $psgettemp variable missing will pop-up.
+
+## Security
+
+- Find a way to scan HealOpsPackages for potential security issues. There is a high trust on these.
 
 ## Setup and configuration of HealOps
 

@@ -18,7 +18,7 @@
     Copyright = '(C) Lars S. Bengtsson (https://github.com/larssb), licensed under Apache 2.0 License.'
 
     # Description of the functionality provided by this module
-    Description = 'A self-healing monitoring system. Uses Pester tests (TDD) to determine the state of a system entity. Then, if the entity is in a faulted state HealOps will try to repair it. All along HealOps reports metrics to a backend report system and HealOps status is sent to stakeholders. In order to e.g. trigger alarms and get on-call personnel on an issue that could not be repaired.'
+    Description = 'A monitoring and healing framework. It uses Pester tests (TDD) to determine the state of an IT system entity. Then, if the entity is in a faulted state HealOps will try to repair it. All along HealOps reports metrics to a backend report system and optionally status can be sent to stakeholders. In order to e.g. trigger alarms and get on-call personnel on an issue that could not be repaired.'
 
     # Modules that must be imported into the global environment prior to importing this module
     RequiredModules = @(@{ModuleName = 'Pester'; ModuleVersion = '4.1.0'; },

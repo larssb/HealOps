@@ -21,6 +21,8 @@
     The name of the HealOps package that the TestsFileName belong to.
 .PARAMETER ReportOnly
     Used to indicate that HealOps should run in "ReportOnly" mode. Having the effect that a failed state will only be reported and not tried repaired.
+.PARAMETER StatsOnly
+    Used to indicate that HealOps should just gather stats when invoked on a specific *.Stats.ps1 file in a HealOpsPackage.
 .PARAMETER TestsFileName
     The name of the *.Tests.ps1 file to execute. The testsfile is part of the HealOps package specified with the HealOpsPackageName.
 .PARAMETER UpdateMode
@@ -87,15 +89,19 @@
         #>
         if ($PSCmdlet.ParameterSetName -eq "File") {
             # Constant for reporting on Repair status of "X" component og an IT service.
-            New-Variable -Name RepairSuccessValue -Value 1 -Option Private -Description "Represent truthy in relation to the result of repairing 'X' component of an IT service" `
+            New-Variable -Name RepairSuccessValue -Value 1 -Option ReadOnly -Description "Represent truthy in relation to the result of repairing 'X' component of an IT service" `
             -Visibility Private -Scope Script -Force
-            New-Variable -Name RepairFailedValue -Value 0 -Option Private -Description "Represent falsy in relation to the result of repairing 'X' component of an IT service" `
+            New-Variable -Name RepairFailedValue -Value 0 -Option ReadOnly -Description "Represent falsy in relation to the result of repairing 'X' component of an IT service" `
             -Visibility Private -Scope Script -Force
         }
 
         # The name of the HealOps module.
         if(-not (Get-variable -Name mainModuleName -ErrorAction SilentlyContinue) -eq $true) {
-            New-Variable -Name mainModuleName -Value "HealOps" -Option Private -Description "The name of the HealOps module" -Visibility Private -Scope Script -Force
+            try {
+                New-Variable -Name mainModuleName -Value "HealOps" -Option ReadOnly -Description "The name of the HealOps module" -Visibility Private -Scope Script -Force -ErrorAction Stop
+            } catch {
+                $log4netLogger.error("Invoke-HealOps | Failed to declared the 'MainModuleName' variable. The error is > $_")
+            }
         }
 
         <#
@@ -335,13 +341,13 @@
                 $log4netLoggerDebug.debug("Trying to repair the 'Failed' test/s.")
                 try {
                     # Invoke repairs matching the failed test
-                    $resultOfRepair = Repair-EntityState -TestFilePath $TestsFile.FullName -TestData $testResult.testdata -ErrorAction Stop @commonParms
+                    $ResultOfRepair = Repair-EntityState -TestFilePath $TestsFile.FullName -TestData $testResult.testdata -ErrorAction Stop @commonParms
                 } catch {
                     # Log it
                     $log4netLogger.error("Repair-EntityState failed with: $_")
                 }
 
-                if ($resultOfRepair -eq $false) {
+                if ($ResultOfRepair -eq $false) {
                     # Report the state of the service to the backend report system. Which should then further trigger an alarm to the on-call personnel.
                     try {
                         # Report the value of the failing component
@@ -424,7 +430,7 @@
                     # Refresh info on the latest version of the HealOps module after having ran an update cycle
                     [PSModuleInfo]$MainModule = Get-LatestModuleVersionLocally -ModuleName $mainModuleName
                 } catch {
-                    $log4netLogger.error("Failed to get the latest module version of HealOps. It failed with > $_")
+                    $log4netLogger.error("Invoke-HealOps | Failed to get the latest module version of HealOps. It failed with > $_")
                 }
 
                 <#
@@ -455,7 +461,7 @@
                         $log4netLoggerDebug.Debug("UpdateCycle registered")
                     }
                 } else {
-                    $log4netLogger.error("The main module > $mainModuleName was not returned properly. Result > Failed to register that an update cycle ran. Value of MainModule.Mobulebase > $($MainModule.ModuleBase)")
+                    $log4netLogger.error("The main module > $mainModuleName was not returned properly. Result > Failed to register that an update cycle ran. Value of MainModule.Modulebase > $($MainModule.ModuleBase)")
                 }
             }
         }

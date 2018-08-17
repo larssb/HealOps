@@ -18,14 +18,13 @@ function Repair-EntityState() {
 #>
 
     # Define parameters
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName="Default")]
     [OutputType([Boolean])]
     param(
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="A file containig the Pester tests to run. This should be a full-path to a file.
-        From this file the Repairs file will be found.")]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string[]]$TestFilePath,
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="Data from an executed test.")]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         $TestData
     )
@@ -35,26 +34,26 @@ function Repair-EntityState() {
     #############
 
     # Define the filename of the Repairs file.
-    $repairsFile = $TestFilePath -replace "Tests.ps1","Repairs.ps1"
-    Write-Verbose -Message "The repairs file was resolved to: $repairsFile"
-    $log4netLoggerDebug.debug("The repairs file was resolved to: $repairsFile")
+    $RepairsFile = $TestFilePath -replace "Tests.ps1","Repairs.ps1"
+    Write-Verbose -Message "Repair-EntityState | The repairs file was resolved to: $RepairsFile"
+    $log4netLoggerDebug.debug("Repair-EntityState | The repairs file was resolved to: $RepairsFile")
 
-    if (Test-Path -Path $repairsFile) {
+    if (Test-Path -Path $RepairsFile) {
         # Run the repair
         try {
             if ($PSBoundParameters.ContainsKey('Verbose')) {
-                $repairResult = . $repairsFile -TestData $TestData -Verbose
+                $RepairResult = . $RepairsFile -TestData $TestData -Verbose
             } else {
-                $repairResult = . $repairsFile -TestData $TestData
+                $RepairResult = . $RepairsFile -TestData $TestData
             }
         } catch {
-            throw "Running the repairs in the following repairs file > $repairsFile failed with > $_"
+            throw "Repair-EntityState | Running the repairs in the following repairs file > $RepairsFile failed with > $_"
         }
-        $log4netLoggerDebug.debug("The result of the repair is: $repairResult")
-        Write-Verbose -Message "The result of the repair is: $repairResult"
+        $log4netLoggerDebug.debug("Repair-EntityState | The result of the repair is: $RepairResult")
+        Write-Verbose -Message "Repair-EntityState | The result of the repair is: $RepairResult"
 
         # Report on the success of repairing the IT Service/Entity
-        if($repairResult -eq $true) {
+        if($RepairResult -eq $true) {
             # Return
             $true
         } else {
@@ -63,7 +62,7 @@ function Repair-EntityState() {
         }
     } else {
         # TODO report it, log it == HARDEN
-        $log4netLogger.error("The repairs file $repairsFile could not be found.")
-        throw "The repairs file $repairsFile could not be found.";
+        $log4netLogger.error("Repair-EntityState | The repairs file $RepairsFile could not be found.")
+        throw "Repair-EntityState | The repairs file $RepairsFile could not be found.";
     }
 }

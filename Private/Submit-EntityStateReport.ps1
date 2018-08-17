@@ -116,8 +116,8 @@ function Submit-EntityStateReport() {
             # Debug logging
             Write-Verbose -Message "The metric to report on is > $metric"
             $log4netLoggerDebug.debug("The metric to report on is > $metric")
-            Write-Verbose -Message "It's value is > $metricValue"
-            $log4netLoggerDebug.debug("It's value is > $metricValue")
+            Write-Verbose -Message "The value of the metric is > $metricValue"
+            $log4netLoggerDebug.debug("The value the metric is > $metricValue")
             Write-Verbose -Message "The following values are in the tags collection on the metric > $($tags.values)"
             $log4netLoggerDebug.debug("The following values are in the tags collection on the metric > $($tags.values)")
 
