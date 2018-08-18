@@ -15,14 +15,14 @@
 .EXAMPLE
     Invoke-HealOps -TestsFileName Citrix.Services.ps1 -HealOpsPackage Citrix.HealOpsPackage
     Executes HealOps on a specific *.Tests.ps1 file. Sending in the HealOps package config file wherein HealOps will read configuration and tags.
-.PARAMETER ForceUpdates
+.PARAMETER ForceUpdate
     Use this switch parameter to force an update of HealOps and its pre-requisites regardless of the values in the HealOps config json file.
 .PARAMETER HealOpsPackageName
     The name of the HealOps package that the TestsFileName belong to.
-.PARAMETER ReportOnly
-    Used to indicate that HealOps should run in "ReportOnly" mode. Having the effect that a failed state will only be reported and not tried repaired.
-.PARAMETER StatsOnly
-    Used to indicate that HealOps should just gather stats when invoked on a specific *.Stats.ps1 file in a HealOpsPackage.
+.PARAMETER ReportMode
+    Used to indicate that HealOps should run in "ReportMode" mode. Having the effect that a failed state will only be reported and not tried repaired.
+.PARAMETER StatsMode
+    Used to indicate that HealOps should run in "StatsMode". It execute the provided *.Stats.ps1 file in a the specified HealOpsPackage.
 .PARAMETER TestsFileName
     The name of the *.Tests.ps1 file to execute. The testsfile is part of the HealOps package specified with the HealOpsPackageName.
 .PARAMETER UpdateMode
@@ -30,6 +30,7 @@
         > All = Everything will be updated. HealOps itself, its required modules and the HealOps packages on the system.
         > HealOpsPackages = Only HealOps packages will be updated.
         > HealOps = Only HealOps itself and its requird modules will be updated.
+    NOTE: HealOpsPackages is the default value. Used when the config is corrupt.
 #>
 
     # Define parameters
@@ -38,21 +39,27 @@
     [System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidGlobalVars","")]
     [System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseDeclaredVarsMoreThanAssignments","")]
     param(
-        [Parameter(ParameterSetName="File")]
-        [Parameter(ParameterSetName="UpdateOnly")]
-        [Switch]$ForceUpdates,
-        [Parameter(Mandatory, ParameterSetName="File")]
+        [Parameter(ParameterSetName="Tests")]
+        [Parameter(ParameterSetName="Stats")]
+        [Switch]$ForceUpdate,
+        [Parameter(Mandatory, ParameterSetName="Tests")]
+        [Parameter(Mandatory, ParameterSetName="Stats")]
         [ValidateNotNullOrEmpty()]
         [String]$HealOpsPackageName,
-        [Parameter(ParameterSetName="File")]
-        [Switch]$ReportOnly,
-        [Parameter(Mandatory, ParameterSetName="File")]
+        [Parameter(ParameterSetName="Tests")]
+        [Switch]$ReportMode,
+        [Parameter(Mandatory, ParameterSetName="Stats")]
+        [Switch]$StatsMode,
+        [Parameter(Mandatory, ParameterSetName="Stats")]
+        [ValidateNotNullOrEmpty()]
+        [String]$StatsFileName,
+        [Parameter(Mandatory, ParameterSetName="Tests")]
         [ValidateNotNullOrEmpty()]
         [String]$TestsFileName,
-        [Parameter(ParameterSetName="File")]
-        [Parameter(ParameterSetName="UpdateOnly")]
+        [Parameter(ParameterSetName="Stats")]
+        [Parameter(ParameterSetName="Tests")]
         [ValidateSet("All","HealOpsPackages","HealOps")]
-        [String]$UpdateMode
+        [String]$UpdateMode = "HealOpsPackages"
     )
 
     #############
@@ -67,10 +74,12 @@
         $LogFilesPath = "$PSScriptRoot/../Artefacts"
 
         # Initiate the log4net logger
-        if($PSCmdlet.ParameterSetName -eq "File") {
+        if($PSCmdlet.ParameterSetName -eq "Tests") {
             $logfileName_GeneratedPart = (Split-Path -Path $TestsFileName -Leaf) -replace ".ps1",""
+        } elseif ($PSCmdlet.ParameterSetName -eq "Stats") {
+            $logfileName_GeneratedPart = (Split-Path -Path $StatsFileName -Leaf) -replace ".ps1",""
         } else {
-            $logfileName_GeneratedPart = "ForceUpdates"
+            $logfileName_GeneratedPart = "ForceUpdate"
         }
         $global:log4netLogger = initialize-log4net -log4NetConfigFile $log4NetConfigFile -LogFilesPath $LogFilesPath -logfileName "HealOps.$logfileName_GeneratedPart" -loggerName "HealOps_Error"
         $global:log4netLoggerDebug = initialize-log4net -log4NetConfigFile $log4NetConfigFile -LogFilesPath $LogFilesPath -logfileName "HealOps.$logfileName_GeneratedPart" -loggerName "HealOps_Debug"
@@ -87,7 +96,7 @@
         <#
             - CONSTANTS
         #>
-        if ($PSCmdlet.ParameterSetName -eq "File") {
+        if ($PSCmdlet.ParameterSetName -eq "Tests") {
             # Constant for reporting on Repair status of "X" component og an IT service.
             New-Variable -Name RepairSuccessValue -Value 1 -Option ReadOnly -Description "Represent truthy in relation to the result of repairing 'X' component of an IT service" `
             -Visibility Private -Scope Script -Force
@@ -168,93 +177,69 @@
             }
         }
 
-        if ($PSCmdlet.ParameterSetName -eq "File") {
-            <#
-                - Determine HealOps package related values
-            #>
-            # Latest version of the HealOps package locally
+        <#
+            - Determine HealOps package related values
+        #>
+        # Get the latest locally available version of the HealOps package
+        try {
+            $LatestHealOpsPackage = Get-LatestModuleVersionLocally -ModuleName $HealOpsPackageName
+        } catch {
+            # Log it
+            $log4netLogger.error("$_")
+
+            # Exit
+            throw $_
+        }
+
+        if ($PSCmdlet.ParameterSetName -eq "Tests") {
+            # Get the testsfile named as in $TestsFileName
             try {
-                $latestHealOpsPackage = Get-LatestModuleVersionLocally -ModuleName $HealOpsPackageName
+                $TestsFile = Get-PS1File -FileName $TestsFileName -ModuleName $HealOpsPackageName
             } catch {
-                # Log it
-                $log4netLogger.error("$_")
-
-                # Exit
-                throw $_
-            }
-
-            # Get the testsfile named $TestsFileName
-            try {
-                # Control if the value of $TestsFileName include the proper extension. To support that specifying the TestsFile with or without an extension.
-                $TestsFileNameExt = [System.IO.Path]::GetExtension($TestsFileName)
-                if (-not ($TestsFileNameExt -match ".ps1") ) {
-                    $TestsFileName = "$TestsFileName.ps1"
-                }
-
-                # Get the TestsFile specified named as in $TestsFileNam
-                $TestsFile = Get-ChildItem -Path $latestHealOpsPackage.ModuleBase -Include $TestsFileName -Recurse -ErrorAction Stop
-
-                # Control that the TestsFile was found
-                if ($null -eq $TestsFile) {
-                    $message = "No TestsFile named $TestsFileName was found. HealOps cannot continue."
-
-                    # Log it
-                    $log4netLogger.error("$message")
-
-                    # Exit
-                    throw $message
-                }
-            } catch {
-                $message = "Getting the TestsFile named $TestsFileName in the HealOps package named $HealOpsPackageName failed with > $_"
-
-                # Log it
-                $log4netLogger.error("$message")
-
                 # Exit
                 throw $message
             }
-
-            # Control the config file in the HealOps package
+        } elseif ($PSCmdlet.ParameterSetName -eq "Stats") {
+            # Get the Stats file named as in $StatsFileName
             try {
-                $HealOpsPackageConfigFile = Get-ChildItem -Path $latestHealOpsPackage.ModuleBase -Include *.json -Recurse -ErrorAction Stop
+                $StatsFile = Get-PS1File -FileName $StatsFileName -ModuleName $HealOpsPackageName
             } catch {
-                $message = "Getting the HealOps package config json file failed with > $_"
-                # Log it
-                $log4netLogger.error("$message")
-
                 # Exit
                 throw $message
             }
+        }
 
-            if($HealOpsPackageConfigFile.count -eq 1) {
-                # Check file integrity & get config data
-                if($psVersionAbove4) {
-                    [PSCustomObject]$global:HealOpsPackageConfig = Get-Content -Path $HealOpsPackageConfigFile.FullName -Encoding UTF8 | ConvertFrom-Json
-                } else {
-                    [PSCustomObject]$global:HealOpsPackageConfig = Get-Content -Path $HealOpsPackageConfigFile.FullName | out-string | ConvertFrom-Json
-                }
+        # Control the config file in the HealOps package
+        try {
+            $HealOpsPackageConfigFile = Get-ChildItem -Path $LatestHealOpsPackage.ModuleBase -Include *.json -Recurse -ErrorAction Stop
+        } catch {
+            $message = "Getting the HealOps package config json file failed with > $_"
+            # Log it
+            $log4netLogger.error("$message")
 
-                if ($null -eq $HealOpsPackageConfig) {
-                    $message = "The HealOps package config contains no data. Please provide a proper HealOps package config file."
-                    Write-Verbose -Message $message
+            # Exit
+            throw $message
+        }
 
-                    # Log it
-                    $log4netLogger.error("$message")
-
-                    # Exit
-                    throw $message
-                } elseif($null -eq $HealOpsPackageConfig[0]) {
-                    $message = "The HealOps package config file is not valid. Please provide a proper one."
-                    Write-Verbose -Message $message
-
-                    # Log it
-                    $log4netLogger.error("$message")
-
-                    # Exit
-                    throw $message
-                }
+        if($HealOpsPackageConfigFile.count -eq 1) {
+            # Check file integrity & get config data
+            if($psVersionAbove4) {
+                [PSCustomObject]$global:HealOpsPackageConfig = Get-Content -Path $HealOpsPackageConfigFile.FullName -Encoding UTF8 | ConvertFrom-Json
             } else {
-                $message = "More than 1 config file seems to exist for the HealOps package > $HealOpsPackageName. A HealOps package should only contain 1 config json file."
+                [PSCustomObject]$global:HealOpsPackageConfig = Get-Content -Path $HealOpsPackageConfigFile.FullName | out-string | ConvertFrom-Json
+            }
+
+            if ($null -eq $HealOpsPackageConfig) {
+                $message = "The HealOps package config contains no data. Please provide a proper HealOps package config file."
+                Write-Verbose -Message $message
+
+                # Log it
+                $log4netLogger.error("$message")
+
+                # Exit
+                throw $message
+            } elseif($null -eq $HealOpsPackageConfig[0]) {
+                $message = "The HealOps package config file is not valid. Please provide a proper one."
                 Write-Verbose -Message $message
 
                 # Log it
@@ -263,6 +248,15 @@
                 # Exit
                 throw $message
             }
+        } else {
+            $message = "More than 1 config file seems to exist for the HealOps package > $HealOpsPackageName. A HealOps package should only contain 1 config json file."
+            Write-Verbose -Message $message
+
+            # Log it
+            $log4netLogger.error("$message")
+
+            # Exit
+            throw $message
         }
 
         <#
@@ -281,13 +275,13 @@
         #>
         if ($canRunUpdate) {
             if($healOpsConfig.checkForUpdates -eq "True") {
-                if (-not $ForceUpdates) {
+                if (-not $ForceUpdate) {
                     $timeForUpdate = Confirm-TimeToUpdate -Config $HealOpsConfig
                 }
 
-                if ($timeForUpdate -eq $true -or $ForceUpdates -eq $true) {
+                if ($timeForUpdate -eq $true -or $ForceUpdate -eq $true) {
                     # Debug info - register that forceupdate was used.
-                    if ($ForceUpdates -eq $true) {
+                    if ($ForceUpdate -eq $true) {
                         $log4netLoggerDebug.debug("The force update parameter was used.")
                     }
 
@@ -324,7 +318,10 @@
         } # End of confitional control on canRunUpdate. This semaphore needs to be true. If false another process is already in the proces of running a self-update cycle.
     }
     Process {
-        if ($PSCmdlet.ParameterSetName -eq "File") {
+        ##############
+        # TESTS MODE #
+        ##############
+        if ($PSCmdlet.ParameterSetName -eq "Tests") {
             # Test execution
             Write-Verbose -Message "Executing the test"
             try {
@@ -333,7 +330,7 @@
                 $log4netLogger.error("Test-EntityState failed with: $_")
             }
 
-            if (($TestResult.state -eq $false) -and (-not ($PSBoundParameters.ContainsKey('ReportOnly')))) {
+            if (($TestResult.state -eq $false) -and (-not ($PSBoundParameters.ContainsKey('ReportMode')))) {
                 ###################
                 # The test failed #
                 ###################
@@ -405,8 +402,21 @@
                     $log4netLogger.error("Submit-EntityStateReport failed with: $_")
                     Write-Verbose "Submit-EntityStateReport failed with: $_"
                 }
-            } # End of conditional control on failed state and not in ReportOnly mode.
-        } # End of conditional control on ParameterSetName -eq "File". If not it is a Update execution  of HealOps.
+            } # End of conditional control on failed state and not in ReportMode.
+        } # End of conditional control on ParameterSetName -eq "Tests".
+
+        ##############
+        # STATS MODE #
+        ##############
+        if ($PSCmdlet.ParameterSetName -eq "Stats") {
+            # Stats gathering
+            Write-Verbose -Message "Gathering stats"
+            try {
+                $Stats = Read-Stats -StatsFilePath $StatsFile.FullName -ErrorAction Stop
+            } catch {
+                $log4netLogger.error(" failed with: $_")
+            }
+        } # End of conditional control on ParameterSetName -eq "Stats".
     } # End of Process {} declaration
     End {
         # Clean-up
@@ -422,7 +432,7 @@
                 $log4netLogger.error("canRunUpdate was $canRunUpdate. Couldn't clean-up the HealOps config lock & read resources. Failed with > $_")
             }
 
-            if ($timeForUpdate -eq $true -or $ForceUpdates -eq $true) {
+            if ($timeForUpdate -eq $true -or $ForceUpdate -eq $true) {
                 <#
                     - Register that an update cycle ran
                 #>
