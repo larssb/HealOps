@@ -1,18 +1,18 @@
 function Test-EntityState() {
 <#
 .DESCRIPTION
-    Invokes Pester tests on a specific Tests file. Provided via the TestFilePath parameter.
+    Invokes Pester on a specific *.Tests.ps1 file. Provided via the TestFilePath parameter.
 .INPUTS
-    <none>
+    [String]TestFilePath. Representing the path to a *.Tests.ps1 file.
 .OUTPUTS
     A Hashtable collection containing:
         - The outcome of the Pester test.
         - The Pester test output.
 .NOTES
-    General notes
+    <none>
 .EXAMPLE
-    Test-EntityState -TestFilePath ./PATH/ENTITY_TO_TEST.TESTS.ps1
-    Explanation of what the example does
+    PS C:\> Test-EntityState -TestFilePath ./PATH/ENTITY_TO_TEST.TESTS.ps1
+    Executes Test-EntityState which executes the tests in the *.Tests.ps1 file in order to determine if an IT system/component is in a failed state.
 .PARAMETER TestFilePath
     A file containig the Pester tests to run. This should be a full-path to a file.
 #>
@@ -42,7 +42,7 @@ function Test-EntityState() {
     }
 
     if ($null -ne $TestOutput.TestResult) {
-        # Set state semaphore
+        # Set a state semaphore
         $state = $true
 
         if ($TestOutput.FailedCount -ge 1) {
