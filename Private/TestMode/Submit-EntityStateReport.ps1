@@ -1,41 +1,46 @@
 function Submit-EntityStateReport() {
 <#
 .DESCRIPTION
-    Long description
+    Used to report stats, repair and test data to the HealOps backend.
 .INPUTS
-    <none>
+    $Data.
+    [String]Metric. The metric to report on in the time shift database backend system.
+    [int]RepairMetricValue. Either 1 or 0 ($true or $false), relative to the result of repairing a failed state of an IT system/component.
 .OUTPUTS
     <none>
 .NOTES
-    General notes
+    <none>
 .EXAMPLE
-    Submit-EntityStateReport -
-    Explanation of what the example does
-.PARAMETER reportBackendSystem
-    Used to specify the software used as the reporting backend. For storing test result metrics.
-.PARAMETER metric
+    Submit-EntityStateReport -Metric $Metric -ReportBackendSystem "OpenTSDB" -Data $Data
+    Requests Submit-EntityStateReport to send data for storage to the HealOps backend on a specific metric.
+.EXAMPLE
+    Submit-EntityStateReport -Metric $Metric -ReportBackendSystem "OpenTSDB" -RepairMetricValue 1
+    Requests Submit-EntityStateReport to send the repair result value (in this case 1 which equals $true) of a specific metric, for storage on the HealOps backend.
+.PARAMETER Data
+    The data to report to the HealOps backend. It can be a Hashtable or a Int32 type object.
+.PARAMETER Metric
     The name of the metric, in a format supported by the reporting backend.
-.PARAMETER TestData
-    A Hashtable or Int32 type object. Containing testdata.
+.PARAMETER ReportBackendSystem
+    Used to specify the reporting backend to use.
 .PARAMETER RepairMetricValue
-    With this parameter you specify the TestData to report for a repair, relative to the result of Repair-EntityState().
+    With this parameter you specify the data to report for a repair, relative to the result of Repair-EntityState().
 #>
 
     # Define parameters
     [CmdletBinding(DefaultParameterSetName="Default")]
     [OutputType([Void])]
-    param(
-        [Parameter(Mandatory, ParameterSetName="Default")]
+    Param(
+        [Parameter(Mandatory, ParameterSetName="StatsAndTest")]
+        [ValidateNotNullOrEmpty()]
+        $Data,
         [Parameter(Mandatory, ParameterSetName="Repair")]
+        [Parameter(Mandatory, ParameterSetName="StatsAndTest")]
+        [ValidateNotNullOrEmpty()]
+        [String]$Metric,
+        [Parameter(Mandatory, ParameterSetName="Repair")]
+        [Parameter(Mandatory, ParameterSetName="StatsAndTest")]
         [ValidateSet("OpenTSDB")]
-        [String]$reportBackendSystem,
-        [Parameter(Mandatory, ParameterSetName="Default")]
-        [Parameter(Mandatory, ParameterSetName="Repair")]
-        [ValidateNotNullOrEmpty()]
-        [String]$metric,
-        [Parameter(Mandatory, ParameterSetName="Default")]
-        [ValidateNotNullOrEmpty()]
-        $TestData,
+        [String]$ReportBackendSystem,
         [Parameter(Mandatory, ParameterSetName="Repair")]
         [ValidateSet(0,1)]
         [int]$RepairMetricValue
@@ -48,12 +53,12 @@ function Submit-EntityStateReport() {
         <#
             - Sanity tests
         #>
-        if ($PSBoundParameters.ContainsKey('TestData')) {
-            # Determine the type of the incoming object to the TestData parameter.
-            if (-not $TestData.GetType().Name -eq "Hashtable" -or -not $TestData.GetType().Name -eq "Int32") {
+        if ($PSBoundParameters.ContainsKey('Data')) {
+            # Determine the type of the incoming object to the Data parameter.
+            if (-not $Data.GetType().Name -eq "Hashtable" -or -not $Data.GetType().Name -eq "Int32") {
                 # Throw
-                $testDataType = $TestData.GetType().Name
-                throw "The datatype of the TestData parameter is not supported. The datatype is > $testDataType"
+                $testDataType = $Data.GetType().Name
+                throw "The datatype of the Data parameter is not supported. The datatype is > $testDataType"
             }
         }
 
@@ -62,13 +67,13 @@ function Submit-EntityStateReport() {
         ############################
         <#
             - Reports to a reporting backend
-                > Invoke-ReportIt declared here to avoid it being exposed outside Submit-EntityStateReport(). Used to adhere to DRY. So that we can support [Hashtable] and [Int32] case on the TestData param coming
+                > Invoke-ReportIt declared here to avoid it being exposed outside Submit-EntityStateReport(). Used to adhere to DRY. So that we can support [Hashtable] and [Int32] case on the Data param coming
                 into the mother function (Submit-EntityStateReport).
         #>
         function Invoke-ReportIt () {
         <#
         .DESCRIPTION
-            Private function used to report to a reporting backend.
+            Private inline function used to report to a reporting backend.
         .INPUTS
             <none>
         .OUTPUTS
@@ -203,9 +208,9 @@ function Submit-EntityStateReport() {
                 # TODO: Alarm that state data could be reported
             }
         } else {
-            if ($TestData.GetType().Name -eq "Hashtable") {
-                # Iterate over each entry in the TestData Hashtable
-                $enumerator = $TestData.GetEnumerator()
+            if ($Data.GetType().Name -eq "Hashtable") {
+                # Iterate over each entry in the Data Hashtable
+                $enumerator = $Data.GetEnumerator()
                 foreach ($entry in $enumerator) {
                     # Get std. tags
                     [Hashtable]$tags = Get-StandardTagCollection -HealOpsPackageConfig $HealOpsPackageConfig
@@ -226,7 +231,7 @@ function Submit-EntityStateReport() {
 
                 # Report it
                 try {
-                    $result = Invoke-ReportIt -reportBackendSystem $reportBackendSystem -metric $metric -metricValue $TestData -tags $tags -log4netLoggerDebug $log4netLoggerDebug -ErrorAction Stop
+                    $result = Invoke-ReportIt -reportBackendSystem $reportBackendSystem -metric $metric -metricValue $Data -tags $tags -log4netLoggerDebug $log4netLoggerDebug -ErrorAction Stop
                 } catch {
                     # TODO: Alarm that state data could be reported
                 }

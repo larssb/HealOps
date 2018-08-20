@@ -348,7 +348,7 @@
                     # Report the state of the service to the backend report system. Which should then further trigger an alarm to the on-call personnel.
                     try {
                         # Report the value of the failing component
-                        Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -TestData $($testResult.testdata) @commonParms -ErrorAction Stop
+                        Submit-EntityStateReport -Data $($testResult.testdata) -ReportBackendSystem $($healOpsConfig.reportingBackend) -Metric $($testResult.metric) @commonParms -ErrorAction Stop
                     } catch {
                         # TODO: LOG IT and inform x
                         $log4netLogger.error("Invoke-HealOps | Submit-EntityStateReport failed with: $_")
@@ -357,7 +357,7 @@
 
                     try {
                         # Report that the repair failed on the component
-                        Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -RepairMetricValue $RepairFailedValue @commonParms -ErrorAction Stop
+                        Submit-EntityStateReport -ReportBackendSystem $($healOpsConfig.reportingBackend) -Metric $($testResult.metric) -RepairMetricValue $RepairFailedValue @commonParms -ErrorAction Stop
                     } catch {
                         $log4netLogger.error("Invoke-HealOps | Submit-EntityStateReport failed with: $_")
                         Write-Verbose "Invoke-HealOps | Submit-EntityStateReport failed with: $_"
@@ -374,7 +374,7 @@
                     # Report the result
                     try {
                         # Report the value of the okay component after repairing it
-                        Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -TestData $($testResult.testdata) @commonParms -ErrorAction Stop
+                        Submit-EntityStateReport -Data $($testResult.testdata) -ReportBackendSystem $($healOpsConfig.reportingBackend) -Metric $($testResult.metric) @commonParms -ErrorAction Stop
                     } catch {
                         # TODO: LOG IT and inform x
                         $log4netLogger.error("Invoke-HealOps | Submit-EntityStateReport failed with: $_")
@@ -383,7 +383,7 @@
 
                     try {
                         # Report that the repair succeeded on the component
-                        Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -RepairMetricValue $RepairSuccessValue @commonParms -ErrorAction Stop
+                        Submit-EntityStateReport -ReportBackendSystem $($healOpsConfig.reportingBackend) -Metric $($testResult.metric) -RepairMetricValue $RepairSuccessValue @commonParms -ErrorAction Stop
                     } catch {
                         $log4netLogger.error("Invoke-HealOps | Submit-EntityStateReport failed with: $_")
                         Write-Verbose "Invoke-HealOps | Submit-EntityStateReport failed with: $_"
@@ -396,11 +396,11 @@
                 # Report the state of the service to the backend report system.
                 try {
                     # Report the value of the okay component
-                    Submit-EntityStateReport -reportBackendSystem $($healOpsConfig.reportingBackend) -metric $($testResult.metric) -TestData $($testResult.testdata) @commonParms -ErrorAction Stop
+                    Submit-EntityStateReport -Data $($testResult.testdata) -ReportBackendSystem $($healOpsConfig.reportingBackend) -Metric $($testResult.metric) @commonParms -ErrorAction Stop
                 } catch {
                     # TODO: LOG IT and inform x
-                    $log4netLogger.error("Submit-EntityStateReport failed with: $_")
-                    Write-Verbose "Submit-EntityStateReport failed with: $_"
+                    $log4netLogger.error("Invoke-HealOps | Submit-EntityStateReport failed with: $_")
+                    Write-Verbose "Invoke-HealOps | Submit-EntityStateReport failed with: $_"
                 }
             } # End of conditional control on failed state and not in ReportMode.
         } # End of conditional control on ParameterSetName -eq "Tests".
@@ -418,7 +418,13 @@
             }
 
             # Submit the stats to the reporting backend.
-
+            try {
+                Submit-EntityStateReport -Data $Stats -Metric $($Stats.metric) -ReportBackendSystem $($healOpsConfig.reportingBackend) @commonParms -ErrorAction Stop
+            } catch {
+                # TODO: LOG IT and inform x
+                $log4netLogger.error("Invoke-HealOps | Submit-EntityStateReport failed with: $_")
+                Write-Verbose "Invoke-HealOps | Submit-EntityStateReport failed with: $_"
+            }
         } # End of conditional control on ParameterSetName -eq "Stats".
     } # End of Process {} declaration
     End {
@@ -430,9 +436,9 @@
                 $HealOpsConfigFile.Close()
                 $HealOpsConfigReader.Dispose()
                 $HealOpsConfigReader.Close()
-                $log4netLoggerDebug.Debug("canRunUpdate was $canRunUpdate. Successfully closed the HealOps config lock & read resources.")
+                $log4netLoggerDebug.Debug("Invoke-HealOps | canRunUpdate was $canRunUpdate. Successfully closed the HealOps config lock & read resources.")
             } catch {
-                $log4netLogger.error("canRunUpdate was $canRunUpdate. Couldn't clean-up the HealOps config lock & read resources. Failed with > $_")
+                $log4netLogger.error("Invoke-HealOps | canRunUpdate was $canRunUpdate. Couldn't clean-up the HealOps config lock & read resources. Failed with > $_")
             }
 
             if ($timeForUpdate -eq $true -or $ForceUpdate -eq $true) {
