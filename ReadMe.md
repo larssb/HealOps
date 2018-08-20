@@ -32,7 +32,7 @@ The above is the motivation for developing HealOps.
         * They can assist you when troubleshooting.
             By:
             * Showing you what is wrong.
-            * By runing them recursively after having fixed "SOMETHING" to see if that made "X" work.
+            * By running them recursively after having fixed "SOMETHING" to see if that made "X" work.
 
 ## Repairing
 
@@ -120,7 +120,7 @@ Rules of thumb and design of the *.Repairs.ps1 file
 
 ### Metrics
 
-Report data is based on metrics. Where metris is in the form e.g. ' systemName.SystemComponent.SystemSubComponent '.
+Report data is based on metrics. Where metrics is in the form e.g. ' systemName.SystemComponent.SystemSubComponent '.
 
 #### Metric values
 
@@ -142,7 +142,7 @@ The std. is:
 
     * The above name description is to be used when defining the "Describe" keyword value in the Pester *.Tests.ps1 file. As this is where the metric name will be derived from when reporting on a metric to the backend system.
 
-#### On state test succes
+#### On state test success
 
     * A global variable should be used to report the value to be used for the metric value. This global variable will be read by HealOps when reporting.
     This value needs to be a numerical type.
@@ -177,7 +177,7 @@ The std. is:
 
     - Required PowerShell modules
         * PowerShellGet
-            - Minumum viable version: v1.5.0.0. If not errors like $psgettemp variable missing will pop-up.
+            - Minimum viable version: v1.5.0.0. If not errors like $psgettemp variable missing will pop-up.
 
 ## Security
 
@@ -271,7 +271,7 @@ The std. is:
     - This property controls what the self-update feature will update. There are three options:
         > All = Everything will be updated. HealOps itself, its required modules and the HealOps packages on the system.
         > HealOpsPackages = Only HealOps packages will be updated.
-        > HealOps = Only HealOps itself and its requird modules will be updated.
+        > HealOps = Only HealOps itself and its required modules will be updated.
     - It is controlled by setting it to one of the above three values in the HealOpsConfig json file or when installing HealOps with the Install-HealOps deploy script.
 
     ''On HealOps packages''

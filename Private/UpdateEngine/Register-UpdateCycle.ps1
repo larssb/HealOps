@@ -1,21 +1,21 @@
 function Register-UpdateCycle() {
-    <#
-    .DESCRIPTION
-        Registers the fact that an HealOps update cycle ran.
-    .INPUTS
-        Inputs (if any)
-    .OUTPUTS
-        [Boolean] relative to the result of registering the update to a config file.
-    .NOTES
-        <none>
-    .EXAMPLE
-        Register-UpdateCycle -Config $Config -ModuleBase $MainModule.ModuleBase
-        Tries to register that an update cycle was run.
-    .PARAMETER Config
-        The config file holding package management repository info. Of the PSCustomObject type
-    .PARAMETER ModuleBase
-        The base (folder path) to the location of the updated module.
-    #>
+<#
+.DESCRIPTION
+    Registers the fact that an HealOps update cycle ran.
+.INPUTS
+    Inputs (if any)
+.OUTPUTS
+    [Boolean] relative to the result of registering the update to a config file.
+.NOTES
+    <none>
+.EXAMPLE
+    Register-UpdateCycle -Config $Config -ModuleBase $MainModule.ModuleBase
+    Tries to register that an update cycle was run.
+.PARAMETER Config
+    The config file holding package management repository info. Of the PSCustomObject type
+.PARAMETER ModuleBase
+    The base (folder path) to the location of the updated module.
+#>
 
     # Define parameters
     [CmdletBinding()]

@@ -1,31 +1,31 @@
 function Sync-HealOpsConfig() {
-    <#
-    .DESCRIPTION
-        Syncs changes from the current HealOps config and an updated HealOps config to the HealOps config file to be used going forward.
-    .INPUTS
-        [System.Array] representing the changes between the current and an updated version of the HealOps config file.
-    .OUTPUTS
-        [PSCustomObject] representing the data to write to the HealOps config file to be used going forward.
-    .NOTES
-        - This function will likely have to be updated regularly. Or in other words, as often as you update/change the HealOps config file.
-    .EXAMPLE
-        [PSCustombObject]$syncedConfig = Sync-HealOpsConfig -configChanges $configChanges -currentConfig $currentConfig
-            > Syncs the changes that was found the current HealOps config file and the one from an updated version of HealOps.
-            > The changes are returned as a PSCustomObject that can be written to the HealOps config file to be used going forward.
-    .PARAMETER currentConfig
-        The current HealOps config file. To be compared with the HealOps config file coming in from an updated version of HealOps.
-    .PARAMETER configChanges
-        The changes between the current HealOps config and an HealOps config from an updated version of HealOps.
-    #>
+<#
+.DESCRIPTION
+    Syncs changes from the current HealOps config and an updated HealOps config to the HealOps config file to be used going forward.
+.INPUTS
+    [System.Array] representing the changes between the current and an updated version of the HealOps config file.
+.OUTPUTS
+    [PSCustomObject] representing the data to write to the HealOps config file to be used going forward.
+.NOTES
+    - This function will likely have to be updated regularly. Or in other words, as often as you update/change the HealOps config file.
+.EXAMPLE
+    [PSCustombObject]$syncedConfig = Sync-HealOpsConfig -configChanges $configChanges -currentConfig $currentConfig
+        > Syncs the changes that was found the current HealOps config file and the one from an updated version of HealOps.
+        > The changes are returned as a PSCustomObject that can be written to the HealOps config file to be used going forward.
+.PARAMETER CurrentConfig
+    The current HealOps config file. To be compared with the HealOps config file coming in from an updated version of HealOps.
+.PARAMETER ConfigChanges
+    The changes between the current HealOps config and an HealOps config from an updated version of HealOps.
+#>
 
     # Define parameters
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName="Default")]
     [OutputType([PSCustomObject])]
     param(
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The changes between the current HealOps config and an HealOps config from an updated version of HealOps.")]
+        [Parameter(Mandatory)]
         [ValidateScript({$_.Count -ge 1})]
         [System.Array]$configChanges,
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The current HealOps config file.")]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [PSCustomObject]$currentConfig
     )
@@ -42,11 +42,11 @@ function Sync-HealOpsConfig() {
         <#
             - Variables
         #>
+        New-Variable -Name addMemberFailureMessage -Value "Sync-HealOpsConfig | Failed to add a new member to the currentConfig object. Failed with >" -Option Constant -Description "addMemberFailureMessage" -Visibility Private -Scope Script
         New-Variable -Name checkForUpdatesInterval -Value "checkForUpdatesInterval_Hours" -Option Constant -Description "The checkForUpdatesInterval_Hours property" -Visibility Private -Scope Script
         New-Variable -Name checkForUpdatesIntervalDefaultValue -Value "24" -Option Constant -Description "The default update interval value." -Visibility Private -Scope Script
         New-Variable -Name JobType -Value "JobType" -Option Constant -Description "The JobType property" -Visibility Private -Scope Script
         New-Variable -Name UpdateMode -Value "UpdateMode" -Option Constant -Description "The UpdateMode property" -Visibility Private -Scope Script
-        New-Variable -Name addMemberFailureMessage -Value "Sync-HealOpsConfig | Failed to add a new member to the currentConfig object. Failed with >" -Option Constant -Description "addMemberFailureMessage" -Visibility Private -Scope Script
 
         # Make sure that calls which lack -ErrorAction prefs. and are per default not terminating on failures do fail in a terminating way.
         $currentErrorActionPreference = $ErrorActionPreference

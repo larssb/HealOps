@@ -1,21 +1,11 @@
-Import-Module -name $PSScriptRoot/../healops -force
+# Define variables
+$moduleRoot = $($Settings.moduleRoot)
 
-InModuleScope healops {
-    Describe "Lock-HealOpsConfig" {
+# Tests
+Describe "Lock-HealOpsConfig" {
 
-        It "Executes cleanly" {
-            # Call Get-HealOpsConfig to get the HealOps config file.
-            { [PSCustomObject]$global:HealOpsConfig = Get-HealOpsConfig -ModuleBase $PSScriptRoot/../ -verbose } | Should Not Throw
-        }
-
-        It "Returns the HealOps config file" {
-            #
-            $HealOpsConfig | Should -Not -BeNullOrEmpty
-        }
-
-        It "Is a proper HealOps config file" {
-            #
-            $HealOpsConfig.reportingBackend | Should -Not -BeNullOrEmpty
-        }
+    It "Executes cleanly" {
+        # Call Get-HealOpsConfig to get the HealOps config file.
+        { [System.IO.FileStream]$global:HealOpsConfigFile = Lock-HealOpsConfig -HealOpsConfigPath $moduleRoot/Artefacts/HealOpsConfig.json -verbose } | Should Not Throw
     }
 }

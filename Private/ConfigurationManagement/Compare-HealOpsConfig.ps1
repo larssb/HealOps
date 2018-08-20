@@ -18,13 +18,13 @@ function Compare-HealOpsConfig() {
 #>
 
     # Define parameters
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName="Default")]
     [OutputType([System.Array])]
     param(
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The current HealOps config file. To be compared with the HealOps config file coming in from an updated version of HealOps.")]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [PSCustomObject]$currentConfig,
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The updated HealOps config file. To be compared with the current HealOps config file.")]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [PSCustomObject]$updatedConfig
     )
