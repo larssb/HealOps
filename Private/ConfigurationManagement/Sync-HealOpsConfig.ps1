@@ -12,29 +12,29 @@ function Sync-HealOpsConfig() {
     [PSCustombObject]$syncedConfig = Sync-HealOpsConfig -configChanges $configChanges -currentConfig $currentConfig
         > Syncs the changes that was found the current HealOps config file and the one from an updated version of HealOps.
         > The changes are returned as a PSCustomObject that can be written to the HealOps config file to be used going forward.
-.PARAMETER CurrentConfig
-    The current HealOps config file. To be compared with the HealOps config file coming in from an updated version of HealOps.
 .PARAMETER ConfigChanges
     The changes between the current HealOps config and an HealOps config from an updated version of HealOps.
+.PARAMETER CurrentConfig
+    The current HealOps config file. To be compared with the HealOps config file coming in from an updated version of HealOps.
 #>
 
     # Define parameters
     [CmdletBinding(DefaultParameterSetName="Default")]
     [OutputType([PSCustomObject])]
-    param(
+    Param(
         [Parameter(Mandatory)]
         [ValidateScript({$_.Count -ge 1})]
-        [System.Array]$configChanges,
+        [System.Array]$ConfigChanges,
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
-        [PSCustomObject]$currentConfig
+        [PSCustomObject]$CurrentConfig
     )
 
     #############
     # Execution #
     #############
     Begin {
-        if ($null -eq $currentConfig.psobject) {
+        if ($null -eq $CurrentConfig.psobject) {
             $log4netLogger.error("Sync-HealOpsConfig > The psobject property is not on the currentConfig object. Pass a valid object passed!")
             throw "Sync-HealOpsConfig > The psobject property is not on the currentConfig object. Pass a valid object passed!"
         }
@@ -42,18 +42,19 @@ function Sync-HealOpsConfig() {
         <#
             - Variables
         #>
-        New-Variable -Name addMemberFailureMessage -Value "Sync-HealOpsConfig | Failed to add a new member to the currentConfig object. Failed with >" -Option Constant -Description "addMemberFailureMessage" -Visibility Private -Scope Script
-        New-Variable -Name checkForUpdatesInterval -Value "checkForUpdatesInterval_Hours" -Option Constant -Description "The checkForUpdatesInterval_Hours property" -Visibility Private -Scope Script
-        New-Variable -Name checkForUpdatesIntervalDefaultValue -Value "24" -Option Constant -Description "The default update interval value." -Visibility Private -Scope Script
-        New-Variable -Name JobType -Value "JobType" -Option Constant -Description "The JobType property" -Visibility Private -Scope Script
-        New-Variable -Name UpdateMode -Value "UpdateMode" -Option Constant -Description "The UpdateMode property" -Visibility Private -Scope Script
+        New-Variable -Name addMemberFailureMessage -Value "Sync-HealOpsConfig | Failed to add a new member to the currentConfig object. Failed with >" -Option ReadOnly -Description "addMemberFailureMessage" -Visibility Private -Scope Script
+        New-Variable -Name checkForUpdatesInterval -Value "checkForUpdatesInterval_Hours" -Option ReadOnly -Description "The checkForUpdatesInterval_Hours property" -Visibility Private -Scope Script
+        New-Variable -Name checkForUpdatesIntervalDefaultValue -Value "24" -Option ReadOnly -Description "The default update interval value." -Visibility Private -Scope Script
+        New-Variable -Name JobType -Value "JobType" -Option ReadOnly -Description "The JobType property" -Visibility Private -Scope Script
+        New-Variable -Name UpdateMode -Value "UpdateMode" -Option ReadOnly -Description "The UpdateMode property" -Visibility Private -Scope Script
 
         # Make sure that calls which lack -ErrorAction prefs. and are per default not terminating on failures do fail in a terminating way.
         $currentErrorActionPreference = $ErrorActionPreference
         $ErrorActionPreference = "Stop"
     }
     Process {
-        $log4netLoggerDebug.Debug("configChanges holds > $configChanges")
+        $log4netLoggerDebug.Debug("ConfigChanges holds > $ConfigChanges")
+
         foreach ($item in $configChanges) {
             switch ($item) {
                 { $_ -match "checkForUpdatesInterval_*" } {
@@ -61,7 +62,7 @@ function Sync-HealOpsConfig() {
                         - The checkForUpdatesInterval_ property was changed from _InDays to _InHours. Ensure that the config file to be used going forward reflects this.
                     #>
                     # Get the checkForUpdatesInterval property. Matching on the part that wasn't changed.
-                    [String]$intervalValue = $currentConfig.psobject.Properties.name -match "checkForUpdatesInterval_(?<content>.*)"
+                    [String]$intervalValue = $CurrentConfig.psobject.Properties.name -match "checkForUpdatesInterval_(?<content>.*)"
 
                     # Compare the value with the updated property value
                     [bool]$intervalValueCompareResult = "$checkForUpdatesInterval" -match $intervalValue
@@ -70,7 +71,7 @@ function Sync-HealOpsConfig() {
                         #### The current property does not match the updated value of the property. Reflect this.
                         # Remove the property from the object
                         try {
-                            $currentConfig.psobject.Properties.Remove($intervalValue)
+                            $CurrentConfig.psobject.Properties.Remove($intervalValue)
                         } catch {
                             $message = "Sync-HealOpsConfig | Failed to remove the property named > $intervalValue. Failed with > $_"
                             $log4netLogger.error("$message")
@@ -93,7 +94,7 @@ function Sync-HealOpsConfig() {
                             > This one is an entirely new property so we need to ensure that the property is there > not update a change to an existing property
                     #>
                     # Control if it is in the properties list.
-                    [bool]$jobTypeLookupResult = $currentConfig.psobject.Properties.name.Contains("$JobType")
+                    [bool]$jobTypeLookupResult = $CurrentConfig.psobject.Properties.name.Contains("$JobType")
 
                     if (-not $jobTypeLookupResult) {
                         # Figure out the value to give JobType
@@ -112,7 +113,7 @@ function Sync-HealOpsConfig() {
 
                         # The property is not already there. Add it.
                         try {
-                            Add-Member -InputObject $currentConfig -MemberType NoteProperty -Name "$JobType" -Value $JobTypeValue -TypeName "System.String" -ErrorAction Stop
+                            Add-Member -InputObject $CurrentConfig -MemberType NoteProperty -Name "$JobType" -Value $JobTypeValue -TypeName "System.String" -ErrorAction Stop
                         } catch {
                             $message = "$addMemberFailureMessage $_"
                             $log4netLogger.error("$message")

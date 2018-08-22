@@ -21,10 +21,12 @@
     The name of the HealOps package that the TestsFileName belong to.
 .PARAMETER ReportMode
     Used to indicate that HealOps should run in "ReportMode" mode. Having the effect that a failed state will only be reported and not tried repaired.
+.PARAMETER StatsFileName
+    The name of the *.Stats.ps1 file to execute. The Statsfile is part of the HealOps package specified via the HealOpsPackageName parameter.
 .PARAMETER StatsMode
     Used to indicate that HealOps should run in "StatsMode". It execute the provided *.Stats.ps1 file in a the specified HealOpsPackage.
 .PARAMETER TestsFileName
-    The name of the *.Tests.ps1 file to execute. The testsfile is part of the HealOps package specified with the HealOpsPackageName.
+    The name of the *.Tests.ps1 file to execute. The testsfile is part of the HealOps package specified via the HealOpsPackageName parameter.
 .PARAMETER UpdateMode
     The execute mode that the self-update should use.
         > All = Everything will be updated. HealOps itself, its required modules and the HealOps packages on the system.

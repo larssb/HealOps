@@ -1,42 +1,46 @@
 function Get-LatestModuleVersion() {
 <#
 .DESCRIPTION
-    Long description
+    Gets the latest version of a package on a package management system.
 .INPUTS
-    <none>
+    [String]APIKey. Representing the APIKey to authentiate with on the package management system.
+    [String]FeedName. The name of the feed to query for the latest version of [String]ModuleName.
+    [String]ModuleName. The name of the module to get the latest version of on the package management system.
+    [String]PackageManagementURI. The URI of the package management system.
 .OUTPUTS
     [String] representing the latest version of the module being looked up.
 .NOTES
-    General notes
+    <none>
 .EXAMPLE
-    Get-LatestModuleVersion -ProGetServerURI https://proget.test.com/ -FeedName MyFeed -ModuleName MyModule -APIKey "fwf292902382909fe9f"
-    Explanation of what the example does
-.PARAMETER ProGetServerURI
-    The URI of the ProGet package management server.
+    Get-LatestModuleVersion -PackageManagementURI https://proget.test.com/ -FeedName MyFeed -ModuleName MyModule -APIKey "fwf292902382909fe9f"
+    Queries the package management system on https://proget.test.com/ for the latest version of a package named MyModule on the feed MyFeed. Authenticating with the
+    APIKey "fwf292902382909fe9f".
+.PARAMETER APIKey
+    The API key with which to authenticate to the package management backend.
 .PARAMETER FeedName
     The name of the Feed to get the latest version of the module specified in the ModuleName parameter.
 .PARAMETER ModuleName
     The name of the module for which to look for the latest version.
-.PARAMETER APIKey
-    The API key with which to authenticate to the package management backend.
+.PARAMETER PackageManagementURI
+    The URI of the package management system to be used by HealOps.
 #>
 
     # Define parameters
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName="Default")]
     [OutputType([String])]
     param(
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The URI of the Package Management server.")]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
-        [String]$PackageManagementURI,
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The name of the Feed to get the latest version of the module specified in the ModuleName parameter.")]
+        [String]$APIKey,
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [String]$FeedName,
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The name of the module for which to look for the latest version.")]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [String]$ModuleName,
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The API key with which to authenticate to the package management backend.")]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
-        $APIKey
+        [String]$PackageManagementURI
     )
 
     #############
@@ -62,7 +66,9 @@ function Get-LatestModuleVersion() {
             $log4netLogger.error("Retrieving the package and version on the package management backend $PackageManagementURI failed with > $_")
         }
         $PackageVersion = $Request.Content | ConvertFrom-Json
+    }
+    End {
+        # Return
         Write-Output($PackageVersion.Version_Text)
     }
-    End {}
 }

@@ -1,36 +1,42 @@
 function Get-AvailableUpdate() {
 <#
 .DESCRIPTION
-    Long description
+    Compares the current version of a module with the latest version of the same module on a package management backend. In order to determine if the current version is behind.
+        - If behind >> the latest available version number is returned.
+        - If there is no newer version >> an empty collection is returned.
 .INPUTS
-    <none>
+    [PSCustomObject]Config. HealOps config data.
+    $CurrentModuleVersion.  The current version of the a PowerShell module.
+    [String]ModuleName. The name of a PowerShell module.
 .OUTPUTS
     [HashTable] containing either info to be used when downloading an update or no info implying that there is either no newer version available or that the package is not available
     on the package management backend.
 .NOTES
-    General notes
+    <none>
 .EXAMPLE
-    Test-AvailableUpdate
-    Explanation of what the example does
-.PARAMETER ModuleName
-    The name of the module that you wish to control if there is available updates to.
+    $AvailableUpdate = Get-AvailableUpdate -ModuleName "MyModule" -CurrentModuleVersion "1.0.0" -Config $Config
+    Checks if a newer version of MyModule is available.
 .PARAMETER Config
-    The config file holding package management repository info. Of the PSCustomObject type.
+    The config file holding package management repository info.
+.PARAMETER CurrentModuleVersion
+    The current version of a PowerShell module on which to control if a newer version exists.
+.PARAMETER ModuleName
+    The name of the module on which you wish to control if a newer version exists.
 #>
 
     # Define parameters
     [CmdletBinding()]
     [OutputType([HashTable])]
     param(
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The name of the module that you wish to control if there is an available update to.")]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
-        [String]$ModuleName,
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The current version of the module that you wish to control if there is an available update to.")]
+        [PSCustomObject]$Config,
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         $CurrentModuleVersion,
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The config file holding package management repository info. Of the PSCustomObject type.")]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
-        [PSCustomObject]$Config
+        [String]$ModuleName
     )
 
     #############

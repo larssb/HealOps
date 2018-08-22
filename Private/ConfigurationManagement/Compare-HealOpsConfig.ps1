@@ -11,9 +11,9 @@ function Compare-HealOpsConfig() {
 .EXAMPLE
     [Array]$configCompare = Compare-HealOpsConfig -currentConfig $currentHealOpsConfig -updatedConfig $updatedHealOpsConfig
         > Compares the current and the updated HealOps config files and returns the result.
-.PARAMETER currentConfig
+.PARAMETER CurrentConfig
     The current HealOps config file. To be compared with the HealOps config file coming in from an updated version of HealOps.
-.PARAMETER updatedConfig
+.PARAMETER UpdatedConfig
     The updated HealOps config file. To be compared with the current HealOps config file
 #>
 
@@ -23,10 +23,10 @@ function Compare-HealOpsConfig() {
     param(
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
-        [PSCustomObject]$currentConfig,
+        [PSCustomObject]$CurrentConfig,
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
-        [PSCustomObject]$updatedConfig
+        [PSCustomObject]$UpdatedConfig
     )
 
     #############
@@ -35,7 +35,7 @@ function Compare-HealOpsConfig() {
     Begin {}
     Process {
         try {
-            $result = Compare-Object -ReferenceObject $updatedConfig.psobject.Properties.name -DifferenceObject $currentConfig.psobject.Properties.name -PassThru -ErrorAction Stop
+            $Result = Compare-Object -ReferenceObject $UpdatedConfig.psobject.Properties.name -DifferenceObject $CurrentConfig.psobject.Properties.name -PassThru -ErrorAction Stop
         } catch {
             $log4netLogger.error("Failed to compare the two HealOps config files. Failed with > $_")
         }
@@ -49,13 +49,14 @@ function Compare-HealOpsConfig() {
             }
         } else {
             # Return empty list.....you know > to be nice
-            $result = @()
+            $Result = @()
+
             $log4netLoggerDebug.debug("The config comparison returned no changes between the config files.")
             Write-Verbose -Message "The config comparison returned no changes between the config files."
         }
     }
     End {
         # Return - The comma is to stop PowerShell from unrolling the collection. As we really do want to potentially return an empty collection if no changes was found in the comparison.
-        ,$result
+        ,$Result
     }
 }

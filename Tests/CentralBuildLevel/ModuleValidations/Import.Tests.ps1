@@ -9,6 +9,6 @@ Describe "Module '$moduleName' can import cleanly" {
     #>
     It "Module '$moduleName' can import cleanly" {
         # Assertion
-        {Import-Module (Join-Path $moduleRoot "$moduleName.psm1") -force -ErrorAction Stop } | Should Not Throw
+        { Import-Module -Name $moduleRoot -force -ErrorAction Stop } | Should Not Throw
     }
 }

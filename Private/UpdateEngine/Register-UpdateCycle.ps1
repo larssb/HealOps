@@ -61,11 +61,11 @@ function Register-UpdateCycle() {
         > In order to catch changes and reflect them to the HealOps config file that will be used going forward.
         #>
         # Get the config from the update
-        [PSCustomObject]$updatedHealOpsConfig = Get-HealOpsConfig -ModuleBase $ModuleBase -verbose
+        [PSCustomObject]$UpdatedHealOpsConfig = Get-HealOpsConfig -ModuleBase $ModuleBase -verbose
 
         # Determine the config file to use as the one going forward
-        if($null -ne $updatedHealOpsConfig) {
-            [System.Array]$configComparisonResult = Compare-HealOpsConfig -currentConfig $Config -updatedConfig $updatedHealOpsConfig -Verbose
+        if($null -ne $UpdatedHealOpsConfig) {
+            [System.Array]$configComparisonResult = Compare-HealOpsConfig -CurrentConfig $Config -UpdatedConfig $UpdatedHealOpsConfig -Verbose
             Write-Verbose -Message "configComparisonResult count is > $($configComparisonResult.Count)"
 
             if ($configComparisonResult.Count -ge 1) {

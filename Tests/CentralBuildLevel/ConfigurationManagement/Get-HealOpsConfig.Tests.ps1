@@ -6,7 +6,7 @@ Describe "Get-HealOpsConfig" {
 
     It "Executes cleanly" {
         # Call Get-HealOpsConfig to get the HealOps config file.
-        { [PSCustomObject]$global:HealOpsConfig = Get-HealOpsConfig -ModuleBase $moduleRoot -verbose } | Should Not Throw
+        { [PSCustomObject]$global:HealOpsConfig = Get-HealOpsConfig -ModuleBase $moduleRoot } | Should Not Throw
     }
 
     It "Returns the HealOps config file" {
