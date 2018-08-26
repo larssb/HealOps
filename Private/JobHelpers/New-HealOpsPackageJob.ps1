@@ -27,28 +27,27 @@ function New-HealOpsPackageJob() {
 #>
 
     # Define parameters
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName="Default")]
     [OutputType([Boolean])]
     [System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword","")]
     [System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingUserNameAndPassWordParams","")]
     param(
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The interval at which to repeat the job.")]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [int]$JobInterval,
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The type of job to use when invoking HealOps.")]
+        [Parameter(Mandatory)]
         [ValidateSet('WinPSJob','WinScTask','LinCronJob')]
         [String]$JobType,
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The name of the HealOps package that the job is created for.")]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [psmoduleinfo]$Package,
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The password set on the local HealOps user.")]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [String]$Password,
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The name of the *.Tests.ps1 file that a job is created for.
-        Without the file extension.")]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [String]$TestsBaseFileName,
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The username of the HealOps user.")]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [String]$UserName
     )

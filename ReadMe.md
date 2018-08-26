@@ -34,7 +34,17 @@ The above is the motivation for developing HealOps.
             * Showing you what is wrong.
             * By running them recursively after having fixed "SOMETHING" to see if that made "X" work.
 
-## Repairing
+# Monitoring HealOps.
+
+- Alerting if/when reporting fails.
+
+The function Submit-EntityStateReport is used to report to a time-shift series database. If this fails, data in the TDB is not visualized via the monitoring system. So make sure to enable alerting in the monitoring system in the case of data gaps.
+
+    - In Grafana this can be done under the "Alert" tab settings on a "Panel". Look for "If no data or all values are null" <-- set this to "Alerting". And configure notifications for the panel in order to alert someone in case of a panel alert.
+
+I considered having the function itself alert, via e-mail, Slack or the like, however, as it is already built into Grafana and similar systems, I came to the conclusion that the need isn't there. Resulting in simpler code.
+
+# Repairing a failed IT system or component state.
 
 Repairing works when:
 
@@ -156,22 +166,24 @@ The std. is:
     * This global variable should be defined for each 'It' block in a Pester *.Tests.ps1 file.
     * The name of the global variable can only be == 'failedTestResult' (without the quotes)
 
-#### Report software specific documentation
+#### Documentation on specific software.
 
-    * OpenTSDB
-        * Chunking needs to be enabled in the OpenTSDB config file. I.e.:
-        `
-        # Enable chunking
-        tsd.http.request.enable_chunked = true
-        tsd.http.request.max_chunk = 4096
-        `
-        * The conf file is could be located at e.g.
-            * /opt/opentsdb/opentsdb-"version"/src/opentsdb.conf
-        * For the chunking config change to be picked you need to:
-            * Add --config= e.g.:
-            `
-            /opt/opentsdb/opentsdb-${TSDB_VERSION}/build/tsdb tsd --config=/opt/opentsdb/opentsdb-${TSDB_VERSION}/src/opentsdb.conf --port=4242 --staticroot=/opt/opentsdb/opentsdb-${TSDB_VERSION}/build/staticroot --cachedir=/tmp --auto-metric
-            `
+__OpenTSDB__
+    Is a time-shift series database system.
+
+* Chunking needs to be enabled in the OpenTSDB config file. I.e.:
+`
+# Enable chunking
+tsd.http.request.enable_chunked = true
+tsd.http.request.max_chunk = 4096
+`
+* The conf file is could be located at e.g.
+    * /opt/opentsdb/opentsdb-"version"/src/opentsdb.conf
+* For the chunking config change to be picked you need to:
+    * Add --config= e.g.:
+    `
+    /opt/opentsdb/opentsdb-${TSDB_VERSION}/build/tsdb tsd --config=/opt/opentsdb/opentsdb-${TSDB_VERSION}/src/opentsdb.conf --port=4242 --staticroot=/opt/opentsdb/opentsdb-${TSDB_VERSION}/build/staticroot --cachedir=/tmp --auto-metric
+    `
 
 ## Required modules and dependencies
 

@@ -1,23 +1,23 @@
 function write-metricToOpenTSDB() {
-    <#
-    .DESCRIPTION
-        Wraps a HTTP Push request to an OpenTSDB endpoint. Used to record a metric measured on "X" IT service/Entity
-    .INPUTS
-        <none>
-    .OUTPUTS
-        [Boolean]
-    .NOTES
-        General notes
-    .EXAMPLE
-        PS C:\> <example usage>
-        Explanation of what the example does
-    .PARAMETER metric
-        The metric value, in a format supported by OpenTSDB, of the IT service/Entity to log data for, into OpenTSDB.
-    .PARAMETER tagPairs
-        The tags to set on the metric. Used to improve querying OpenTSDB. Provided as a Key/Value collection (comparable to pairs of "P").
-    .PARAMETER metricValue
-        The value to record on the metric being writen to OpenTSDB.
-    #>
+<#
+.DESCRIPTION
+    Wraps a HTTP Push request to an OpenTSDB endpoint. Used to record a metric measured on "X" IT service/Entity
+.INPUTS
+    <none>
+.OUTPUTS
+    [Boolean]
+.NOTES
+    <none>
+.EXAMPLE
+    PS C:\> <example usage>
+    Explanation of what the example does
+.PARAMETER metric
+    The metric value, in a format supported by OpenTSDB, of the IT service/Entity to log data for, into OpenTSDB.
+.PARAMETER tagPairs
+    The tags to set on the metric. Used to improve querying OpenTSDB. Provided as a Key/Value collection (comparable to pairs of "P").
+.PARAMETER metricValue
+    The value to record on the metric being writen to OpenTSDB.
+#>
 
     # Define parameters
     [CmdletBinding()]

@@ -3,7 +3,8 @@ function Get-TestsFileJobInterval() {
 .DESCRIPTION
     Determines the repeat interval for a job running a *.Tests.ps1 file. Determined by reading the 'jobInterval' property in the HealOps package config file.
 .INPUTS
-    Inputs (if any)
+    [System.Array]HealOpsPackageConfig. The HealOps config file. Converted from JSON to an Array.
+    [System.IO.FileSystemInfo]TestsFile. File info on a specific *.Tests.ps1 file.
 .OUTPUTS
     [int] representing the value by which a job executing a *.Tests.ps1 file should repeat.
 .NOTES
@@ -18,13 +19,13 @@ function Get-TestsFileJobInterval() {
 #>
 
     # Define parameters
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName="Default")]
     [OutputType([Int])]
     param(
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The HealOps package config file. Represented as an Array.")]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [System.Array]$HealOpsPackageConfig,
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The *.Tests.ps1 file to look up in the HealOps package config file.")]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [System.IO.FileSystemInfo]$TestsFile
     )

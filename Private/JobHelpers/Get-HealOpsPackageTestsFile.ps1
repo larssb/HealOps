@@ -24,13 +24,13 @@ function Get-HealOpsPackageTestsFile() {
     [CmdletBinding()]
     [OutputType([System.Array])]
     param(
-        [Parameter(Mandatory=$false, ParameterSetName="All", HelpMessage="Use this parameter to specify that you want all the *.Tests.ps1 files in the HealOps package.")]
+        [Parameter(ParameterSetName="All")]
         [switch]$All,
-        [Parameter(Mandatory=$true, ParameterSetName="All", HelpMessage="The name of a package in which to get HealOps *.Tests.ps1 files in.")]
-        [Parameter(Mandatory=$true, ParameterSetName="Specific", HelpMessage="The name of a package in which to get HealOps *.Tests.ps1 files in.")]
+        [Parameter(Mandatory, ParameterSetName="All")]
+        [Parameter(Mandatory, ParameterSetName="Specific")]
         [ValidateNotNullOrEmpty()]
         [PSModuleInfo]$Package,
-        [Parameter(Mandatory=$true, ParameterSetName="Specific", HelpMessage="The name of the specific *.Tests.ps1 file you wish to retrieve.")]
+        [Parameter(Mandatory, ParameterSetName="Specific")]
         [ValidateNotNullOrEmpty()]
         [String]$TestsFileName
     )
