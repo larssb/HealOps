@@ -17,7 +17,7 @@ function Read-EntityStats() {
 
     # Define parameters
     [CmdletBinding(DefaultParameterSetName = "Default")]
-    [OutputType([Void])]
+    [OutputType([Hashtable])]
     param(
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
@@ -29,7 +29,8 @@ function Read-EntityStats() {
     #############
     Begin {
         # Determine the file name of the Stats file. Used for logs entries and the like.
-        [String]$StatsFileBaseName = $StatsFilePath.BaseName
+        [String]$StatsFileBaseName = ($StatsFilePath -split "\\")[-1]
+        Write-Verbose -Message "The name of the Statsfile is determind to be > $StatsFileBaseName."
     }
     Process {
         if (Test-Path -Path $StatsFilePath) {
@@ -44,12 +45,16 @@ function Read-EntityStats() {
                 throw "Read-EntityStats | Gathering stats via the following stats file > $StatsFileBaseName failed with > $_"
             }
         } else {
-            # TODO report it, log it == HARDEN
             $log4netLogger.error("Read-EntityStats | The stats file $StatsFileBaseName could not be found.")
             throw "Read-EntityStats | The stats file $StatsFileBaseName could not be found.";
         }
     }
     End {
+        # Define the stats hashtable collection (make it ready for reporting).
+        $TempCollection = @{}
+        $TempCollection.Add("StatsData",$Stats)
+        $TempCollection.Add("Metric",$($))
+
         # Return the stats.
         $Stats
     }

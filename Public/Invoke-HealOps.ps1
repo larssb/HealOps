@@ -23,8 +23,6 @@
     Used to indicate that HealOps should run in "ReportMode" mode. Having the effect that a failed state will only be reported and not tried repaired.
 .PARAMETER StatsFileName
     The name of the *.Stats.ps1 file to execute. The Statsfile is part of the HealOps package specified via the HealOpsPackageName parameter.
-.PARAMETER StatsMode
-    Used to indicate that HealOps should run in "StatsMode". It execute the provided *.Stats.ps1 file in a the specified HealOpsPackage.
 .PARAMETER TestsFileName
     The name of the *.Tests.ps1 file to execute. The testsfile is part of the HealOps package specified via the HealOpsPackageName parameter.
 .PARAMETER UpdateMode
@@ -50,8 +48,6 @@
         [String]$HealOpsPackageName,
         [Parameter(ParameterSetName="Tests")]
         [Switch]$ReportMode,
-        [Parameter(Mandatory, ParameterSetName="Stats")]
-        [Switch]$StatsMode,
         [Parameter(Mandatory, ParameterSetName="Stats")]
         [ValidateNotNullOrEmpty()]
         [String]$StatsFileName,
@@ -342,7 +338,6 @@
                     # Invoke repairs matching the failed test
                     $ResultOfRepair = Repair-EntityState -TestFilePath $TestsFile.FullName -TestData $testResult.testdata -ErrorAction Stop @commonParms
                 } catch {
-                    # Log it
                     $log4netLogger.error("Invoke-HealOps | Repair-EntityState failed with: $_")
                 }
 
@@ -352,7 +347,6 @@
                         # Report the value of the failing component
                         Submit-EntityStateReport -Data $($testResult.testdata) -ReportBackendSystem $($healOpsConfig.reportingBackend) -Metric $($testResult.metric) @commonParms -ErrorAction Stop
                     } catch {
-                        # TODO: LOG IT and inform x
                         $log4netLogger.error("Invoke-HealOps | Submit-EntityStateReport failed with: $_")
                         Write-Verbose "Invoke-HealOps | Submit-EntityStateReport failed with: $_"
                     }
@@ -378,7 +372,6 @@
                         # Report the value of the okay component after repairing it
                         Submit-EntityStateReport -Data $($testResult.testdata) -ReportBackendSystem $($healOpsConfig.reportingBackend) -Metric $($testResult.metric) @commonParms -ErrorAction Stop
                     } catch {
-                        # TODO: LOG IT and inform x
                         $log4netLogger.error("Invoke-HealOps | Submit-EntityStateReport failed with: $_")
                         Write-Verbose "Invoke-HealOps | Submit-EntityStateReport failed with: $_"
                     }
@@ -400,7 +393,6 @@
                     # Report the value of the okay component
                     Submit-EntityStateReport -Data $($testResult.testdata) -ReportBackendSystem $($healOpsConfig.reportingBackend) -Metric $($testResult.metric) @commonParms -ErrorAction Stop
                 } catch {
-                    # TODO: LOG IT and inform x
                     $log4netLogger.error("Invoke-HealOps | Submit-EntityStateReport failed with: $_")
                     Write-Verbose "Invoke-HealOps | Submit-EntityStateReport failed with: $_"
                 }
@@ -414,18 +406,19 @@
             # Stats gathering
             Write-Verbose -Message "Gathering stats"
             try {
-                $Stats = Read-EntityStats -StatsFilePath $StatsFile.FullName -ErrorAction Stop
+                [Hashtable]$Stats = Read-EntityStats -StatsFilePath $StatsFile.FullName @commonParms -ErrorAction Stop
             } catch {
                 $log4netLogger.error("Invoke-HealOps | Read-EntityStats failed with: $_")
             }
 
-            # Submit the stats to the reporting backend.
-            try {
-                Submit-EntityStateReport -Data $Stats -Metric $($Stats.metric) -ReportBackendSystem $($healOpsConfig.reportingBackend) @commonParms -ErrorAction Stop
-            } catch {
-                # TODO: LOG IT and inform x
-                $log4netLogger.error("Invoke-HealOps | Submit-EntityStateReport failed with: $_")
-                Write-Verbose "Invoke-HealOps | Submit-EntityStateReport failed with: $_"
+            if ($null -ne $Stats) {
+                # Submit the stats to the reporting backend.
+                try {
+                    Submit-EntityStateReport -Data $($Stats.StatsData) -Metric $($Stats.Metric) -ReportBackendSystem $($healOpsConfig.reportingBackend) @commonParms -ErrorAction Stop
+                } catch {
+                    $log4netLogger.error("Invoke-HealOps | Submit-EntityStateReport failed with: $_")
+                    Write-Verbose "Invoke-HealOps | Submit-EntityStateReport failed with: $_"
+                }
             }
         } # End of conditional control on ParameterSetName -eq "Stats".
     } # End of Process {} declaration
