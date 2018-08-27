@@ -1,3 +1,5 @@
+# Motivation
+
 I [Lars Bengtsson](https://github.com/larssb) started developing HealOps in early 2017. Stemming from the thought that it had to be possible to make life as a DevOps Engineer and as a member of the on-call team at work easier. __By:__
 
 - Improving the info received when getting a call when on on-call duty.
