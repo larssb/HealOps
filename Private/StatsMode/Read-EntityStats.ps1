@@ -50,10 +50,20 @@ function Read-EntityStats() {
         }
     }
     End {
-        # Define the stats hashtable collection (make it ready for reporting).
-        $TempCollection = @{}
-        $TempCollection.Add("StatsData",$Stats)
-        $TempCollection.Add("Metric",$($))
+        <#
+            Sanity tests/validation controls on the Stats object retrieved from executing the StatsFile on the StatsFilePath.
+        #>
+        if (-not ($Stats.GetType().Name -eq "Hashtable")) {
+
+        }
+
+        if (-not ($Stats.Count -gt 0)) {
+
+        }
+
+<#         if (-not ) {
+
+        } #>
 
         # Return the stats.
         $Stats
