@@ -1,4 +1,4 @@
-# Welcome.
+# Welcome
 
 This is the home of the documentation on HealOps.
 
