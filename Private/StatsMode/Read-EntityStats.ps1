@@ -53,23 +53,26 @@ function Read-EntityStats() {
         <#
             Sanity tests/validation controls on the Stats object retrieved from executing the StatsFile on the StatsFilePath.
         #>
-        [String]$ExceptionMessage = "Read-EntityStats | The Stats data returned from the $StatsFileBaseName cannot be supported by HealOps."
+        [String]$ExceptionMessage = "The Stats data returned from the $StatsFileBaseName cannot be supported by HealOps."
+
         if (-not ($Stats.GetType().Name -eq "Hashtable")) {
-            Write-Verbose -Message "The stats collection is not of type [Hashtable]."
-            throw $ExceptionMessage
+            [String]$StatsType_Exception = "$ExceptionMessage The stats collection is not of type [Hashtable]."
+            Write-Verbose -Message $StatsType_Exception
+            throw $StatsType_Exception
         }
 
         if (-not ($Stats.Count -gt 0)) {
-            Write-Verbose -Message "There is no items in the Stats [Hashtable] collection."
-            throw $ExceptionMessage
+            [String]$StatsCount_Exception = "$ExceptionMessage There is no items in the Stats [Hashtable] collection."
+            Write-Verbose -Message $StatsCount_Exception
+            throw $StatsCount_Exception
         }
 
         $enumerator = $Stats.GetEnumerator()
         foreach ($item in $enumerator) {
             if (-not ($item.GetType().Name -eq "Hashtable")) {
-                Write-Verbose -Message "An item in the Stats [Hashtable] collection is not of the correct type ([Hashtable])."
-                $log4netLogger.error("$ExceptionMessage")
-                throw $ExceptionMessage
+                [String]$ItemControl_Exception = "$ExceptionMessage An item in the Stats [Hashtable] collection is not of the correct type ([Hashtable])."
+                Write-Verbose -Message $ItemControlException
+                throw $ItemControl_Exception
             }
         }
 
