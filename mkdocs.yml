@@ -1,0 +1,12 @@
+site_name: HealOps
+repo_url: https://github.com/larssb/HealOps
+theme: readthedocs
+pages:
+  - Welcome: index.md
+  - Synopsis:
+    - What?: HealOps-What.md
+    - The motivation: HealOps-Motivation.md
+  - HealOpsPackages:
+    - What?: HealOpsPackages-What.md
+    - Getting started: HealOpsPackages-GettingStarted.md
+    - Structure: HealOpsPackages-Structure.md
