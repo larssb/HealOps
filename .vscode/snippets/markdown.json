@@ -1,0 +1,14 @@
+{
+    "MD_IMAGE_URI": {
+        "prefix": "uri-image-markdown",
+        "body": [
+            "[![Source](foldername/imagename.extension)](foldername/imagename.extension)"
+        ]
+    },
+    "MD_URI": {
+        "prefix": "uri-in-markdown",
+        "body":[
+            "[name_seen_on_the_page][reference_to_links_section]{:.no-mark-external}"
+        ]
+    }
+}
