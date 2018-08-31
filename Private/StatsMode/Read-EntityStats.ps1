@@ -55,22 +55,22 @@ function Read-EntityStats() {
         #>
         [String]$ExceptionMessage = "The Stats data returned from the $StatsFileBaseName cannot be supported by HealOps."
 
-        if (-not ($Stats.GetType().Name -eq "Hashtable")) {
-            [String]$StatsType_Exception = "$ExceptionMessage The stats collection is not of type [Hashtable]."
+        if (-not ($Stats.GetType().FullName -match "StatsItem")) {
+            [String]$StatsType_Exception = "$ExceptionMessage The stats collection does not match a strongly typed collection for >> [StatsItem]."
             Write-Verbose -Message $StatsType_Exception
             throw $StatsType_Exception
         }
 
         if (-not ($Stats.Count -gt 0)) {
-            [String]$StatsCount_Exception = "$ExceptionMessage There is no items in the Stats [Hashtable] collection."
+            [String]$StatsCount_Exception = "$ExceptionMessage There is no items in the Stats collection."
             Write-Verbose -Message $StatsCount_Exception
             throw $StatsCount_Exception
         }
 
         $enumerator = $Stats.GetEnumerator()
         foreach ($item in $enumerator) {
-            if (-not ($item.GetType().Name -eq "Hashtable")) {
-                [String]$ItemControl_Exception = "$ExceptionMessage An item in the Stats [Hashtable] collection is not of the correct type ([Hashtable])."
+            if (-not ($item.GetType().Name -eq "StatsItem")) {
+                [String]$ItemControl_Exception = "$ExceptionMessage An item in the Stats collection is not of the correct type ([StatsItem])."
                 Write-Verbose -Message $ItemControlException
                 throw $ItemControl_Exception
             }

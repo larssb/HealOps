@@ -36,7 +36,7 @@ $runmode = [Environment]::UserInteractive
     - The below task will be the default build task in the Invoke-Build New-VSCodeTask.ps1 script generated VS Code tasks.json file.
     Simply because it is the first declared task in this build file.
 #>
-$folderToInclude = @('Artefacts','docs','Private','Public')
+$folderToInclude = @('Artefacts','Private','Public')
 task Build {
     # Copy folders to buildOutputRoot
     ForEach ($folder in $folderToInclude) {
@@ -45,7 +45,7 @@ task Build {
     }
 
     # Copy relevant files from the module root
-    Get-ChildItem -Path $ModuleRoot\* -File -Exclude "*.gitignore" | Copy-Item -Destination $buildOutputRoot
+    Get-ChildItem -Path $ModuleRoot\* -File -Exclude "*.gitignore","mkdocs.yml" | Copy-Item -Destination $buildOutputRoot
 
     <#
         - Give build information on where to find the cooked package
