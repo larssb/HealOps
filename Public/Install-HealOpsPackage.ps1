@@ -155,7 +155,7 @@ function Install-HealOpsPackage() {
 
                     # Exit
                     throw $message
-                } elseif(-not ($healOpsConfig.reportingBackend.Length -gt 1)) {
+                } elseif(-not ($healOpsConfig.Metrics.System.Length -gt 1)) {
                     $message = "The HealOps config file is invalid. Run Install-HealOpsPackage again & use the Package Management parameters."
                     Write-Verbose -Message $message
                     $log4netLogger.error("$message")

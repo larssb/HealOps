@@ -16,6 +16,6 @@ Describe "Get-HealOpsConfig" {
 
     It "Is a proper HealOps config file" {
         #
-        $HealOpsConfig.reportingBackend | Should -Not -BeNullOrEmpty
+        $HealOpsConfig.Metrics.System | Should -Not -BeNullOrEmpty
     }
 }

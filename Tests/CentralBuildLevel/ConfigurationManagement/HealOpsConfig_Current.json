@@ -3,8 +3,12 @@
     "checkForUpdatesInterval_Hours": "4",
     "checkForUpdatesNext":  "21/08/2018 01:05:55",
     "FeedName":  "HealOps",
+    "Metrics": {
+        "System":  "OpenTSDB",
+        "OpenTSDB_IP": "192.168.49.111",
+        "OpenTSDB_Port": 4242
+    },
     "PackageManagementAPIKey":  "4rioroiaioufoiuu901209",
     "PackageManagementURI":  "https://localhost:8080/ProGet",
-    "reportingBackend":  "OpenTSDB",
     "UpdateMode": "HealOpsPackages"
 }

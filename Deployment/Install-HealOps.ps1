@@ -29,7 +29,7 @@
 .NOTES
     <none>
 .EXAMPLE
-    "PATH_TO_THIS_FILE"/Instal-HealOps.ps1 -reportingBackend 'OpenTSDB' -checkForUpdatesInterval_Hours 3 -PackageManagementURI https://My.PackageManagementServer.com -FeedName HealOps `
+    "PATH_TO_THIS_FILE"/Instal-HealOps.ps1 -MetricsSystem 'OpenTSDB' -checkForUpdatesInterval_Hours 3 -PackageManagementURI https://My.PackageManagementServer.com -FeedName HealOps `
     -APIKey "API_KEY" -HealOpsPackages Citrix.HealOpsPackage -JobType WinScTask
 
     >> Executes Installs HealOps on the node where it is executed. Sets the reporting backend to use OpenTSDB. Updates will be checked for every third day. The PackageManagement system `
@@ -49,8 +49,8 @@
     The type of job to use when invoking HealOps.
 .PARAMETER PackageManagementURI
     The URI of the Package Management backend, where modules used by HealOps are stored.
-.PARAMETER reportingBackend
-    Used to specify the software used as the reporting backend. For storing test result metrics.
+.PARAMETER MetricsSystem
+    Used to specify the system used to store metrics.
 .PARAMETER UpdateMode
     The execute mode that the self-update should use.
         > All = Everything will be updated. HealOps itself, its required modules and the HealOps packages on the system.
@@ -84,7 +84,7 @@
         [String]$PackageManagementURI,
         [Parameter(Mandatory)]
         [ValidateSet('OpenTSDB')]
-        [String]$reportingBackend,
+        [String]$MetricsSystem,
         [Parameter()]
         [ValidateSet("All","HealOpsPackages","HealOps")]
         [String]$UpdateMode
@@ -324,7 +324,11 @@
             #>
             Write-Progress -Activity "Installing HealOps" -CurrentOperation "Defining the HealOps config json file." -Id 3
             $HealOpsConfig = @{}
-            $HealOpsConfig.reportingBackend = $reportingBackend
+            $HealOpsConfig.Metrics = @{}
+            $HealOpsConfig.Metrics.System = $MetricsSystem
+            if ($MetricsSystem -eq "OpenTSDB") {
+
+            }
             if($PSBoundParameters.ContainsKey('checkForUpdatesInterval_Hours') ) {
                 $HealOpsConfig.checkForUpdates = "True"
                 $HealOpsConfig.checkForUpdatesInterval_Hours = $checkForUpdatesInterval_Hours
