@@ -11,17 +11,17 @@ function Submit-EntityStateReport() {
 .NOTES
     <none>
 .EXAMPLE
-    Submit-EntityStateReport -Metric $Metric -ReportBackendSystem "OpenTSDB" -Data $Data
+    Submit-EntityStateReport -Metric $Metric -MetricsSystem "OpenTSDB" -Data $Data
     Requests Submit-EntityStateReport to send data for storage to the HealOps backend on a specific metric.
 .EXAMPLE
-    Submit-EntityStateReport -Metric $Metric -ReportBackendSystem "OpenTSDB" -RepairMetricValue 1
+    Submit-EntityStateReport -Metric $Metric -MetricsSystem "OpenTSDB" -RepairMetricValue 1
     Requests Submit-EntityStateReport to send the repair result value (in this case 1 which equals $true) of a specific metric, for storage on the HealOps backend.
 .PARAMETER Data
     The data to report to the HealOps backend. It can be a Hashtable or a Int32 type object.
 .PARAMETER Metric
     The name of the metric, in a format supported by the reporting backend.
-.PARAMETER ReportBackendSystem
-    Used to specify the reporting backend to use.
+.PARAMETER MetricsSystem
+    The system used to store metrics.
 .PARAMETER RepairMetricValue
     With this parameter you specify the data to report for a repair, relative to the result of Repair-EntityState().
 #>
@@ -40,7 +40,7 @@ function Submit-EntityStateReport() {
         [Parameter(Mandatory, ParameterSetName="Repair")]
         [Parameter(Mandatory, ParameterSetName="StatsAndTest")]
         [ValidateSet("OpenTSDB")]
-        [String]$ReportBackendSystem,
+        [String]$MetricsSystem,
         [Parameter(Mandatory, ParameterSetName="Repair")]
         [ValidateSet(0,1)]
         [int]$RepairMetricValue
@@ -81,9 +81,9 @@ function Submit-EntityStateReport() {
         .NOTES
             <none>
         .EXAMPLE
-            $result = Invoke-ReportIt -reportBackendSystem $reportBackendSystem -metric $metric -metricValue $RepairMetricValue -tags $tags
-                > Calles Invoke-ReportIt to report to the report backend system specified in the $reportBackendSystem variable. With the data in the metric, metricvalue and tags variables.
-        .PARAMETER reportBackendSystem
+            $result = Invoke-ReportIt -MetricsSystem $MetricsSystem -metric $metric -metricValue $RepairMetricValue -tags $tags
+                > Calles Invoke-ReportIt to report to the report backend system specified in the $MetricsSystem variable. With the data in the metric, metricvalue and tags variables.
+        .PARAMETER MetricsSystem
             Used to specify the software used as the reporting backend. For storing test result metrics.
         .PARAMETER metric
             The name of the metric, in a format supported by the reporting backend.
@@ -101,7 +101,7 @@ function Submit-EntityStateReport() {
             param(
                 [Parameter(Mandatory)]
                 [ValidateSet("OpenTSDB")]
-                [String]$reportBackendSystem,
+                [String]$MetricsSystem,
                 [Parameter(Mandatory)]
                 [ValidateNotNullOrEmpty()]
                 [String]$metric,
@@ -127,10 +127,10 @@ function Submit-EntityStateReport() {
             $log4netLoggerDebug.debug("The following values are in the tags collection on the metric > $($tags.values)")
 
             # Determine the reporting backend system to use & push the report
-            switch ($reportBackendSystem) {
+            switch ($MetricsSystem) {
                 { $_ -eq "OpenTSDB" } {
                     Import-Module -name $PSScriptRoot/ReportHelpers/OpenTSDB/OpenTSDB -Force
-                    $result = write-metricToOpenTSDB -metric $metric -tagPairs $tags -metricValue $metricValue -verbose
+                    $result = Write-MetricToOpenTSDB -metric $metric -tagPairs $tags -metricValue $metricValue -Verbose
                 }
                 Default {
                     throw "The reporting backend could not be determined."
@@ -203,7 +203,7 @@ function Submit-EntityStateReport() {
 
             # Report it
             try {
-                $result = Invoke-ReportIt -reportBackendSystem $reportBackendSystem -metric $metric -metricValue $RepairMetricValue -tags $tags -log4netLoggerDebug $log4netLoggerDebug -ErrorAction Stop
+                $result = Invoke-ReportIt -MetricsSystem $MetricsSystem -metric $metric -metricValue $RepairMetricValue -tags $tags -log4netLoggerDebug $log4netLoggerDebug -ErrorAction Stop
             } catch {
                 # TODO: Alarm that state data could be reported
             }
@@ -220,7 +220,7 @@ function Submit-EntityStateReport() {
 
                     # Report it
                     try {
-                        $result = Invoke-ReportIt -reportBackendSystem $reportBackendSystem -metric $metric -metricValue $entry.Value -tags $tags -log4netLoggerDebug $log4netLoggerDebug -ErrorAction Stop
+                        $result = Invoke-ReportIt -MetricsSystem $MetricsSystem -metric $metric -metricValue $entry.Value -tags $tags -log4netLoggerDebug $log4netLoggerDebug -ErrorAction Stop
                     } catch {
                         # TODO: Alarm that state data could be reported
                     }
@@ -231,7 +231,7 @@ function Submit-EntityStateReport() {
 
                 # Report it
                 try {
-                    $result = Invoke-ReportIt -reportBackendSystem $reportBackendSystem -metric $metric -metricValue $Data -tags $tags -log4netLoggerDebug $log4netLoggerDebug -ErrorAction Stop
+                    $result = Invoke-ReportIt -MetricsSystem $MetricsSystem -metric $metric -metricValue $Data -tags $tags -log4netLoggerDebug $log4netLoggerDebug -ErrorAction Stop
                 } catch {
                     # TODO: Alarm that state data could be reported
                 }

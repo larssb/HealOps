@@ -56,8 +56,8 @@ function Write-MetricToOpenTSDB() {
 
     # POST the metric to OpenTSDB
     try {
-        $OpenTSDBendpoint = $Config.OpenTSDB_IP
-        $OpenTSDBport = $OpenTSDBconfig.OpenTSDB_Port
+        $OpenTSDBendpoint = $Config.Metrics.IP
+        $OpenTSDBport = $Config.Metrics.Port
         $result = Invoke-WebRequest -Uri http://$OpenTSDBendpoint":"$OpenTSDBport/api/put -Method post -ContentType "application/json" -body $metricInJSON -UseBasicParsing
         Write-Verbose -Message "Payload to sent to OpenTSDB is: $metricInJSON"
     } catch {

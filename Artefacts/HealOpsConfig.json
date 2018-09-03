@@ -6,8 +6,8 @@
     "JobType": "",
     "Metrics": {
         "System":  "OpenTSDB",
-        "OpenTSDB_IP": "192.168.49.111",
-        "OpenTSDB_Port": 4242
+        "IP": "192.168.49.111",
+        "Port": 4242
     },
     "PackageManagementAPIKey":  "",
     "PackageManagementURI":  "",

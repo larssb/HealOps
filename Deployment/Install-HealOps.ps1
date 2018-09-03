@@ -1,5 +1,5 @@
 <#PSScriptInfo
-.VERSION 0.0.0.21
+.VERSION 1.0.0
 .GUID bbf74424-f58d-42d1-9d5a-aeba44ccd545
 .AUTHOR Lars Bengtsson
 .COMPANYNAME
@@ -50,7 +50,11 @@
 .PARAMETER PackageManagementURI
     The URI of the Package Management backend, where modules used by HealOps are stored.
 .PARAMETER MetricsSystem
-    Used to specify the system used to store metrics.
+    The system used to store metrics.
+.PARAMETER MetricsSystemIP
+    The IP of the metrics system.
+.PARAMETER MetricsSystemPort
+    The Port to communicate with the metrics system over.
 .PARAMETER UpdateMode
     The execute mode that the self-update should use.
         > All = Everything will be updated. HealOps itself, its required modules and the HealOps packages on the system.
@@ -85,6 +89,12 @@
         [Parameter(Mandatory)]
         [ValidateSet('OpenTSDB')]
         [String]$MetricsSystem,
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [String]$MetricsSystemIP,
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [String]$MetricsSystemPort,
         [Parameter()]
         [ValidateSet("All","HealOpsPackages","HealOps")]
         [String]$UpdateMode
@@ -326,9 +336,8 @@
             $HealOpsConfig = @{}
             $HealOpsConfig.Metrics = @{}
             $HealOpsConfig.Metrics.System = $MetricsSystem
-            if ($MetricsSystem -eq "OpenTSDB") {
-
-            }
+            $HealOpsConfig.Metrics.IP = $MetricsSystemIP
+            $HealOpsConfig.Metrics.Port = $MetricsSystemPort
             if($PSBoundParameters.ContainsKey('checkForUpdatesInterval_Hours') ) {
                 $HealOpsConfig.checkForUpdates = "True"
                 $HealOpsConfig.checkForUpdatesInterval_Hours = $checkForUpdatesInterval_Hours
