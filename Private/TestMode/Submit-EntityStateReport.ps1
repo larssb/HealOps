@@ -11,11 +11,13 @@ function Submit-EntityStateReport() {
 .NOTES
     <none>
 .EXAMPLE
-    Submit-EntityStateReport -Metric $Metric -MetricsSystem "OpenTSDB" -Data $Data
+    Submit-EntityStateReport -Config $HealOpsConfig -Metric $Metric -MetricsSystem "OpenTSDB" -Data $Data
     Requests Submit-EntityStateReport to send data for storage to the HealOps backend on a specific metric.
 .EXAMPLE
     Submit-EntityStateReport -Metric $Metric -MetricsSystem "OpenTSDB" -RepairMetricValue 1
     Requests Submit-EntityStateReport to send the repair result value (in this case 1 which equals $true) of a specific metric, for storage on the HealOps backend.
+.PARAMETER Config
+    The HealOps config file.
 .PARAMETER Data
     The data to report to the HealOps backend. It can be a Hashtable or a Int32 type object.
 .PARAMETER Metric
@@ -30,6 +32,9 @@ function Submit-EntityStateReport() {
     [CmdletBinding(DefaultParameterSetName="Default")]
     [OutputType([Void])]
     Param(
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [PSCustomObject]$Config,
         [Parameter(Mandatory, ParameterSetName="StatsAndTest")]
         [ValidateNotNullOrEmpty()]
         $Data,
@@ -83,6 +88,8 @@ function Submit-EntityStateReport() {
         .EXAMPLE
             $result = Invoke-ReportIt -MetricsSystem $MetricsSystem -metric $metric -metricValue $RepairMetricValue -tags $tags
                 > Calles Invoke-ReportIt to report to the report backend system specified in the $MetricsSystem variable. With the data in the metric, metricvalue and tags variables.
+        .PARAMETER Config
+            The HealOps config file.
         .PARAMETER MetricsSystem
             Used to specify the software used as the reporting backend. For storing test result metrics.
         .PARAMETER metric
@@ -99,6 +106,9 @@ function Submit-EntityStateReport() {
             [CmdletBinding(DefaultParameterSetName="Default")]
             [OutputType([Boolean])]
             param(
+                [Parameter(Mandatory)]
+                [ValidateNotNullOrEmpty()]
+                [PSCustomObject]$Config,
                 [Parameter(Mandatory)]
                 [ValidateSet("OpenTSDB")]
                 [String]$MetricsSystem,
@@ -129,8 +139,8 @@ function Submit-EntityStateReport() {
             # Determine the reporting backend system to use & push the report
             switch ($MetricsSystem) {
                 { $_ -eq "OpenTSDB" } {
-                    Import-Module -name $PSScriptRoot/ReportHelpers/OpenTSDB/OpenTSDB -Force
-                    $result = Write-MetricToOpenTSDB -metric $metric -tagPairs $tags -metricValue $metricValue -Verbose
+                    Import-Module -name $PSScriptRoot/MetricsSystem/OpenTSDB/OpenTSDB -Force
+                    $result = Write-MetricToOpenTSDB -Config $Config -Metric $metric -TagPairs $tags -MetricValue $metricValue -Verbose
                 }
                 Default {
                     throw "The reporting backend could not be determined."
@@ -159,7 +169,7 @@ function Submit-EntityStateReport() {
             [Hashtable]$tags = Get-StandardTagCollection
             > Generates and returns standard tags
         .PARAMETER HealOpsPackageConfig
-            The content of the config file in the HealOps package.
+            A HealOpsPackage config.
         #>
 
             # Define parameters
@@ -203,7 +213,7 @@ function Submit-EntityStateReport() {
 
             # Report it
             try {
-                $result = Invoke-ReportIt -MetricsSystem $MetricsSystem -metric $metric -metricValue $RepairMetricValue -tags $tags -log4netLoggerDebug $log4netLoggerDebug -ErrorAction Stop
+                $result = Invoke-ReportIt -Config $Config -MetricsSystem $MetricsSystem -metric $metric -metricValue $RepairMetricValue -tags $tags -log4netLoggerDebug $log4netLoggerDebug -ErrorAction Stop
             } catch {
                 # TODO: Alarm that state data could be reported
             }
@@ -220,7 +230,7 @@ function Submit-EntityStateReport() {
 
                     # Report it
                     try {
-                        $result = Invoke-ReportIt -MetricsSystem $MetricsSystem -metric $metric -metricValue $entry.Value -tags $tags -log4netLoggerDebug $log4netLoggerDebug -ErrorAction Stop
+                        $result = Invoke-ReportIt -Config $Config -MetricsSystem $MetricsSystem -metric $metric -metricValue $entry.Value -tags $tags -log4netLoggerDebug $log4netLoggerDebug -ErrorAction Stop
                     } catch {
                         # TODO: Alarm that state data could be reported
                     }
@@ -231,7 +241,7 @@ function Submit-EntityStateReport() {
 
                 # Report it
                 try {
-                    $result = Invoke-ReportIt -MetricsSystem $MetricsSystem -metric $metric -metricValue $Data -tags $tags -log4netLoggerDebug $log4netLoggerDebug -ErrorAction Stop
+                    $result = Invoke-ReportIt -Config $Config -MetricsSystem $MetricsSystem -metric $metric -metricValue $Data -tags $tags -log4netLoggerDebug $log4netLoggerDebug -ErrorAction Stop
                 } catch {
                     # TODO: Alarm that state data could be reported
                 }

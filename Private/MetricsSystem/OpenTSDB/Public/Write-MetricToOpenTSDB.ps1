@@ -12,7 +12,7 @@ function Write-MetricToOpenTSDB() {
     PS C:\> Write-MetricToOpenTSDB -Config $HealOpsConfig -
     Executes Write-MetricToOpenTSDB which will store a metric on a OpenTSDB instance.
 .PARAMETER Config
-    The config file holding package management repository info. Of the PSCustomObject type
+    The HealOps config file.
 .PARAMETER Metric
     The metric value, in a format supported by OpenTSDB, of the IT service/Entity to log data for, into OpenTSDB.
 .PARAMETER TagPairs
@@ -30,13 +30,13 @@ function Write-MetricToOpenTSDB() {
         [PSCustomObject]$Config,
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
-        [String]$metric,
+        [String]$Metric,
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
-        [hashtable]$tagPairs,
+        [int]$MetricValue,
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
-        [int]$metricValue
+        [hashtable]$TagPairs
     )
 
     #############

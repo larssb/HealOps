@@ -6,9 +6,11 @@ function Out-StatsCollectionObject() {
 .INPUTS
     <none>
 .OUTPUTS
-    [System.Collections.Generic.List`1[StatsItem]] representing the collection to hold StatsItem objects.
+    [System.Collections.Generic.List`1[StatsItem]] representing a collection to hold StatsItem objects. So a generic collection matching the requirements of
+    HealOps.
 .NOTES
-    <none>
+    Set to output [Void] in order to comply with the PowerShell language. Also if [Void] wasn't used, an error would be thrown when invoking the function.
+    As the output type [System.Collections.Generic.List`1[StatsItem]] would not be known by PowerShell, when this function is invocated.
 .EXAMPLE
     PS C:\> Out-StatsCollectionObject
     Outputs a collection, matching the requirements of HealOps when reporting stats on 'x' IT system/component.

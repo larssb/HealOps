@@ -5,8 +5,8 @@
     "FeedName":  "HealOps",
     "Metrics": {
         "System":  "OpenTSDB",
-        "OpenTSDB_IP": "192.168.49.111",
-        "OpenTSDB_Port": 4242
+        "IP": "192.168.49.111",
+        "Port": 4242
     },
     "PackageManagementAPIKey":  "4rioroiaioufoiuu901209",
     "PackageManagementURI":  "https://localhost:8080/ProGet",
