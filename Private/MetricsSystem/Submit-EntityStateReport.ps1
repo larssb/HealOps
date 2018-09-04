@@ -19,7 +19,7 @@ function Submit-EntityStateReport() {
 .PARAMETER Config
     The HealOps config file.
 .PARAMETER Data
-    The data to report to the HealOps backend. It can be a Hashtable or a Int32 type object.
+    The data to report to the HealOps backend. It can be a Hashtable, StatsCollection[StatsItem] or a Int32 type object.
 .PARAMETER Metric
     The name of the metric, in a format supported by the reporting backend.
 .PARAMETER MetricsSystem
@@ -59,14 +59,19 @@ function Submit-EntityStateReport() {
             - Sanity tests
         #>
         if ($PSBoundParameters.ContainsKey('Data')) {
+            [Array]$ArrayOfAcceptedDataTypes = "Hashtable", "Int32"
             # Determine the type of the incoming object to the Data parameter.
-            if (-not $Data.GetType().Name -eq "Hashtable" -or -not $Data.GetType().Name -eq "Int32") {
+            if (-not $Data.GetType().Name -in $ArrayOfAcceptedDataTypes -or -not $Data.GetType().FullName -match "StatsItem") {
                 # Throw
-                $testDataType = $Data.GetType().Name
-                throw "The datatype of the Data parameter is not supported. The datatype is > $testDataType"
+                $TestDataType = $Data.GetType().FullName
+                throw "The datatype of the Data parameter is not supported. The datatype is > $TestDataType"
             }
         }
 
+        <#
+            - Variables used througout the function.
+        #>
+        [String]$InvokeReportItException = "Invoke-ReportIt | Failed with {0}."
         ############################
         # PRIVATE HELPER FUNCTIONS #
         ############################
@@ -86,7 +91,7 @@ function Submit-EntityStateReport() {
         .NOTES
             <none>
         .EXAMPLE
-            $result = Invoke-ReportIt -MetricsSystem $MetricsSystem -metric $metric -metricValue $RepairMetricValue -tags $tags
+            $Result = Invoke-ReportIt -MetricsSystem $MetricsSystem -metric $metric -metricValue $RepairMetricValue -tags $tags
                 > Calles Invoke-ReportIt to report to the report backend system specified in the $MetricsSystem variable. With the data in the metric, metricvalue and tags variables.
         .PARAMETER Config
             The HealOps config file.
@@ -114,13 +119,13 @@ function Submit-EntityStateReport() {
                 [String]$MetricsSystem,
                 [Parameter(Mandatory)]
                 [ValidateNotNullOrEmpty()]
-                [String]$metric,
+                [String]$Metric,
                 [Parameter(Mandatory)]
                 [ValidateNotNullOrEmpty()]
-                [int]$metricValue,
+                [int]$MetricValue,
                 [Parameter(Mandatory)]
                 [ValidateNotNullOrEmpty()]
-                [hashtable]$tags,
+                [HashTable]$tags,
                 [Parameter(Mandatory)]
                 $log4netLoggerDebug
             )
@@ -129,18 +134,18 @@ function Submit-EntityStateReport() {
             # Execution #
             #############
             # Debug logging
-            Write-Verbose -Message "The metric to report on is > $metric"
-            $log4netLoggerDebug.debug("The metric to report on is > $metric")
-            Write-Verbose -Message "The value of the metric is > $metricValue"
-            $log4netLoggerDebug.debug("The value the metric is > $metricValue")
-            Write-Verbose -Message "The following values are in the tags collection on the metric > $($tags.values)"
-            $log4netLoggerDebug.debug("The following values are in the tags collection on the metric > $($tags.values)")
+            Write-Verbose -Message "The Metric to report on is > $Metric"
+            $log4netLoggerDebug.debug("The Metric to report on is > $Metric")
+            Write-Verbose -Message "The value of the Metric is > $MetricValue"
+            $log4netLoggerDebug.debug("The value the Metric is > $MetricValue")
+            Write-Verbose -Message "The following values are in the tags collection on the Metric > $($tags.values)"
+            $log4netLoggerDebug.debug("The following values are in the tags collection on the Metric > $($tags.values)")
 
             # Determine the reporting backend system to use & push the report
             switch ($MetricsSystem) {
                 { $_ -eq "OpenTSDB" } {
-                    Import-Module -name $PSScriptRoot/MetricsSystem/OpenTSDB/OpenTSDB -Force
-                    $result = Write-MetricToOpenTSDB -Config $Config -Metric $metric -TagPairs $tags -MetricValue $metricValue -Verbose
+                    Import-Module -name $PSScriptRoot/OpenTSDB/OpenTSDB -Force
+                    $Result = Write-MetricToOpenTSDB -Config $Config -Metric $Metric -TagPairs $tags -MetricValue $MetricValue -Verbose
                 }
                 Default {
                     throw "The reporting backend could not be determined."
@@ -148,7 +153,7 @@ function Submit-EntityStateReport() {
             }
 
             # Return
-            $result
+            $Result
         }
 
         <#
@@ -166,8 +171,8 @@ function Submit-EntityStateReport() {
         .NOTES
             General notes
         .EXAMPLE
-            [Hashtable]$tags = Get-StandardTagCollection
-            > Generates and returns standard tags
+            [Hashtable]$tags = Get-StandardTagCollection -HealOpsPackageConfig $HealOpsPackageConfig
+            > Generates and returns standard tags.
         .PARAMETER HealOpsPackageConfig
             A HealOpsPackage config.
         #>
@@ -184,19 +189,37 @@ function Submit-EntityStateReport() {
             #############
             # Execution #
             #############
-            # Define tags in JSON
-            $tags = @{}
-            $tags.Add("node",(get-hostname))
-            $tags.Add("environment",$($HealOpsPackageConfig.environment))
+            Begin {
+                # Variables used throughout
+                [String]$Environment = $HealOpsPackageConfig.environment
 
-            # Return
-            $tags
+                # Sanity tests
+                if($null -eq $Environment -or $Environment.Length -lt 1) {
+                    [String]$EnvironmentExceptionMessage = "The value for the 'Environment' tag is not defined. Cannot continue. It is > $Environment. Has it been configured in the config file for the HealOpsPackage?"
+                    $log4netlogger.error($EnvironmentExceptionMessage)
+                    throw "$EnvironmentExceptionMessage"
+                }
+            }
+            Process {
+                # Define tags in JSON
+                $tags = @{}
+                $tags.Add("node",(get-hostname))
+                $tags.Add("environment",$($HealOpsPackageConfig.environment))
+            }
+            End {
+                # Return
+                $tags
+            }
         }
     }
     Process {
         if ($PSCmdlet.ParameterSetName -eq "Repair") {
-            # Get std. tags
-            [Hashtable]$tags = Get-StandardTagCollection -HealOpsPackageConfig $HealOpsPackageConfig
+            # Get Std. tags
+            try {
+                [Hashtable]$tags = Get-StandardTagCollection -HealOpsPackageConfig $HealOpsPackageConfig -ErrorAction Stop
+            } catch {
+                throw $_
+            }
 
             # Component tag
             $tags.Add("component",$metric)
@@ -213,40 +236,51 @@ function Submit-EntityStateReport() {
 
             # Report it
             try {
-                $result = Invoke-ReportIt -Config $Config -MetricsSystem $MetricsSystem -metric $metric -metricValue $RepairMetricValue -tags $tags -log4netLoggerDebug $log4netLoggerDebug -ErrorAction Stop
+                $Result = Invoke-ReportIt -Config $Config -MetricsSystem $MetricsSystem -metric $metric -metricValue $RepairMetricValue -tags $tags -log4netLoggerDebug $log4netLoggerDebug -ErrorAction Stop
             } catch {
-                # TODO: Alarm that state data could be reported
+                $log4netlogger.error($([String]::Format($InvokeReportItException, $_)))
             }
         } else {
-            if ($Data.GetType().Name -eq "Hashtable") {
-                # Iterate over each entry in the Data Hashtable
+            if ($Data.GetType().Name -ne "Int32") {
+                # Iterate over each entry in $Data
                 $enumerator = $Data.GetEnumerator()
-                foreach ($entry in $enumerator) {
-                    # Get std. tags
-                    [Hashtable]$tags = Get-StandardTagCollection -HealOpsPackageConfig $HealOpsPackageConfig
+                foreach ($item in $enumerator) {
+                    # Get Std. tags
+                    try {
+                        [Hashtable]$Tags = Get-StandardTagCollection -HealOpsPackageConfig $HealOpsPackageConfig -ErrorAction Stop
+                    } catch {
+                        throw $_
+                    }
 
-                    # Component tag (Name == Key in the Hashtable)
-                    $tags.Add("component",$entry.Name)
+                    # Component tag.
+                    $Tags.Add("component",$item.key)
 
                     # Report it
                     try {
-                        $result = Invoke-ReportIt -Config $Config -MetricsSystem $MetricsSystem -metric $metric -metricValue $entry.Value -tags $tags -log4netLoggerDebug $log4netLoggerDebug -ErrorAction Stop
+                        $Result = Invoke-ReportIt -Config $Config -MetricsSystem $MetricsSystem -Metric $metric -MetricValue $item.Value -tags $Tags -log4netLoggerDebug $log4netLoggerDebug -ErrorAction Stop
                     } catch {
-                        # TODO: Alarm that state data could be reported
+                        $log4netlogger.error($([String]::Format($InvokeReportItException, $_)))
                     }
                 }
             } else {
-                # Get std. tags
-                [Hashtable]$tags = Get-StandardTagCollection -HealOpsPackageConfig $HealOpsPackageConfig
+                # Get Std. tags
+                try {
+                    [Hashtable]$Tags = Get-StandardTagCollection -HealOpsPackageConfig $HealOpsPackageConfig -ErrorAction Stop
+                } catch {
+                    throw $_
+                }
 
                 # Report it
                 try {
-                    $result = Invoke-ReportIt -Config $Config -MetricsSystem $MetricsSystem -metric $metric -metricValue $Data -tags $tags -log4netLoggerDebug $log4netLoggerDebug -ErrorAction Stop
+                    $Result = Invoke-ReportIt -Config $Config -MetricsSystem $MetricsSystem -Metric $metric -MetricValue $Data -tags $Tags -log4netLoggerDebug $log4netLoggerDebug -ErrorAction Stop
                 } catch {
-                    # TODO: Alarm that state data could be reported
+                    $log4netlogger.error($([String]::Format($InvokeReportItException, $_)))
                 }
             }
         }
     }
-    End {}
+    End {
+        # Return
+        $Result
+    }
 }

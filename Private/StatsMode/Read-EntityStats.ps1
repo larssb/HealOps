@@ -9,6 +9,11 @@ function Read-EntityStats() {
 .NOTES
     Set to output [Void] in order to comply with the PowerShell language. Also if [Void] wasn't used, an error would be thrown when invoking the function.
     As the output type [System.Collections.Generic.List`1[StatsItem]] would not be known by PowerShell, when this function is invocated.
+
+    It is not necessary to control the type of each element in the StatsCollection returned from a Stats file, as a [StatsItem] type is the only type that can be added to the StatsCollection. Therefore, controlling:
+    - the type of the StatsCollection and
+    - it actually contains items
+    ...is enough.
 .EXAMPLE
     PS C:\> $Stats = Read-EntityStats -StatsFilePath ./PATH/ENTITY_TO_GATHER_STATS_ON.Stats.ps1
     Read-EntityStats will execute the *.Stats.ps1 file, specified via the StatsFilePath parameter.
@@ -57,7 +62,7 @@ function Read-EntityStats() {
         [String]$ExceptionMessage = "The Stats data returned from the $StatsFileBaseName cannot be supported by HealOps."
 
         if (-not ($Stats.GetType().FullName -match "StatsItem")) {
-            [String]$StatsType_Exception = "$ExceptionMessage The stats collection does not match a strongly typed collection for >> [StatsItem]."
+            [String]$StatsType_Exception = "$ExceptionMessage The stats collection does not match a strongly typed collection for > [StatsItem]. The type is > $($Stats.GetType().FullName)"
             Write-Verbose -Message $StatsType_Exception
             throw $StatsType_Exception
         }
@@ -66,15 +71,6 @@ function Read-EntityStats() {
             [String]$StatsCount_Exception = "$ExceptionMessage There is no items in the Stats collection."
             Write-Verbose -Message $StatsCount_Exception
             throw $StatsCount_Exception
-        }
-
-        #$enumerator = $Stats.GetEnumerator()
-        foreach ($item in $Stats) {
-            if (-not ($item.GetType().Name -eq "StatsItem")) {
-                [String]$ItemControl_Exception = "$ExceptionMessage An item in the Stats collection is not of the correct type ([StatsItem])."
-                Write-Verbose -Message $ItemControlException
-                throw $ItemControl_Exception
-            }
         }
 
         # Return the stats.

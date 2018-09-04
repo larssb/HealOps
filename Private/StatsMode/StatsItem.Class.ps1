@@ -1,4 +1,6 @@
-class StatsItem {
+using namespace System.Collections.Hashtable
+
+class StatsItem : Hashtable {
     # DECLARE PROPERTIES
     [String]$Metric
     $StatsData
