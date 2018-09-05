@@ -26,6 +26,8 @@ function Submit-EntityStateReport() {
     The system used to store metrics.
 .PARAMETER RepairMetricValue
     With this parameter you specify the data to report for a repair, relative to the result of Repair-EntityState().
+.PARAMETER StatsOwner
+    Holds the value of an owning node of 'x' stat.
 #>
 
     # Define parameters
@@ -48,7 +50,11 @@ function Submit-EntityStateReport() {
         [String]$MetricsSystem,
         [Parameter(Mandatory, ParameterSetName="Repair")]
         [ValidateSet(0,1)]
-        [int]$RepairMetricValue
+        [int]$RepairMetricValue,
+        [Parameter()]
+        [Parameter(ParameterSetName="StatsAndTest")]
+        [ValidateNotNullOrEmpty()]
+        [String]$StatsOwner
     )
 
     #############
@@ -236,31 +242,37 @@ function Submit-EntityStateReport() {
 
             # Report it
             try {
-                $Result = Invoke-ReportIt -Config $Config -MetricsSystem $MetricsSystem -metric $metric -metricValue $RepairMetricValue -tags $tags -log4netLoggerDebug $log4netLoggerDebug -ErrorAction Stop
+                $Result = Invoke-ReportIt -Config $Config -MetricsSystem $MetricsSystem -metric $Metric -metricValue $RepairMetricValue -tags $tags -log4netLoggerDebug $log4netLoggerDebug -ErrorAction Stop
             } catch {
                 $log4netlogger.error($([String]::Format($InvokeReportItException, $_)))
             }
         } else {
             if ($Data.GetType().Name -ne "Int32") {
-                # Iterate over each entry in $Data
+                # Get Std. tags
+                try {
+                    [Hashtable]$Tags = Get-StandardTagCollection -HealOpsPackageConfig $HealOpsPackageConfig -ErrorAction Stop
+                } catch {
+                    throw $_
+                }
+
+                # Add the StatsOwner property as a tag, if it's defined.
+                if ($PSBoundParameters.ContainsKey('StatsOwner')) {
+                    $Tags.Add("StatsOwner",$StatsOwner)
+                }
+
+                # Iterate over entries in $Data, not matching the key == "Value" and add the item as a tag on the metric.
                 $enumerator = $Data.GetEnumerator()
                 foreach ($item in $enumerator) {
-                    # Get Std. tags
-                    try {
-                        [Hashtable]$Tags = Get-StandardTagCollection -HealOpsPackageConfig $HealOpsPackageConfig -ErrorAction Stop
-                    } catch {
-                        throw $_
+                    if (-not ($item.key -eq "Value")) {
+                        $Tags.Add($item.key,$item.value)
                     }
+                }
 
-                    # Component tag.
-                    $Tags.Add("component",$item.key)
-
-                    # Report it
-                    try {
-                        $Result = Invoke-ReportIt -Config $Config -MetricsSystem $MetricsSystem -Metric $metric -MetricValue $item.Value -tags $Tags -log4netLoggerDebug $log4netLoggerDebug -ErrorAction Stop
-                    } catch {
-                        $log4netlogger.error($([String]::Format($InvokeReportItException, $_)))
-                    }
+                # Report it
+                try {
+                    $Result = Invoke-ReportIt -Config $Config -MetricsSystem $MetricsSystem -Metric $Metric -MetricValue $Data['Value'] -tags $Tags -log4netLoggerDebug $log4netLoggerDebug -ErrorAction Stop
+                } catch {
+                    $log4netlogger.error($([String]::Format($InvokeReportItException, $_)))
                 }
             } else {
                 # Get Std. tags
@@ -272,7 +284,7 @@ function Submit-EntityStateReport() {
 
                 # Report it
                 try {
-                    $Result = Invoke-ReportIt -Config $Config -MetricsSystem $MetricsSystem -Metric $metric -MetricValue $Data -tags $Tags -log4netLoggerDebug $log4netLoggerDebug -ErrorAction Stop
+                    $Result = Invoke-ReportIt -Config $Config -MetricsSystem $MetricsSystem -Metric $Metric -MetricValue $Data -tags $Tags -log4netLoggerDebug $log4netLoggerDebug -ErrorAction Stop
                 } catch {
                     $log4netlogger.error($([String]::Format($InvokeReportItException, $_)))
                 }

@@ -1,4 +1,9 @@
 <#
+    - Import classes
+#>
+. $PSScriptRoot/Private/StatsMode/StatsItem.Class.ps1
+
+<#
     - Determine system specific values
 #>
 # PowerShell below 5 is not module versioning compatible. Reflect this.

@@ -24,12 +24,10 @@ function Out-StatsCollectionObject() {
     #############
     # Execution #
     #############
-    Begin {
-        . $PSScriptRoot/../Private/StatsMode/StatsItem.Class.ps1
-    }
+    Begin {}
     Process {
         # Create a strongly typed collection. To hold only StatsItem objects.
-        $StatsCollectionObject = [System.Collections.Generic.List`1[StatsItem]]::new()
+        $StatsCollectionObject = New-Object System.Collections.Generic.List``1[StatsItem]
     }
     End {
         # Return it. The comma in front of the object is to stop PowerShell from unrolling the collection.

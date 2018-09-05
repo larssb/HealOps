@@ -14,22 +14,25 @@ function Out-StatsItemObject() {
 .EXAMPLE
     PS C:\> Out-StatsItemObject
     The example will return a StatsItem object, structured specifically to adhere to the requirements of reporting stats on an IT system/component via HealOps.
+.PARAMETER IncludeStatsOwnerProperty
+    Includes a "StatsOwner" property on the returned StatsItem object.
 #>
 
     # Define parameters
     [CmdletBinding(DefaultParameterSetName = "Default")]
     [OutputType([Void])]
-    Param()
+    Param(
+        [Parameter()]
+        [Switch]$IncludeStatsOwnerProperty
+    )
 
     #############
     # Execution #
     #############
-    Begin {
-        . $PSScriptRoot/../Private/StatsMode/StatsItem.Class.ps1
-    }
-    Process {}
-    End {
-        # Return a StatsItem object.
+    # Return a StatsItem object.
+    if ($IncludeStatsOwnerProperty) {
+        [StatsItem]::New("",@{},"")
+    } else {
         [StatsItem]::New("",@{})
     }
 }

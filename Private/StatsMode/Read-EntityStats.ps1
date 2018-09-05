@@ -52,7 +52,7 @@ function Read-EntityStats() {
             }
         } else {
             $log4netLogger.error("Read-EntityStats | The stats file $StatsFileBaseName could not be found.")
-            throw "Read-EntityStats | The stats file $StatsFileBaseName could not be found.";
+            throw "Read-EntityStats | The stats file $StatsFileBaseName could not be found."
         }
     }
     End {

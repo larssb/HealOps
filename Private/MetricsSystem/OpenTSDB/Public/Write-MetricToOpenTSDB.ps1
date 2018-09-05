@@ -58,18 +58,18 @@ function Write-MetricToOpenTSDB() {
     try {
         $OpenTSDBendpoint = $Config.Metrics.IP
         $OpenTSDBport = $Config.Metrics.Port
-        $result = Invoke-WebRequest -Uri http://$OpenTSDBendpoint":"$OpenTSDBport/api/put -Method post -ContentType "application/json" -body $metricInJSON -UseBasicParsing
+        $Result = Invoke-WebRequest -Uri http://$OpenTSDBendpoint":"$OpenTSDBport/api/put -Method post -ContentType "application/json" -body $metricInJSON -UseBasicParsing
         Write-Verbose -Message "Payload to sent to OpenTSDB is: $metricInJSON"
     } catch {
         throw "HTTP POST to OpenTSDB on $openTSDBendpoint failed with: $_"
     }
 
-    # Check the result of the POST to OpenTSDB
-    # TODO: Maybe this changes in OpenTSDB v2.3 <-- where it returns HTTP204
-    if ($result.status -eq 200) {
+    # Check the result of the POST to OpenTSDB. HTTP204 is what OpenTSDB returns. Which per the HTTP Std. means == "The server successfully processed the request and is not returning any content.".
+    if ($Result.StatusCode -eq 204) {
         $true
+    } else {
+        $false
 
-        # TODO: Log info
         # TODO: Look further into the request data... e.g. I got this error:
         <#
             2017-11-09 10:07:44,209 ERROR [OpenTSDB I/O Worker #3] RpcHandler: [id: 0x9344fdcb, /192.168.49.22:51840 => /172.17.0.2:4242] Received an unsupported chunked request: DefaultHttpRequest(chunked: true)
@@ -79,13 +79,8 @@ Content-Type: application/json
 Host: 192.168.49.111:4242
 Content-Length: 211
 Expect: 100-continue
-2017-11-09 10:07:44,210 WARN  [OpenTSDB I/O Worker #3] HttpQuery: [id: 0x9344fdcb, /192.168.49.22:51840 => /172.17.0.2:4242] Bad Request on                                                   /api/put: Chunked request not supported.
-2017-11-09 10:07:44,213 INFO  [OpenTSDB I/O Worker #3] HttpQuery: [id: 0x9344fdcb, /192.168.49.22:51840 => /172.17.0.2:4242] HTTP /api/put d                                                  one in 4ms
-
+2017-11-09 10:07:44,210 WARN  [OpenTSDB I/O Worker #3] HttpQuery: [id: 0x9344fdcb, /192.168.49.22:51840 => /172.17.0.2:4242] Bad Request on /api/put: Chunked request not supported.
+2017-11-09 10:07:44,213 INFO  [OpenTSDB I/O Worker #3] HttpQuery: [id: 0x9344fdcb, /192.168.49.22:51840 => /172.17.0.2:4242] HTTP /api/put done in 4ms
         #>
-    } else {
-        $false
-
-        # TODO: Log info
     }
 }
