@@ -52,24 +52,24 @@ function Test-EntityState() {
             # Retrieve the failed test value to report to the backend (HealOps requires the value to be numeric)
             $log4netLoggerDebug.debug("Test-EntityState | The failuremessage in the Pester output is > $($TestOutput.TestResult.FailureMessage)")
             if ((Get-Variable -Name failedTestResult -ErrorAction SilentlyContinue)) {
-                $testData = $failedTestResult # Uses the global variable set in the *.Tests.ps1 file to capture a numeric value to report to the reporting backend.
+                $TestData = $failedTestResult # Uses the global variable set in the *.Tests.ps1 file to capture a numeric value to report to the reporting backend.
                 $log4netLoggerDebug.debug("Test-EntityState | failedTestResult value > $failedTestResult set in *.Tests.ps1 file > $TestFilePath")
                 Write-Verbose -Message "Test-EntityState | failedTestResult > $failedTestResult"
             } else {
                 # TODO: Log IT and inform x!
-                $testData = -2 # Value indicating that the global variable failedTestResult was not set correctly in the *.Tests.ps1 file.
+                $TestData = -2 # Value indicating that the global variable failedTestResult was not set correctly in the *.Tests.ps1 file.
                 $log4netLogger.error("Test-EntityState | The failedTestResult variable was NOT defined in the *.Tests.ps1 file > $TestFilePath <- this HAS to be done.")
                 Write-Verbose -Message "Test-EntityState | The failedTestResult variable was NOT defined in the *.Tests.ps1 file > $TestFilePath <- this HAS to be done."
             }
         } else {
             # Retrieve the passed test value to report to the backend (HealOps requires the value to be numeric)
             if ((Get-Variable -Name passedTestResult -ErrorAction SilentlyContinue)) {
-                $testData = $passedTestResult # Uses the global variable set in the *.Tests.ps1 file to capture a numeric value to report to the reporting backend.
+                $TestData = $passedTestResult # Uses the global variable set in the *.Tests.ps1 file to capture a numeric value to report to the reporting backend.
                 $log4netLoggerDebug.debug("Test-EntityState | passedTestResult value > $passedTestResult set in *.Tests.ps1 file > $TestFilePath")
                 Write-Verbose -Message "Test-EntityState | passedTestResult > $passedTestResult"
             } else {
                 # TODO: Log IT and inform x!
-                $testData = -1 # Value indicating that the global variable passedTestResult was not set correctly in the *.Tests.ps1 file.
+                $TestData = -1 # Value indicating that the global variable passedTestResult was not set correctly in the *.Tests.ps1 file.
                 $log4netLogger.error("Test-EntityState | The passedTestResult variable was NOT defined in the *.Tests.ps1 file > $TestFilePath <- this HAS to be done.")
                 Write-Verbose -Message "Test-EntityState | The passedTestResult variable was NOT defined in the *.Tests.ps1 file > $TestFilePath <- this HAS to be done."
             }
@@ -78,7 +78,7 @@ function Test-EntityState() {
         # Collect the result
         $tempCollection = @{}
         $tempCollection.Add("state",$state)
-        $tempCollection.Add("testdata",$testData)
+        $tempCollection.Add("Testdata",$TestData)
         $tempCollection.Add("metric",$($TestOutput.TestResult.Describe))
 
         # Return to caller

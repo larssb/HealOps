@@ -3,7 +3,7 @@
     RootModule = 'HealOps.psm1'
 
     # Version number of this module.
-    ModuleVersion = '1.0.0'
+    ModuleVersion = '1.1.0'
 
     # ID used to uniquely identify this module
     GUID = 'a7de9802-3086-4612-a31f-8da988c2eca0'
@@ -30,8 +30,8 @@
     FunctionsToExport = @(
         'Install-HealOpsPackage'
         'Invoke-HealOps'
-        'Out-StatsCollectionObject'
-        'Out-StatsItemObject'
+        'Out-MetricsCollectionObject'
+        'Out-MetricItemObject'
     )
 
     # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.

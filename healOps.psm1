@@ -1,7 +1,7 @@
 <#
     - Import classes
 #>
-. $PSScriptRoot/Private/StatsMode/StatsItem.Class.ps1
+. $PSScriptRoot/Private/MetricsSystem/MetricItem.Class.ps1
 
 <#
     - Determine system specific values

@@ -1,57 +1,58 @@
 using namespace System.Collections.Hashtable
 
-class StatsItem : Hashtable {
+class MetricItem : Hashtable {
     # DECLARE PROPERTIES
     [String]$Metric
-    $StatsData
-    hidden [Hashtable]$StatsItemContainer = @{}
+    $MetricData
+    hidden [Hashtable]$MetricItemContainer = @{}
     [String]$StatsOwner
 
     # DEFINE CONSTRUCTORS
-    StatsItem([String] $Metric, [Int32] $StatsData) {
+    MetricItem([String] $Metric, [Int32] $MetricData) {
         [String]
         [ValidateNotNullOrEmpty()]
         $Metric
 
         [Int32]
         [ValidateNotNullOrEmpty()]
-        $StatsData
+        $MetricData
 
         # Set the properties, to the incoming values
         $this.Metric = $Metric
-        $this.StatsData = $StatsData
+        $this.MetricData = $MetricData
 
         # Declare the hashtable collection for holding the Stats item.
-        $this.StatsItemContainer.Add("Metric",$Metric)
-        $this.StatsItemContainer.Add("StatsData",$StatsData)
+        $this.MetricItemContainer.Add("Metric",$Metric)
+        $this.MetricItemContainer.Add("MetricData",$MetricData)
     }
 
-    StatsItem([String] $Metric, [HashTable] $StatsData) {
+    MetricItem([String] $Metric, [HashTable] $MetricData) {
         [String]
         [ValidateNotNullOrEmpty()]
         $Metric
 
         [HashTable]
         [ValidateNotNullOrEmpty()]
-        $StatsData
+        $MetricData
 
         # Set the properties, to the incoming values
         $this.Metric = $Metric
-        $this.StatsData = $StatsData
+        $this.MetricData = $MetricData
+        [Int32]$this.MetricData.Value = 0
 
         # Declare the hashtable collection for holding the Stats item.
-        $this.StatsItemContainer.Add("Metric",$Metric)
-        $this.StatsItemContainer.Add("StatsData",$StatsData)
+        $this.MetricItemContainer.Add("Metric",$Metric)
+        $this.MetricItemContainer.Add("MetricData",$MetricData)
     }
 
-    StatsItem([String] $Metric, [HashTable] $StatsData, [String] $StatsOwner) {
+    MetricItem([String] $Metric, [HashTable] $MetricData, [String] $StatsOwner) {
         [String]
         [ValidateNotNullOrEmpty()]
         $Metric
 
         [HashTable]
         [ValidateNotNullOrEmpty()]
-        $StatsData
+        $MetricData
 
         [String]
         [ValidateNotNullOrEmpty()]
@@ -59,12 +60,13 @@ class StatsItem : Hashtable {
 
         # Set the properties, to the incoming values
         $this.Metric = $Metric
-        $this.StatsData = $StatsData
+        $this.MetricData = $MetricData
+        [Int32]$this.MetricData.Value = 0
         $this.StatsOwner = $StatsOwner
 
         # Declare the hashtable collection for holding the Stats item.
-        $this.StatsItemContainer.Add("Metric",$Metric)
-        $this.StatsItemContainer.Add("StatsData",$StatsData)
-        $this.StatsItemContainer.Add("StatsOwner",$StatsOwner)
+        $this.MetricItemContainer.Add("Metric",$Metric)
+        $this.MetricItemContainer.Add("MetricData",$MetricData)
+        $this.MetricItemContainer.Add("StatsOwner",$StatsOwner)
     }
 }
