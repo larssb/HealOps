@@ -1,10 +1,3 @@
-# Deploying/Installing HealOps
-
-1 When deploying HealOps to a node you will need to deploy:
-
-    * The specific HealOps package for the IT Service/Entity you want to monitor and heal.
-    * The HealOps module itself.
-
 ## Fixing failed states based on HealOps triggered alarms
 
     * Why not use the *.Tests.ps1 files, that "X" IT service/Entity is tested via, when you have had to manually remediate a failed IT service/Entity? You guessed it! That question was rhetorical. Of course you should. E.g.
@@ -145,25 +138,6 @@ The std. is:
     This value needs to be a numerical type.
     * This global variable should be defined for each 'It' block in a Pester *.Tests.ps1 file.
     * The name of the global variable can only be == 'failedTestResult' (without the quotes)
-
-#### Documentation on specific software.
-
-__OpenTSDB__
-    Is a time-shift series database system.
-
-* Chunking needs to be enabled in the OpenTSDB config file. I.e.:
-`
-# Enable chunking
-tsd.http.request.enable_chunked = true
-tsd.http.request.max_chunk = 4096
-`
-* The conf file is could be located at e.g.
-    * /opt/opentsdb/opentsdb-"version"/src/opentsdb.conf
-* For the chunking config change to be picked you need to:
-    * Add --config= e.g.:
-    `
-    /opt/opentsdb/opentsdb-${TSDB_VERSION}/build/tsdb tsd --config=/opt/opentsdb/opentsdb-${TSDB_VERSION}/src/opentsdb.conf --port=4242 --staticroot=/opt/opentsdb/opentsdb-${TSDB_VERSION}/build/staticroot --cachedir=/tmp --auto-metric
-    `
 
 ## Required modules and dependencies
 
