@@ -74,6 +74,6 @@ function Read-EntityStats() {
         }
 
         # Return the stats.
-        $Stats
+        ,$Stats
     }
 }

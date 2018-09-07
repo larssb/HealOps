@@ -195,7 +195,7 @@
                 $TestsFile = Get-PS1File -FileName $TestsFileName -ModuleName $HealOpsPackageName
             } catch {
                 # Exit
-                throw $message
+                throw $_
             }
         } elseif ($PSCmdlet.ParameterSetName -eq "Stats") {
             # Get the Stats file named as in $StatsFileName
@@ -203,7 +203,7 @@
                 $StatsFile = Get-PS1File -FileName $StatsFileName -ModuleName $HealOpsPackageName
             } catch {
                 # Exit
-                throw $message
+                throw $_
             }
         }
 
@@ -462,29 +462,40 @@
                 $log4netLogger.error("Invoke-HealOps | Read-EntityStats failed with: $_")
             }
 
-            if ($null -ne $Stats) {
+            if (($null -ne $Stats) -and ($Stats.Count -gt 0)) {
                 foreach ($item in $Stats) {
-                    # Parameter splatting for the Submit-EntityStateReport function.
-                    $SubmitEntityStateReport_Parms = @{
-                        Config = $HealOpsConfig
-                        Data = $($item.MetricData)
-                        ErrorAction = "Stop"
-                        Metric = $($item.Metric)
-                        MetricsSystem = $($HealOpsConfig.Metrics.System)
-                        Verbose = $CommonParms['Verbose']
-                    }
+                    if ($null -ne $item.MetricData) {
+                        $MetricValueType = $item.MetricData.Value.GetType().Name
+                        if ($MetricValueType -eq "Int32") {
+                            # Parameter splatting for the Submit-EntityStateReport function.
+                            $SubmitEntityStateReport_Parms = @{
+                                Config = $HealOpsConfig
+                                Data = $($item.MetricData)
+                                ErrorAction = "Stop"
+                                Metric = $($item.Metric)
+                                MetricsSystem = $($HealOpsConfig.Metrics.System)
+                                Verbose = $CommonParms['Verbose']
+                            }
 
-                    if ($null -ne $Item.StatsOwner) {
-                        $SubmitEntityStateReport_Parms.Add("StatsOwner", $Item.StatsOwner)
-                    }
+                            if ($null -ne $Item.StatsOwner) {
+                                $SubmitEntityStateReport_Parms.Add("StatsOwner", $Item.StatsOwner)
+                            }
 
-                    # Submit the stats to the reporting backend.
-                    try {
-                        Submit-EntityStateReport @SubmitEntityStateReport_Parms
-                    } catch {
-                        $log4netLogger.error("Invoke-HealOps | Submit-EntityStateReport failed with: $_")
-                        Write-Verbose "Invoke-HealOps | Submit-EntityStateReport failed with: $_"
-                    }
+                            # Submit the stats to the reporting backend.
+                            try {
+                                Submit-EntityStateReport @SubmitEntityStateReport_Parms
+                            } catch {
+                                $log4netLogger.error("Invoke-HealOps | Submit-EntityStateReport failed with: $_")
+                                Write-Verbose "Invoke-HealOps | Submit-EntityStateReport failed with: $_"
+                            }
+                        } else {
+                            $log4netLogger.error("Invoke-HealOps | The value property in MetricData is of the wrong type. Its value is $MetricValueType. The metric will not be reported.")
+                            Write-Verbose "Invoke-HealOps | The value property in MetricData is of the wrong type. Its value is $MetricValueType. The metric will not be reported."
+                        } # End of conditional control on the type of Int32.
+                    } else {
+                        $log4netLogger.error("Invoke-HealOps | The MetricData property isn't defined in MetricData. The metric will not be reported.")
+                        Write-Verbose "Invoke-HealOps | The MetricData property in MetricData is not correctly defined. The metric will not be reported."
+                    } # End of conditional control on MetricData not $null
                 }
             } else {
                 $log4netLogger.error("Invoke-HealOps | No stats retrieved.")
