@@ -7,7 +7,7 @@ __The easy way to get going__
 
 [![video](https://asciinema.org/a/t4jqseGsOx1xtxQesIZaLss1B.png)](https://asciinema.org/a/t4jqseGsOx1xtxQesIZaLss1B)
 
-> The video uses the template found in the [PlasterPlethora](https://github.com/larssb/PlasterPlethora) GitHub repository.
+> The video uses the HealOpsPackage template found in the [PlasterPlethora](https://github.com/larssb/PlasterPlethora) GitHub repository.
 
 __The cumbersome way__
 

@@ -3,10 +3,17 @@ repo_url: https://github.com/larssb/HealOps
 theme: readthedocs
 pages:
   - Welcome: index.md
-  - Synopsis:
-    - What?: HealOps-What.md
     - The motivation: HealOps-Motivation.md
+  - HealOps:
+    - Deploying HealOps: HealOps-Deploying.md
+    - HealOps insides: HealOps-ArchitectureAndInnerWorkings.md
+    - Troubleshooting:
+      - OpenTSDB: HealOps-Troubleshooting-OpenTSDB
   - HealOpsPackages:
     - What?: HealOpsPackages-What.md
     - Getting started: HealOpsPackages-GettingStarted.md
-    - Structure: HealOpsPackages-Structure.md
+    - Coding: HealOpsPackages-Developing.md
+  - The project:
+    - Who's behind: Who.md
+    - Contributing: Contributing.md
+    - More info: MoreHealOps.md

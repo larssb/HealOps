@@ -1,8 +1,9 @@
 # The motivation
 
-I [Lars Bengtsson](https://github.com/larssb), started developing HealOps in early 2017. Stemming from the thought that it had to be possible to make life as a DevOps Engineer and as a member of the on-call team at work easier. __By:__
+I [Lars Bengtsson](https://github.com/larssb), started developing HealOps in early 2017. Stemming from the thought that it had to be possible to make life as a DevOps Engineer and as a member of the on-call team at work easier.
 
-- Improving the info received when getting a call when on on-call duty.
+__By:__
+- Improving the info received when getting alerted on an on-call watch.
 - Even better, developing a system that tries healing 'x' IT component and if that succeeds I can continue my sleep unknowingly of the mishap.
         - Although it will be possible to see that this happened, as the issue is logged.
 - Having the system automatically contact the person on on-call duty, instead of having manual labour doing this. Because, having manual labor doing this.
@@ -15,5 +16,5 @@ I [Lars Bengtsson](https://github.com/larssb), started developing HealOps in ear
 - Packaging the code needed to monitor and healing 'x' IT service and its components into clearly compartmentalized entities. That makes it possible to:
         - Deploy those easily.
         - Modularize these packages, which then makes it easier to re-use them for different IT service monitoring and healing situations.
-
-The above is the motivation for developing HealOps.
+- By providing stats on components and IT systems. Making it possible to consider pro-active measures for the future and knowing where the most gain is available.
+- Freeing up resources for improving and designing better products.
