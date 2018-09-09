@@ -7,9 +7,9 @@ __The easy way to get going__
 
 [![video](https://asciinema.org/a/t4jqseGsOx1xtxQesIZaLss1B.png)](https://asciinema.org/a/t4jqseGsOx1xtxQesIZaLss1B)
 
-> The video uses the template found in the [PlasterPlethora](https://github.com/larssb/PlasterPlethora){:.no-mark-external} GitHub repository.
+> The video uses the template found in the [PlasterPlethora](https://github.com/larssb/PlasterPlethora) GitHub repository.
 
-__The long way__
+__The cumbersome way__
 
 If you for some reason (which is hard to fathom), do not want to use the Plaster PowerShell module, you need to follow the below guide to get going.
 
