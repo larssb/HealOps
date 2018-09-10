@@ -2,7 +2,7 @@ site_name: HealOps Docs
 repo_url: https://github.com/larssb/HealOps
 theme: readthedocs
 nav:
-  - Welcome: 'index.md'
+  - Home: 'index.md'
   - HealOps:
     - 'HealOps-Motivation.md'
     - 'HealOps-Deploying.md'
