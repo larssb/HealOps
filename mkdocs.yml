@@ -8,7 +8,7 @@ pages:
     - 'HealOps-Deploying.md'
     - 'HealOps-ArchitectureAndInnerWorkings.md'
     - Troubleshooting:
-      - 'HealOps-Troubleshooting-OpenTSDB'
+      - 'HealOps-Troubleshooting-OpenTSDB.md'
   - HealOpsPackages:
     - 'HealOpsPackages-What.md'
     - 'HealOpsPackages-Developing.md'
