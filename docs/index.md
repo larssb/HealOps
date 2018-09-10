@@ -23,4 +23,4 @@ This is the home of all the documentation on HealOps. You should be able to find
 
 I hope you find the documentation useful and less boring to read than the manual to your new vacuum cleaner.
 
-> If you are already well versed in HealOps you should have a look at the HealOps package concept > [What is a HealOpsPackage?](./HealOpsPackages-What.md)
+__If you are already well versed in HealOps you should have a look at the HealOps package concept > [What is a HealOpsPackage?](./HealOpsPackages-What.md)__
