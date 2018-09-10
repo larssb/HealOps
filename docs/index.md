@@ -1,5 +1,3 @@
-# HealOps Docs
-
 __HealOps__ is a state monitoring, stats gathering and broken state repairing framework. Use it for operation validation, repairing and stats gathering. With HealOps you can automatically gather stats and/or monitor and repair the state of IT systems and their components.
 
 Systems and components are monitored by writing Pester tests that acts as the state determining engine. When a broken state is found a repair is automatically executed.

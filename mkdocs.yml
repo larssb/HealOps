@@ -6,13 +6,13 @@ pages:
   - HealOps:
     - The motivation: 'HealOps-Motivation.md'
     - Deploying HealOps: 'HealOps-Deploying.md'
-    - An architectural overview of HealOps: 'HealOps-ArchitectureAndInnerWorkings.md'
+    - An architectural overview: 'HealOps-ArchitectureAndInnerWorkings.md'
     - Troubleshooting:
-      - Troubleshooting OpenTSDB: 'HealOps-Troubleshooting-OpenTSDB.md'
+      - OpenTSDB: 'HealOps-Troubleshooting-OpenTSDB.md'
   - HealOpsPackages:
     - What is a HealOpsPackage?: 'HealOpsPackages-What.md'
     - Developing a HealOps package: 'HealOpsPackages-Developing.md'
-  - The project:
+  - Around the project:
     - The people behind: 'Who.md'
     - Contributing guidelines: 'Contributing.md'
     - It's hard to get enough HealOps: 'MoreHealOps.md'
