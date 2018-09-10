@@ -6,15 +6,15 @@ nav:
   - Landing: 'index.md'
   - The motivation: 'HealOps-Motivation.md'
 - HealOps:
-    - Deploying HealOps: 'HealOps-Deploying.md'
-    - HealOps insides: 'HealOps-ArchitectureAndInnerWorkings.md'
-    - Troubleshooting:
-      - OpenTSDB: 'HealOps-Troubleshooting-OpenTSDB'
-  - HealOpsPackages:
-    - What?: 'HealOpsPackages-What.md'
-    - Getting started: 'HealOpsPackages-GettingStarted.md'
-    - Coding: 'HealOpsPackages-Developing.md'
-  - The project:
-    - The people behind: 'Who.md'
-    - Contributing: 'Contributing.md'
-    - More info: 'MoreHealOps.md'
+  - Deploying HealOps: 'HealOps-Deploying.md'
+  - HealOps insides: 'HealOps-ArchitectureAndInnerWorkings.md'
+  - Troubleshooting:
+    - OpenTSDB: 'HealOps-Troubleshooting-OpenTSDB'
+- HealOpsPackages:
+  - What?: 'HealOpsPackages-What.md'
+  - Getting started: 'HealOpsPackages-GettingStarted.md'
+  - Coding: 'HealOpsPackages-Developing.md'
+ - The project:
+  - The people behind: 'Who.md'
+  - Contributing: 'Contributing.md'
+  - More info: 'MoreHealOps.md'
