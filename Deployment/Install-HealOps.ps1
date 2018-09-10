@@ -1,5 +1,5 @@
 <#PSScriptInfo
-.VERSION 1.0.0
+.VERSION 2.1.0
 .GUID bbf74424-f58d-42d1-9d5a-aeba44ccd545
 .AUTHOR Lars Bengtsson
 .COMPANYNAME
@@ -29,7 +29,7 @@
 .NOTES
     <none>
 .EXAMPLE
-    "PATH_TO_THIS_FILE"/Instal-HealOps.ps1 -MetricsSystem 'OpenTSDB' -checkForUpdatesInterval_Hours 3 -PackageManagementURI https://My.PackageManagementServer.com -FeedName HealOps `
+    "PATH_TO_THIS_FILE"/Instal-HealOps.ps1 -MetricsSystem 'OpenTSDB' -CheckForUpdatesInterval_Hours 3 -PackageManagementURI https://My.PackageManagementServer.com -FeedName HealOps `
     -APIKey "API_KEY" -HealOpsPackages Citrix.HealOpsPackage -JobType WinScTask
 
     >> Executes Installs HealOps on the node where it is executed. Sets the reporting backend to use OpenTSDB. Updates will be checked for every third day. The PackageManagement system `
@@ -39,8 +39,8 @@
     Used to specify that the package management backend does not allow anonymous access. This will make the script prompt for credentials.
 .PARAMETER APIKey
     The API key to used when communicatnig with the Package Management backend.
-.PARAMETER checkForUpdatesInterval_Hours
-    The interval in hours between checking for updates. Specifying this implicitly also enables the check for updates feature.
+.PARAMETER CheckForUpdatesInterval_Hours
+    The interval in hours between checking for updates. Specifying this implicitly also enables the check for update feature.
 .PARAMETER FeedName
     The name of the feed on the Package Management backend, in which modules used by HealOps are stored.
 .PARAMETER HealOpsPackages
@@ -73,7 +73,7 @@
         [String]$APIKey,
         [Parameter()]
         [ValidateNotNullOrEmpty()]
-        [Int]$checkForUpdatesInterval_Hours,
+        [Int]$CheckForUpdatesInterval_Hours,
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [String]$FeedName,
@@ -338,9 +338,9 @@
             $HealOpsConfig.Metrics.System = $MetricsSystem
             $HealOpsConfig.Metrics.IP = $MetricsSystemIP
             $HealOpsConfig.Metrics.Port = $MetricsSystemPort
-            if($PSBoundParameters.ContainsKey('checkForUpdatesInterval_Hours') ) {
+            if($PSBoundParameters.ContainsKey('CheckForUpdatesInterval_Hours') ) {
                 $HealOpsConfig.checkForUpdates = "True"
-                $HealOpsConfig.checkForUpdatesInterval_Hours = $checkForUpdatesInterval_Hours
+                $HealOpsConfig.CheckForUpdatesInterval_Hours = $CheckForUpdatesInterval_Hours
                 $HealOpsConfig.checkForUpdatesNext = "" # Real value provided when HealOps is running and have done its first update cycle pass.
                 $HealOpsConfig.PackageManagementURI = $PackageManagementURI
                 $HealOpsConfig.FeedName = $FeedName
@@ -507,7 +507,7 @@
                     if ($null -eq $healOpsPackageInstallationResult) {
                         <#
                             - Tasks for running HealOps package tests
-                                -- 1 task per *.Tests.ps1 file in the TestsAndRepairs folder given.
+                                -- 1 task per *.Tests.ps1 and *.Stats.ps1 file.
                         #>
                         $HealOpsPackageModuleBase = Split-Path -Path (Get-Module -ListAvailable -Name $HealOpsPackage).ModuleBase | Select-Object -Unique
                         if($psVersionAbove4) {
@@ -517,25 +517,31 @@
                         }
 
                         # Get the *.Tests.ps1 files in the provided directory
-                        $TestsFiles = Get-ChildItem -Path $HealOpsPackageModuleRootBase/TestsAndRepairs -Recurse -Force -Include "*.Tests.ps1"
-                        foreach ($testFile in $TestsFiles) {
+                        $Files = Get-ChildItem -Path $HealOpsPackageModuleRootBase/ -Recurse -Force -Include "*.Tests.ps1","*.Stats.ps1"
+                        foreach ($File in $Files) {
                             if($psVersionAbove4) {
                                 [Array]$HealOpsPackageConfig = Get-Content -Path $HealOpsPackageModuleRootBase/Config/*.json -Encoding UTF8 | ConvertFrom-Json
                             } else {
                                 [Array]$HealOpsPackageConfig = Get-Content -Path $HealOpsPackageModuleRootBase/Config/*.json | out-string | ConvertFrom-Json
                             }
 
-                            $TestsFileName = Split-Path -Path $testFile -Leaf
-                            $fileExt = [System.IO.Path]::GetExtension($TestsFileName)
-                            $fileNoExt = $TestsFileName -replace $fileExt,""
-                            $TestsFileJobInterval = $HealOpsPackageConfig.$fileNoExt.jobInterval
-                            Write-Verbose -Message "The job repetition interval will be > $TestsFileJobInterval"
+                            $FileName = Split-Path -Path $File -Leaf
+                            $StatsFile = if ($FileName -match "Stats") { $true } else { $false }
+                            $fileExt = [System.IO.Path]::GetExtension($FileName)
+                            $fileNoExt = $FileName -replace $fileExt,""
+                            $FileJobInterval = $HealOpsPackageConfig.$fileNoExt.jobInterval
+                            Write-Verbose -Message "Creating a job for the file named $fileExt"
+                            Write-Verbose -Message "The job repetition interval will be > $FileJobInterval"
 
                             ################
                             # JOB CREATION #
                             ################
-                            [String]$ScriptBlockString = "Invoke-HealOps -TestsFileName '$fileNoExt' -HealOpsPackageName '$HealOpsPackage'"
-                            Write-Progress -Activity "Installing HealOps" -CurrentOperation "Creating a task to execute HealOps. For the *.Tests.ps1 file > $testFile" -Status "With the following task repetition interval > $TestsFileJobInterval" -Id 5
+                            if ($StatsFile) {
+                                [String]$ScriptBlockString = "Invoke-HealOps -HealOpsPackageName '$HealOpsPackage' -StatsFileName '$fileNoExt'"
+                            } else {
+                                [String]$ScriptBlockString = "Invoke-HealOps -HealOpsPackageName '$HealOpsPackage' -TestsFileName '$fileNoExt'"
+                            }
+                            Write-Progress -Activity "Installing HealOps" -CurrentOperation "Creating a task to execute HealOps. For the file named $FileName" -Status "With the following task repetition interval > $FileJobInterval" -Id 5
                             switch ($JobType) {
                                 # PowerShell Scheduled Job - WINDOWS
                                 "WinPSJob" {
@@ -562,7 +568,7 @@
                                     $kickOffJobDateTimeRandom = get-random -Minimum 2 -Maximum 6
                                     $Trigger = @{
                                         At = (Get-date).AddMinutes(1).AddMinutes(($kickOffJobDateTimeRandom))
-                                        RepetitionInterval = (New-TimeSpan -Minutes $TestsFileJobInterval)
+                                        RepetitionInterval = (New-TimeSpan -Minutes $FileJobInterval)
                                         RepeatIndefinitely = $true
                                         Once = $true
                                     }
@@ -599,7 +605,7 @@
                                         $taskRunDration = $currentDate.AddYears(25) - $currentDate
                                         $Trigger = @{
                                             At = (Get-date).AddMinutes(1).AddMinutes(($kickOffJobDateTimeRandom))
-                                            RepetitionInterval = (New-TimeSpan -Minutes $TestsFileJobInterval)
+                                            RepetitionInterval = (New-TimeSpan -Minutes $FileJobInterval)
                                             RepetitionDuration  = $taskRunDration
                                             Once = $true
                                         }
@@ -616,11 +622,15 @@
                                             The settings explained:
                                             - ToRun: The value to hand to the /TR parameter of the schtasks cmd. Everything after powershell.exe will be taken as parameters.
                                         #>
-                                        $executeFileFullPath = "$HealOpsPackageModuleRootBase/TestsAndRepairs/execute.$TestsFileName"
+                                        if ($StatsFile) {
+                                            $ExecuteFileFullPath = "$HealOpsPackageModuleRootBase/Stats/execute.$FileName"
+                                        } else {
+                                            $ExecuteFileFullPath = "$HealOpsPackageModuleRootBase/TestsAndRepairs/execute.$FileName"
+                                        }
                                         $Options = @{
                                             Username = $HealOpsUsername
                                             Password = $clearTextPassword
-                                            ToRun = "`"powershell.exe -NoLogo -NonInteractive -WindowStyle Hidden -File `"`"$executeFileFullPath`"`"`""
+                                            ToRun = "`"powershell.exe -NoLogo -NonInteractive -WindowStyle Hidden -File `"`"$ExecuteFileFullPath`"`"`""
                                         }
 
                                         <#
@@ -633,12 +643,12 @@
 
                                         # Create a CMD file for the scheduled task to execute. In order to avoid the limitation of the /TR parameter on the schtasks cmd. It cannot be longer than 261 chars.
                                         try {
-                                            Set-Content -Path "$executeFileFullPath" -Value "$ScriptBlockString" -Force -NoNewline -ErrorAction Stop
+                                            Set-Content -Path "$ExecuteFileFullPath" -Value "$ScriptBlockString" -Force -NoNewline -ErrorAction Stop
                                         } catch {
-                                            Write-Output "Failed to set content in the script for the scheduled task to execute. The task could there not be created for the Tests file > $TestsFileName > You'll have to create a task manually for this test."
+                                            Write-Output "Failed to set content in the script for the scheduled task to execute. The task could there not be created for the Tests file > $FileName > You'll have to create a task manually for this test."
                                         }
 
-                                        if (Test-Path -Path "$executeFileFullPath") {
+                                        if (Test-Path -Path "$ExecuteFileFullPath") {
                                             try {
                                                 # Create the task with the schtasks cmd.
                                                 Add-ScheduledTask -TaskName $fileNoExt -TaskOptions $Options -TaskTrigger $Trigger -Method "schtasks"
@@ -693,7 +703,7 @@
             write-host "....HealOps was installed...." -ForegroundColor Green
             write-host "=============================" -ForegroundColor DarkYellow
         } else {
-            throw "The HealOps module does not seem to be installed. So we have to stop."
+            throw "The HealOps module does not seem to be installed. Have to stop."
         }
     }
     End {}
