@@ -4,16 +4,15 @@ theme: readthedocs
 nav:
 - Welcome: 'index.md'
 - HealOps:
-    - The motivation: 'HealOps-Motivation.md'
-    - Deploying HealOps: 'HealOps-Deploying.md'
-    - HealOps insides: 'HealOps-ArchitectureAndInnerWorkings.md'
+    - 'HealOps-Motivation.md'
+    - 'HealOps-Deploying.md'
+    - 'HealOps-ArchitectureAndInnerWorkings.md'
     - Troubleshooting:
-        - OpenTSDB: 'HealOps-Troubleshooting-OpenTSDB'
+        - 'HealOps-Troubleshooting-OpenTSDB'
 - HealOpsPackages:
-    - What?: 'HealOpsPackages-What.md'
-    - Getting started: 'HealOpsPackages-GettingStarted.md'
-    - Coding: 'HealOpsPackages-Developing.md'
+    - 'HealOpsPackages-What.md'
+    - 'HealOpsPackages-Developing.md'
 - The project:
-    - The people behind: 'Who.md'
-    - Contributing: 'Contributing.md'
-    - More info: 'MoreHealOps.md'
+    - 'Who.md'
+    - 'Contributing.md'
+    - 'MoreHealOps.md'
