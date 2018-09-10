@@ -4,15 +4,15 @@ theme: readthedocs
 pages:
   - Home: 'index.md'
   - HealOps:
-    - 'HealOps-Motivation.md'
-    - 'HealOps-Deploying.md'
-    - 'HealOps-ArchitectureAndInnerWorkings.md'
+    - The motivation: 'HealOps-Motivation.md'
+    - Deploying HealOps: 'HealOps-Deploying.md'
+    - An architectural overview of HealOps: 'HealOps-ArchitectureAndInnerWorkings.md'
     - Troubleshooting:
-      - 'HealOps-Troubleshooting-OpenTSDB.md'
+      - Troubleshooting OpenTSDB: 'HealOps-Troubleshooting-OpenTSDB.md'
   - HealOpsPackages:
-    - 'HealOpsPackages-What.md'
-    - 'HealOpsPackages-Developing.md'
+    - What is a HealOpsPackage?: 'HealOpsPackages-What.md'
+    - Developing a HealOps package: 'HealOpsPackages-Developing.md'
   - The project:
-    - 'Who.md'
-    - 'Contributing.md'
-    - 'MoreHealOps.md'
+    - The people behind: 'Who.md'
+    - Contributing guidelines: 'Contributing.md'
+    - It's hard to get enough HealOps: 'MoreHealOps.md'
