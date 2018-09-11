@@ -4,7 +4,7 @@ OpenTSDB is a time-series database. It is a storage engine for metrics. OpenTSDB
 
 ## Specific issues you might bump into
 
-* Chunking needs to be enabled in the OpenTSDB config file. i.e.:
+Chunking needs to be enabled in the OpenTSDB config file. i.e.:
 
 1. Open the conf file, it is located at e.g.
     1. /opt/opentsdb/opentsdb-"version"/src/opentsdb.conf
@@ -27,6 +27,7 @@ OpenTSDB is a time-series database. It is a storage engine for metrics. OpenTSDB
 
 Go to the "Logs" tab in the Web interface. Or view logs directly on the OpenTSDB Srv.
 
-    _The logs tab_
-    * Go to the URI of the OpenTSDB webinterface.
-    * Click on the "Logs" tab in the top left corner.
+_The logs tab_
+
+* Go to the URI of the OpenTSDB web-interface.
+* Click on the "Logs" tab in the top left corner.

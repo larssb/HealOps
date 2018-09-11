@@ -4,6 +4,7 @@ Systems and components are monitored by writing Pester tests that acts as the st
 Tests, Repairs and Stats executions generate metrics. HealOps reports all metrics to a time-shift database backend. From there they are picked up by a metrics visualization system which can be used to create dashboards with graphs of various kinds. On these dashboards, threshold levels can be set. This makes it possible to automatically react to a component above a set threshold. If a threshold is met, it means that a broken state could not be repaired. So, the natural action to take, is to get some human eyeballs on the issue. For this to happen the visualization system pushes an alert to an incident management system. The incident management system then automatically contact the personnel responsible for a failed IT system or component. That is the full lifecycle of HealOps.
 
 A nice bonus of the above is that, even though a state could not be repaired, it is possible with todays metrics visualization systems, to send useful info along with an alert to an incident management system. This could be:
+
 * A picture of the graph of a failed component.
 * URI's to documentation articles. Advice on how to fix a failed component.
 * URI's to e.g. a system change log, system status websites and so forth.
