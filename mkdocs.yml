@@ -15,8 +15,7 @@ pages:
       - Package management: 'HealOps-Troubleshooting-PackageManagement.md'
   - HealOpsPackages:
     - What?: 'HealOpsPackages-What.md'
-    - Getting started: 'HealOpsPackages-GettingStarted.md'
-    - Coding: 'HealOpsPackages-Developing.md'
+    - Developing a HealOps package: 'HealOpsPackages-Developing.md'
   - Metrics:
     - Round and about: 'Metrics.md'
     - Visualizing: 'Grafana-VisualizingMetrics.md'
