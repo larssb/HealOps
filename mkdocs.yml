@@ -17,6 +17,9 @@ pages:
     - What?: HealOpsPackages-What.md
     - Getting started: HealOpsPackages-GettingStarted.md
     - Coding: HealOpsPackages-Developing.md
+  - Metrics:
+    - Round and about: Metrics.md
+    - Visualizing: Grafana-VisualizingMetrics.md
   - Package Management:
       - Getting ready for managing packets: PackageManagement-Setup.md
       - Every day management: PackageManagement-TheDailyRoutine.md
