@@ -1,5 +1,8 @@
-site_name: HealOps
+markdown_extensions:
+  - toc:
+    permalink: "#"
 repo_url: https://github.com/larssb/HealOps
+site_name: HealOps
 theme: readthedocs
 pages:
   - Welcome: index.md
@@ -9,10 +12,14 @@ pages:
     - HealOps insides: HealOps-ArchitectureAndInnerWorkings.md
     - Troubleshooting:
       - OpenTSDB: HealOps-Troubleshooting-OpenTSDB
+      - Package management: HealOps-Troubleshooting-PackageManagement.md
   - HealOpsPackages:
     - What?: HealOpsPackages-What.md
     - Getting started: HealOpsPackages-GettingStarted.md
     - Coding: HealOpsPackages-Developing.md
+  - Package Management:
+      - Getting ready for managing packets: PackageManagement-Setup.md
+      - Every day management: PackageManagement-TheDailyRoutine.md
   - The project:
     - Who's behind: Who.md
     - Contributing: Contributing.md
