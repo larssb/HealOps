@@ -1,6 +1,6 @@
 markdown_extensions:
   - toc:
-    permalink: "#"
+      permalink: "#"
 repo_url: https://github.com/larssb/HealOps
 site_name: HealOps
 theme: readthedocs
