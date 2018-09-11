@@ -11,7 +11,7 @@ pages:
     - Deploying HealOps: 'HealOps-Deploying.md'
     - An architectural overview: 'HealOps-ArchitectureAndInnerWorkings.md'
     - Troubleshooting:
-      - OpenTSDB: 'HealOps-Troubleshooting-OpenTSDB'
+      - OpenTSDB: 'HealOps-Troubleshooting-OpenTSDB.md'
       - Package management: 'HealOps-Troubleshooting-PackageManagement.md'
   - HealOpsPackages:
     - What?: 'HealOpsPackages-What.md'
