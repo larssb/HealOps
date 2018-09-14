@@ -30,3 +30,9 @@ So figure out which HealOps packages you need, if they aren't available, you can
 * If all went well HealOps and the HealOps packages you specified to the `Install-HealOps` function will now have been installed. Now, you need to do some final customizations of the installed HealOps packages and _maybe_ some of the actual scripts inside the HealOps packages. **_its on the to-do list to make it easier to deploy HealOps. In a way that makes it unnecessary to do additional work after a deploy. It will likely be in the line of some pre-deploy steps. Steps that will likely be a part of builing a HealOps package_**.
 
 See the below video as an example of deploying HealOps.
+
+```
+Register-PSRepository -Name HealOps -SourceLocation https://proget.danskespil.dk/nuget/HealOps/ -PublishLocation https://proget.danskespil.dk/nuget/HealOps/ -ScriptSourceLocation https://proget.danskespil.dk/nuget/HealOps -ScriptPublishLocation https://proget.danskespil.dk/nuget/HealOps -InstallationPolicy Trusted -PackageManagementProvider NuGet
+Install-Script -Name Install-HealOps -Repository HealOps -Force
+Install-HealOps.ps1 -APIKey "API_KEY" -Environment "EnvironmentName" -FeedName HealOps -HealOpsPackages WindowsSystem.HealOpsPackage,Sitecore.HealOpsPackage,IIS.HealOpsPackage -JobType WinScTask -PackageManagementURI https://proget.danskespil.dk -MetricsSystem OpenTSDB -MetricsSystemIP 192.168.49.111 -MetricsSystemPort 4242 -Verbose
+```

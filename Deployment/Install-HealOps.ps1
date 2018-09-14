@@ -1,5 +1,5 @@
 <#PSScriptInfo
-.VERSION 2.1.0
+.VERSION 2.3.0
 .GUID bbf74424-f58d-42d1-9d5a-aeba44ccd545
 .AUTHOR Lars Bengtsson
 .COMPANYNAME
@@ -12,6 +12,7 @@
 .REQUIREDSCRIPTS
 .EXTERNALSCRIPTDEPENDENCIES
 .RELEASENOTES
+    v2.3.0 now also installs the requirements of each installed HealOps package.
 #>
 
 <#
@@ -41,6 +42,8 @@
     The API key to used when communicatnig with the Package Management backend.
 .PARAMETER CheckForUpdatesInterval_Hours
     The interval in hours between checking for updates. Specifying this implicitly also enables the check for update feature.
+.PARAMETER Environment
+    Used to specify the environment property in the HealOps packages installed via this funnction.
 .PARAMETER FeedName
     The name of the feed on the Package Management backend, in which modules used by HealOps are stored.
 .PARAMETER HealOpsPackages
@@ -74,6 +77,9 @@
         [Parameter()]
         [ValidateNotNullOrEmpty()]
         [Int]$CheckForUpdatesInterval_Hours,
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [String]$Environment,
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [String]$FeedName,
@@ -215,7 +221,7 @@
             [String]$extractModulePath
         }
 
-        function Install-AvailableUpdate($PackageManagementURI,$ModuleName,$Version,$FeedName,$extractModulePath) {
+        function Install-AvailableUpdate($PackageManagementURI,$ModuleName,$Version,$FeedName,$ExtractModulePath) {
             # Download the module
             try {
                 Invoke-WebRequest -Uri "$PackageManagementURI/nuget/$FeedName/package/$ModuleName/$Version" -UseBasicParsing -OutFile $PSScriptRoot/Temp/$ModuleName.zip -ErrorAction Stop
@@ -228,13 +234,13 @@
                 # Extract the package
                 try {
                     if(Get-Command -Name Expand-Archive -ErrorAction SilentlyContinue) {
-                        Expand-Archive $PSScriptRoot/Temp/$ModuleName.zip -DestinationPath $extractModulePath -Force -ErrorAction Stop
+                        Expand-Archive $PSScriptRoot/Temp/$ModuleName.zip -DestinationPath $ExtractModulePath -Force -ErrorAction Stop
                     } else {
                         # Add the .NET compression class to the current session
                         Add-Type -Assembly System.IO.Compression.FileSystem
 
                         # Extract the zip file
-                        [System.IO.Compression.ZipFile]::ExtractToDirectory("$PSScriptRoot/Temp/$ModuleName.zip", "$extractModulePath")
+                        [System.IO.Compression.ZipFile]::ExtractToDirectory("$PSScriptRoot/Temp/$ModuleName.zip", "$ExtractModulePath")
                     }
                 } catch {
                    throw "Failed to extract the nuget package. The extraction failed with > $_"
@@ -273,7 +279,7 @@
             if ($null -ne $latestModuleVersion -or $latestModuleVersion.length -ge 1) {
                 Write-Progress -Activity "Installing HealOps" -CurrentOperation "Installing the HealOps module." -Id 1
                 $extractModulePath = Get-ModuleExtractionPath -modulename $HealOpsModuleName -psVersionAbove4 $psVersionAbove4 -Version $latestModuleVersion
-                Install-AvailableUpdate -PackageManagementURI $PackageManagementURI -ModuleName $HealOpsModuleName -Version $latestModuleVersion -FeedName $FeedName -extractModulePath $extractModulePath
+                Install-AvailableUpdate -PackageManagementURI $PackageManagementURI -ModuleName $HealOpsModuleName -Version $latestModuleVersion -FeedName $FeedName -extractModulePath $ExtractModulePath
             }
         } else {
             Write-Verbose -Message "There was no reason to upgrade as the locally installed module > $HealOpsModuleName is either newer or at the same version as the one on the Package Management system."
@@ -315,7 +321,7 @@
                     try {
                         Write-Progress -Activity "Installing HealOps" -CurrentOperation "Installing the HealOps dependency module $requiredModule." -Id 2
                         $extractModulePath = Get-ModuleExtractionPath -modulename $requiredModule.Name -psVersionAbove4 $psVersionAbove4 -Version $latestRequiredModuleVersion
-                        Install-AvailableUpdate -PackageManagementURI $PackageManagementURI -ModuleName $requiredModule.Name -Version $latestRequiredModuleVersion -FeedName $FeedName -extractModulePath $extractModulePath
+                        Install-AvailableUpdate -PackageManagementURI $PackageManagementURI -ModuleName $requiredModule.Name -Version $latestRequiredModuleVersion -FeedName $FeedName -extractModulePath $ExtractModulePath
                     } catch {
                         throw "Failed to install the HealOps required module $requiredModule. It failed with > $_"
                     }
@@ -357,10 +363,11 @@
 
             # Write the HealOps config json file
             try {
-                Set-Content -Path "$HealOpsModuleBase/Artefacts/HealOpsConfig.json" -Value $HealOpsConfig_InJSON -Force -ErrorAction Stop
+                Set-Content -Path "$HealOpsModuleBase/Artefacts/HealOpsConfig.json" -NoNewline -Value $HealOpsConfig_InJSON -Force -ErrorAction Stop
             } catch {
                 throw "Writing the HealOps config json file failed with: $_"
             }
+
             <#
                 - Create privileged user for the HealOps task
             #>
@@ -485,33 +492,81 @@
             # Create credentials object used when registering the scheduled job.
             $credential = new-object -typename System.Management.Automation.PSCredential -argumentlist $HealOpsUsername, $password
 
-            # Install HealOps packages
+            <#
+                - Install HealOps packages
+            #>
             foreach ($HealOpsPackage in $HealOpsPackages) {
                 # Get the latest version of the HealOps package.
                 try {
-                    $latestModuleVersion = Get-LatestModuleVersion -PackageManagementURI $PackageManagementURI -APIKey $APIKey -FeedName $FeedName -ModuleName $HealOpsPackage
+                    $LatestModuleVersion = Get-LatestModuleVersion -PackageManagementURI $PackageManagementURI -APIKey $APIKey -FeedName $FeedName -ModuleName $HealOpsPackage
                 } catch {
                     Write-Output "Could not get the latest version of the HealOps Package $HealOpsPackage. It failed with > $_. This package will not be installed."
                 }
 
-                if ($null -ne $latestModuleVersion -or $latestModuleVersion.length -ge 1) {
+                if ($null -ne $LatestModuleVersion -or $LatestModuleVersion.length -ge 1) {
                     try {
                         Write-Progress -Activity "Installing HealOps" -CurrentOperation "Installing the HealOps package $HealOpsPackage." -Id 4
-                        $extractModulePath = Get-ModuleExtractionPath -modulename $HealOpsPackage -psVersionAbove4 $psVersionAbove4 -Version $latestModuleVersion
-                        Install-AvailableUpdate -PackageManagementURI $PackageManagementURI -ModuleName $HealOpsPackage -Version $latestModuleVersion -FeedName $FeedName -extractModulePath $extractModulePath
+                        $ExtractModulePath = Get-ModuleExtractionPath -modulename $HealOpsPackage -psVersionAbove4 $psVersionAbove4 -Version $LatestModuleVersion
+                        Install-AvailableUpdate -PackageManagementURI $PackageManagementURI -ModuleName $HealOpsPackage -Version $LatestModuleVersion -FeedName $FeedName -ExtractModulePath $ExtractModulePath
                     } catch {
                         Write-Output "Failed to install the HealOps package > $HealOpsPackage. It failed with > $_"
-                        $healOpsPackageInstallationResult = "failed"
+                        $HealOpsPackageInstallationResult = "failed"
                     }
 
-                    if ($null -eq $healOpsPackageInstallationResult) {
+                    if ($null -eq $HealOpsPackageInstallationResult) {
                         <#
-                            - Tasks for running HealOps package tests
+                            - Install the requirements of the HealOps package
+                        #>
+                        # Get the required modules from the newest available HealOps module
+                        $InstalledHealOpsPackageModules = Get-Module -ListAvailable -Name $HealOpsPackage -ErrorAction SilentlyContinue
+                        if($null -ne $InstalledHealOpsPackageModules) {
+                            $RequiredModules = ($InstalledHealOpsPackageModules | Sort-Object -Property Version -Descending)[0].RequiredModules
+                        } else {
+                            Write-Warning "The HealOps package $HealOpsPackage seems not to be installed. The Install-HealOps script cannot continue."
+                        }
+
+                        foreach ($RequiredModule in $RequiredModules) {
+                            # Remove the RequiredModule from the current runspace if it is loaded.
+                            Remove-Module -Name $RequiredModule -Force -ErrorAction SilentlyContinue # Ok to continue silently > if it failed the module was not there to remove and that is what we want.
+
+                            # Get the latest version of the required module.
+                            try {
+                                $LatestRequiredModuleVersion = Get-LatestModuleVersion -PackageManagementURI $PackageManagementURI -APIKey $APIKey -FeedName $FeedName -ModuleName $RequiredModule.Name
+                            } catch {
+                                Write-Warning "Could not get the latest version of the module $($RequiredModule.Name). It failed with > $_"
+                            }
+
+                            # Control the local system to confirm if the module is already installed
+                            $RequiredModuleAlreadyThere = Get-Module -ListAvailable -Name $RequiredModule.Name
+                            if ($null -ne $RequiredModuleAlreadyThere) {
+                                $newestRequiredModuleAlreadyThere = ($RequiredModuleAlreadyThere | Sort-Object -Property Version -Descending)[0]
+                                $reasonToUpdate = $LatestRequiredModuleVersion -gt $newestRequiredModuleAlreadyThere.Version
+                                Write-Verbose -Message "We are here and the result of the compare is > $reasonToUpdate. The versions are: latest on PackManURI > $LatestRequiredModuleVersion and locally > $($newestRequiredModuleAlreadyThere.Version)"
+                            } else {
+                                $reasonToUpdate = $true
+                                Write-Verbose -Message "The required module was not found. Let's install the required module > $RequiredModule"
+                            }
+
+                            if ($reasonToUpdate -eq $true) {
+                                try {
+                                    Write-Progress -Activity "Installing HealOps" -CurrentOperation "Installing the HealOps dependency module $RequiredModule." -Id 2
+                                    $extractModulePath = Get-ModuleExtractionPath -modulename $RequiredModule.Name -psVersionAbove4 $psVersionAbove4 -Version $LatestRequiredModuleVersion
+                                    Install-AvailableUpdate -PackageManagementURI $PackageManagementURI -ModuleName $RequiredModule.Name -Version $LatestRequiredModuleVersion -FeedName $FeedName -extractModulePath $ExtractModulePath
+                                } catch {
+                                    Write-Warning "Failed to install the HealOps required module $RequiredModule. It failed with > $_"
+                                }
+                            } else {
+                                Write-Verbose -Message "There was no reason to upgrade as the locally instaled module > $($RequiredModule.Name) is either newer or at the same version as the one on the Package Management system."
+                            }
+                        }
+
+                        <#
+                            - Tasks for each file in the HealOps package
                                 -- 1 task per *.Tests.ps1 and *.Stats.ps1 file.
                         #>
                         $HealOpsPackageModuleBase = Split-Path -Path (Get-Module -ListAvailable -Name $HealOpsPackage).ModuleBase | Select-Object -Unique
                         if($psVersionAbove4) {
-                            $HealOpsPackageModuleRootBase = "$HealOpsPackageModuleBase/$latestModuleVersion"
+                            $HealOpsPackageModuleRootBase = "$HealOpsPackageModuleBase/$LatestModuleVersion"
                         } else {
                             $HealOpsPackageModuleRootBase = "$HealOpsPackageModuleBase/$HealOpsPackage"
                         }
@@ -520,9 +575,9 @@
                         $Files = Get-ChildItem -Path $HealOpsPackageModuleRootBase/ -Recurse -Force -Include "*.Tests.ps1","*.Stats.ps1"
                         foreach ($File in $Files) {
                             if($psVersionAbove4) {
-                                [Array]$HealOpsPackageConfig = Get-Content -Path $HealOpsPackageModuleRootBase/Config/*.json -Encoding UTF8 | ConvertFrom-Json
+                                [PSCustomObject]$HealOpsPackageConfig = Get-Content -Path $HealOpsPackageModuleRootBase/Config/*.json -Encoding UTF8 | ConvertFrom-Json
                             } else {
-                                [Array]$HealOpsPackageConfig = Get-Content -Path $HealOpsPackageModuleRootBase/Config/*.json | out-string | ConvertFrom-Json
+                                [PSCustomObject]$HealOpsPackageConfig = Get-Content -Path $HealOpsPackageModuleRootBase/Config/*.json | Out-String | ConvertFrom-Json
                             }
 
                             $FileName = Split-Path -Path $File -Leaf
@@ -532,6 +587,27 @@
                             $FileJobInterval = $HealOpsPackageConfig.$fileNoExt.jobInterval
                             Write-Verbose -Message "Creating a job for the file named $fileExt"
                             Write-Verbose -Message "The job repetition interval will be > $FileJobInterval"
+
+                            <#
+                                - Set the environment in the HealOps package config file.
+                            #>
+                            # Set the environment property
+                            if ($null -ne $HealOpsPackageConfig.environment) {
+                                $HealOpsPackageConfig.environment = "$Environment"
+
+                                # Convert it back to JSON
+                                $HealOpsPackageConfig_InJSON = ConvertTo-Json -InputObject $HealOpsPackageConfig -Depth 10
+
+                                # Save the config file to disk
+                                try {
+                                    Set-Content -Path "$HealOpsPackageModuleRootBase/Config/*.json" -Force -NoNewline -Value $HealOpsPackageConfig_InJSON -ErrorAction Stop
+                                } catch {
+                                    throw "Saving the HealOps package config file failed with: $_"
+                                }
+                            } else {
+                                # Warn the executing party that the config file of the HealOps package is wrong.
+                                Write-Warning -Message "The config file of the HealOps package $HealOpsPackage does not have an environment property. Please fix."
+                            }
 
                             ################
                             # JOB CREATION #
