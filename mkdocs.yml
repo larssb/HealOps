@@ -13,15 +13,18 @@ pages:
     - Troubleshooting:
       - OpenTSDB: 'HealOps-Troubleshooting-OpenTSDB.md'
       - Package management: 'HealOps-Troubleshooting-PackageManagement.md'
+      - HealOps and HealOps packages: 'HealOps-Troubleshooting-HealOpsAndPackages.md'
   - HealOpsPackages:
     - What?: 'HealOpsPackages-What.md'
     - Developing a HealOps package: 'HealOpsPackages-Developing.md'
   - Metrics:
     - Round and about: 'Metrics.md'
-    - Visualizing: 'Grafana-VisualizingMetrics.md'
+    - Grafana: 'Grafana-ConfigurationAndSetup.md'
   - Package Management:
       - Getting ready for managing packets: 'PackageManagement-Setup.md'
       - Every day management: 'PackageManagement-TheDailyRoutine.md'
+  - Security:
+      - Security considerations: 'HealOps-Security.md'
   - The project:
     - Who's behind: 'Who.md'
     - Contributing: 'Contributing.md'
