@@ -17,6 +17,8 @@ pages:
   - HealOpsPackages:
     - What?: 'HealOpsPackages-What.md'
     - Developing a HealOps package: 'HealOpsPackages-Developing.md'
+  - Incident management:
+    - Integration: 'IncidentManagement-Integration.md'
   - Metrics:
     - Round and about: 'Metrics.md'
     - Grafana: 'Grafana-ConfigurationAndSetup.md'

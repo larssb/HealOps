@@ -15,19 +15,20 @@ Chunking needs to be enabled in the OpenTSDB config file. i.e.:
 
 2. For the chunking config change to be picked you need to:
     2. Add --config= e.g.:
-        ```
-        /opt/opentsdb/opentsdb-${TSDB_VERSION}/build/tsdb tsd --config=/opt/opentsdb/opentsdb-${TSDB_VERSION}/src/opentsdb.conf --port=4242 --staticroot=/opt/opentsdb/opentsdb-${TSDB_VERSION}/build/staticroot --cachedir=/tmp --auto-metric
-        ```
+
+```bash
+/opt/opentsdb/opentsdb-${TSDB_VERSION}/build/tsdb tsd --config=/opt/opentsdb/opentsdb-${TSDB_VERSION}/src/opentsdb.conf --port=4242 --staticroot=/opt/opentsdb/opentsdb-${TSDB_VERSION}/build/staticroot --cachedir=/tmp --auto-metric
+```
 
 ## Where to get info
 
-* Find the official info [here][http://opentsdb.net/docs/build/html/index.html]{:.no-mark-external}
+* Find the official info [here][http://opentsdb.net/docs/build/html/index.html]
 
 ### Logs
 
 Go to the "Logs" tab in the Web interface. Or view logs directly on the OpenTSDB Srv.
 
-_The logs tab_
+#### Via the logs tab
 
 * Go to the URI of the OpenTSDB web-interface.
 * Click on the "Logs" tab in the top left corner.

@@ -1,4 +1,4 @@
-# What is a HealOpsPackage?
+# A HealOpsPackage
 
 A HealOpsPackage is to HealOps, what a package is to your Node.js project. Equivalent to a module in the Java 9+ world.....and on you go for other programming languages that has a package management system via which you can share collections of code.
 
