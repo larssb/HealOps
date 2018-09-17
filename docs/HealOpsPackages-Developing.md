@@ -1,6 +1,6 @@
 # Developing a HealOps package
 
-    __The easy way to get going__
+## The easy way to get started
 
 1. If `Plaster` isn't already installed on your box then install it: `Install-Module -Name Plaster -Repository PSGallery`
 2. Execute `Invoke-Plaster`. For an example _see the below video, showing the effects of running Invoke-Plaster to create a HealOpsPackage_.
@@ -9,7 +9,7 @@
 
 > The video uses the HealOpsPackage template found in the [PlasterPlethora](https://github.com/larssb/PlasterPlethora) GitHub repository.
 
-    __The cumbersome way__
+## The cumbersome way
 
 If you for some reason (which is hard to fathom), do not want to use the Plaster PowerShell module, you need to follow the below guide to get going.
 

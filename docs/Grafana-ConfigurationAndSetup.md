@@ -1,4 +1,4 @@
-# Grafana. Setup and configuration
+# Grafana - Setup and configuration
 
 ## Visualizing metrics with Grafana
 

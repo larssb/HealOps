@@ -2,7 +2,7 @@
 
 ## PowerShell package management cmdlet errors
 
-    __The Register-PSRepository cmdlet__
+### The Register-PSRepository cmdlet
 
 _Error:_
 > `PackageManagement\Register-PackageSource : SourceLocation 'https://URI/nuget/HealOps' and ScriptSourceLocation 'https://URI/nuget/HealOps' should not be same for URI based repositories.`

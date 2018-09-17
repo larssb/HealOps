@@ -20,7 +20,7 @@ When you have landed on the incident management system you want to use. What is 
 * add an on-call schedule.
 * set system priorities.
 
-## The cheap incident alerting solution (but still worth it :-))
+## The cheap incident alerting solution (but still worth it :-)
 
 If you can't or don't want to pay the price for a professional incident management system you can have the metrics visualization system alert by e-mail, Slack (which you might already be using) or Telegram. Or optionally use the webhook option and then development a receiving system that does xyz to the alert. In order to get your on-call personnel on a raised alert.
 
