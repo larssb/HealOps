@@ -4,7 +4,7 @@ function Repair-EntityState() {
     Basically a wrapper function used to invoke a specific *.Repairs.ps1 file, companying a *.Tests.ps1 file.
 .INPUTS
     [StringTestFilePath. Representing the path to the *.Tests.ps1 file that was executed and by which a failed state was identified.
-    [Hashtable]TestData. Holds data from executing the test/tests in the *.Tests.ps1 file.
+    TestData. Holds data from executing the test/tests in the *.Tests.ps1 file.
 .OUTPUTS
     [Boolean] relative to the result of the attempt to repair the state of "X" IT service/Entity
 .NOTES
@@ -28,7 +28,7 @@ function Repair-EntityState() {
         [String]$TestFilePath,
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
-        [Hashtable]$TestData
+        $TestData
     )
 
     #############
@@ -55,7 +55,6 @@ function Repair-EntityState() {
             $log4netLoggerDebug.debug("Repair-EntityState | The result of the repair is: $RepairResult")
             Write-Verbose -Message "Repair-EntityState | The result of the repair is: $RepairResult"
         } else {
-            # TODO report it, log it == HARDEN
             $log4netLogger.error("Repair-EntityState | The repairs file $RepairsFile could not be found.")
             throw "Repair-EntityState | The repairs file $RepairsFile could not be found.";
         }

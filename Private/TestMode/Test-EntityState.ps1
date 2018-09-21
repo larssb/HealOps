@@ -53,7 +53,6 @@ function Test-EntityState() {
             $log4netLoggerDebug.debug("Test-EntityState | The failuremessage in the Pester output is > $($TestOutput.TestResult.FailureMessage)")
             if ((Get-Variable -Name failedTestResult -ErrorAction SilentlyContinue)) {
                 $TestData = $failedTestResult # Uses the global variable set in the *.Tests.ps1 file to capture a numeric value to report to the reporting backend.
-                $log4netLoggerDebug.debug("Test-EntityState | failedTestResult value > $failedTestResult set in *.Tests.ps1 file > $TestFilePath")
                 Write-Verbose -Message "Test-EntityState | failedTestResult > $failedTestResult"
             } else {
                 $TestData = -2 # Value indicating that the global variable failedTestResult was not set correctly in the *.Tests.ps1 file.
@@ -64,7 +63,6 @@ function Test-EntityState() {
             # Retrieve the passed test value to report to the backend (HealOps requires the value to be numeric)
             if ((Get-Variable -Name passedTestResult -ErrorAction SilentlyContinue)) {
                 $TestData = $passedTestResult # Uses the global variable set in the *.Tests.ps1 file to capture a numeric value to report to the reporting backend.
-                $log4netLoggerDebug.debug("Test-EntityState | passedTestResult value > $passedTestResult set in *.Tests.ps1 file > $TestFilePath")
                 Write-Verbose -Message "Test-EntityState | passedTestResult > $passedTestResult"
             } else {
                 $TestData = -1 # Value indicating that the global variable passedTestResult was not set correctly in the *.Tests.ps1 file.

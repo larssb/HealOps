@@ -16,10 +16,10 @@ function Get-HealOpsPackageConfig() {
 #>
 
     # Define parameters
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName="Default")]
     [OutputType([System.Array])]
     param(
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The base path of the HealOps package PowerShell module.")]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [String]$ModuleBase
     )
@@ -33,7 +33,7 @@ function Get-HealOpsPackageConfig() {
             if($psVersionAbove4) {
                 [Array]$HealOpsPackageConfig = Get-Content -Path $ModuleBase/Config/*.json -Encoding UTF8 -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
             } else {
-                [Array]$HealOpsPackageConfig = Get-Content -Path $ModuleBase/Config/*.json -ErrorAction Stop | out-string -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+                [Array]$HealOpsPackageConfig = Get-Content -Path $ModuleBase/Config/*.json -ErrorAction Stop | Out-String -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
             }
         } catch {
             $log4netLogger.error("Get-HealOpsPackageConfig > Getting the config file failed with > $_")
@@ -41,7 +41,7 @@ function Get-HealOpsPackageConfig() {
 
         # Control that HealOpsPackageConfig contains elements
         if (-not $HealOpsPackageConfig.Count -ge 1) {
-            # Return empty list.....you know > to be nice
+            # Return an empty list instead of throwing.
             [Array]$HealOpsPackageConfig = @()
         }
     }

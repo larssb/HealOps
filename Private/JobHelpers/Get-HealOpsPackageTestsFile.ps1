@@ -59,7 +59,7 @@ function Get-HealOpsPackageTestsFile() {
 
         # Control that TestsFiles contains elements
         if (-not $TestsFiles.Count -ge 1) {
-            # Return empty list.....you know > to be nice
+            # Return an empty list instead of throwing.
             [Array]$TestsFiles = @()
         }
     }

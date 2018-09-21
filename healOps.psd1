@@ -3,7 +3,7 @@
     RootModule = 'HealOps.psm1'
 
     # Version number of this module.
-    ModuleVersion = '1.1.0'
+    ModuleVersion = '1.1.1'
 
     # ID used to uniquely identify this module
     GUID = 'a7de9802-3086-4612-a31f-8da988c2eca0'
@@ -68,7 +68,7 @@
             # IconUri = ''
 
             # ReleaseNotes of this module
-            # ReleaseNotes = ''
+            ReleaseNotes = 'Fixed issue in a private function. The Repair-EntityState function. It had the wrong type on the TestData parameter.'
 
             # Flag to indicate whether the module requires explicit user acceptance for install/update/save
             RequireLicenseAcceptance = $False

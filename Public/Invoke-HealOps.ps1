@@ -135,7 +135,7 @@
                 if ($psVersionAbove4) {
                     [PSCustomObject]$HealOpsConfig = $HealOpsConfigText | ConvertFrom-Json
                 } else {
-                    [PSCustomObject]$HealOpsConfig = $HealOpsConfigText | out-string | ConvertFrom-Json
+                    [PSCustomObject]$HealOpsConfig = $HealOpsConfigText | Out-String | ConvertFrom-Json
                 }
 
                 # Mark semaphore signaling that we are a' okay! to run a self-update cycle.

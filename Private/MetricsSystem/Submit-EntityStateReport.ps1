@@ -150,7 +150,7 @@ function Submit-EntityStateReport() {
             # Determine the reporting backend system to use & push the report
             switch ($MetricsSystem) {
                 { $_ -eq "OpenTSDB" } {
-                    Import-Module -name $PSScriptRoot/OpenTSDB/OpenTSDB -Force
+                    Import-Module -name $PSScriptRoot/OpenTSDB/OpenTSDB
                     $Result = Write-MetricToOpenTSDB -Config $Config -Metric $Metric -TagPairs $tags -MetricValue $MetricValue -Verbose
                 }
                 Default {

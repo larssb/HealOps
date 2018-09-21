@@ -21,13 +21,13 @@ function Get-TestsFileBaseName() {
 #>
 
     # Define parameters
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName="Default")]
     [OutputType([String])]
     param(
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The HealOps package config file. Represented as an Array.")]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [System.Array]$HealOpsPackageConfig,
-        [Parameter(Mandatory=$true, ParameterSetName="Default", HelpMessage="The *.Tests.ps1 file..")]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [System.IO.FileSystemInfo]$TestsFile
     )
@@ -41,14 +41,14 @@ function Get-TestsFileBaseName() {
         $TestsFileName = Split-Path -Path $TestsFile -Leaf
 
         # Get the filetype extension
-        $fileExt = [System.IO.Path]::GetExtension($TestsFileName)
+        $FileExt = [System.IO.Path]::GetExtension($TestsFileName)
 
         # Now remove the extension. We don't want that in our job name. And the extension is also not in the HealOps package json file.
         # Which is important when looking up the jobInterval in the HealOps package config file.
-        $fileNoExt = $TestsFileName -replace $fileExt,""
+        $FileNoExt = $TestsFileName -replace $FileExt,""
     }
     End {
         # Return
-        $fileNoExt
+        $FileNoExt
     }
 }
