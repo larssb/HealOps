@@ -1,6 +1,7 @@
 #####################
 # Folders to ignore #
 BuildOutput
+src/obj
 
 ####################
 # Files to ignore  #
@@ -8,3 +9,6 @@ BuildOutput
 *.txt
 *.log
 *.zip
+*.DS_Store
+# We never want .dll's as we should build properly to get those.
+*.dll

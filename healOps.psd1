@@ -3,7 +3,7 @@
     RootModule = 'HealOps.psm1'
 
     # Version number of this module.
-    ModuleVersion = '1.1.1'
+    ModuleVersion = '1.2.1'
 
     # ID used to uniquely identify this module
     GUID = 'a7de9802-3086-4612-a31f-8da988c2eca0'
@@ -18,13 +18,19 @@
     Copyright = '(C) Lars S. Bengtsson (https://github.com/larssb), licensed under the MIT License.'
 
     # Description of the functionality provided by this module
-    Description = 'A monitoring and healing framework. It uses Pester tests (TDD) to determine the state of an IT system entity. Then, if the entity is in a faulted state HealOps will try to repair it. All along HealOps reports metrics to a backend report system and optionally status can be sent to stakeholders. In order to e.g. trigger alarms and get on-call personnel on an issue that could not be repaired.'
+    Description = 'HealOps is a state monitoring and broken state repairing framework. Use it for all your operation validation needs. Automatically monitor and
+    repair the state of IT systems and their components. Systems and components can be monitored by writing Pester tests that acts as the state determining engine.
+    Regular PowerShell scripts are used for repairing a broken state of a system or component. Furthermore, HealOps can also be used to collect stats.
+    This also happens via PowerShell scripts.'
 
     # Modules that must be imported into the global environment prior to importing this module
     RequiredModules = @(
         @{ModuleName = 'Pester'; ModuleVersion = '4.1.0'; },
         @{ModuleName = 'PowerShellTooling'; ModuleVersion = '1.0.0'; }
     )
+
+    # Modules to import as nested modules of the module specified in RootModule/ModuleToProcess
+    NestedModules = @('bin\HealOps.dll')
 
     # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
     FunctionsToExport = @(
@@ -68,7 +74,7 @@
             # IconUri = ''
 
             # ReleaseNotes of this module
-            ReleaseNotes = 'Fixed issue in a private function. The Repair-EntityState function. It had the wrong type on the TestData parameter.'
+            ReleaseNotes = 'Making it possible to validate config files needed with HealOps. Via a JSONSchema and a validator function.'
 
             # Flag to indicate whether the module requires explicit user acceptance for install/update/save
             RequireLicenseAcceptance = $False
