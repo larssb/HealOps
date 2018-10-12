@@ -53,6 +53,9 @@ task Build {
     if($runmode -eq $true) {
         Write-Build Green "The build completed and its output can be found in: $buildOutputRoot"
     }
+
+    # Update the manifest build
+
 }
 
 task Publish {

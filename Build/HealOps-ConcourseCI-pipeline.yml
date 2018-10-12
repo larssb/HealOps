@@ -1,0 +1,59 @@
+#resource_types:
+#- name: telegram-notification
+#  type: docker-image
+#  source:
+#    repository: w32blaster/concourse-telegram-notifier
+#    tag: latest
+
+resources:
+#- name: status-message
+#  type: telegram-notification
+#  source:
+#    bot_token: ((tgram_token))
+- name: repo
+  type: git
+  source:
+    branch: develop
+    password: ((qgit_pass))
+    uri: https://bengtssondd.it/git/healops.git
+    username: qgit
+- name: version
+  type: semver
+  source:
+    branch: version
+    driver: git
+    file: version
+    initial_version: 1.2.1
+    password: ((qgit_pass))
+    uri: https://bengtssondd.it/git/healops.git
+    username: qgit
+
+jobs:
+- name: HealOps
+  plan:
+  - get: version
+    params: {bump: minor}
+  - get: repo
+    trigger: true
+  - task: build-HealOps
+    config:
+      platform: linux
+      image_resource:
+        source:
+          repository: larssb/healopsci
+          tag: 1.0.0
+        type: docker-image
+      inputs:
+        - name: repo
+        - name: version
+      outputs:
+        - name: healops-build
+      run:
+        path: pwsh
+        args: ["-c Invoke-Build -Task Build, RunAllTests -File repo/Build/HealOps.Build.ps1"]
+  - put: version
+    params: {file: version/version}
+#  - put: status-message
+#    params:
+#      chat_id: ""
+#      text: "HealOps was was build > [The build number is $BUILD_NAME]."
