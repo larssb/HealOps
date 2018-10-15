@@ -13,7 +13,7 @@ resources:
 - name: repo
   type: git
   source:
-    branch: develop
+    branch: BuildHealOps
     password: ((qgit_pass))
     uri: https://bengtssondd.it/git/healops.git
     username: qgit
@@ -50,7 +50,9 @@ jobs:
         - name: healops-build
       run:
         path: pwsh
-        args: ["-c Invoke-Build -Task Build, RunAllTests -File repo/Build/HealOps.Build.ps1"]
+        #args: ['-NoExit', '-Interactive', '-Command', '{ Invoke-Build -Task Build, RunAllTests -File repo/Build/HealOps.Build.ps1 }']
+        args: ['-Command', "& { Invoke-Build -Task Build, RunAllTests -File repo/Build/HealOps.Build.ps1 }"]
+        #args: ['-Interactive', '-Command', "& { write-host 'jaaa daaaa' }"]
   - put: version
     params: {file: version/version}
 #  - put: status-message

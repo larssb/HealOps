@@ -1,0 +1,52 @@
+version: '3.2'
+
+services:
+  concourse-db:
+    image: postgres:10.5
+    environment:
+      POSTGRES_DB: concourse
+      POSTGRES_USER: concourse
+      POSTGRES_PASSWORD: klamhuggerOeje44
+      PGDATA: /database
+    networks:
+      - concourse-network
+    volumes:
+      - type: volume
+        source: concourse-postgres
+        target: /var/lib/postgresql/data
+
+  concourse-web:
+    image: concourse/concourse:4.2.1
+    command: web
+    depends_on: [concourse-db]
+    networks:
+      - concourse-network
+    ports: ["9090:8080"]
+    volumes: ["./keys/web:/concourse-keys"]
+    restart: unless-stopped # required so that it retries until concourse-db comes up
+    environment:
+      CONCOURSE_ADD_LOCAL_USER: concourse:$$2b$$10$$gIhCLxqNqzlT8.8W9a25I.PUAxygTgUlq2d90Zsc.oJppgT9BsFrq
+      CONCOURSE_MAIN_TEAM_ALLOW_ALL_USERS: 'true'
+      CONCOURSE_EXTERNAL_URL: http://localhost:9090
+      CONCOURSE_POSTGRES_HOST: concourse-db
+      CONCOURSE_POSTGRES_USER: concourse
+      CONCOURSE_POSTGRES_PASSWORD: klamhuggerOeje44
+      CONCOURSE_POSTGRES_DATABASE: concourse
+
+  concourse-worker:
+    image: concourse/concourse:4.2.1
+    privileged: true
+    depends_on: [concourse-web]
+    command: worker
+    networks:
+      - concourse-network
+    volumes: ["./keys/worker:/concourse-keys"]
+    environment:
+      CONCOURSE_TSA_HOST: concourse-web:2222
+      CONCOURSE_GARDEN_NETWORK:
+
+volumes:
+  concourse-postgres:
+
+networks:
+  concourse-network:

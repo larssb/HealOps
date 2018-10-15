@@ -2,6 +2,7 @@
 # Folders to ignore #
 BuildOutput
 src/obj
+build/Setup/keys
 
 ####################
 # Files to ignore  #
