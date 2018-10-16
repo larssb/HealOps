@@ -50,9 +50,7 @@ jobs:
         - name: healops-build
       run:
         path: pwsh
-        #args: ['-NoExit', '-Interactive', '-Command', '{ Invoke-Build -Task Build, RunAllTests -File repo/Build/HealOps.Build.ps1 }']
         args: ['-Command', "& { Invoke-Build -Task Build, RunAllTests -File repo/Build/HealOps.Build.ps1 }"]
-        #args: ['-Interactive', '-Command', "& { write-host 'jaaa daaaa' }"]
   - put: version
     params: {file: version/version}
 #  - put: status-message
