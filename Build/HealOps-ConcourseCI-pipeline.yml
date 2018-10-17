@@ -51,9 +51,11 @@ jobs:
       run:
         path: pwsh
         args: ['-Command', "& { Invoke-Build -Task Build, RunAllTests -File repo/Build/HealOps.Build.ps1 }"]
-  - put: version
-    params: {file: version/version}
-  - put: status-message
-    params:
-      chat_id: "46668144"
-      text: "HealOps was was build > [The build number is $BUILD_NAME]."
+    on_success:
+      put: version
+      params: {file: version/version}
+      on_success:
+        put: status-message
+        params:
+          chat_id: "46668144"
+          text: "HealOps was build > [The build number is $BUILD_NAME]."

@@ -68,7 +68,7 @@ task RunAllTests {
     Import-Module -Name $PSScriptRoot/../Tests/Pester.Tests.Settings.psm1 -Force
 
     # Execute the tests
-    Invoke-Pester $PSScriptRoot/../Tests/ -EnableExit -Show Failed -Strict
+    Invoke-Pester $PSScriptRoot/../Tests/CentralBuildLevel -EnableExit -Show Failed -Strict
 }
 
 task RunConfigurationManagementTests {
