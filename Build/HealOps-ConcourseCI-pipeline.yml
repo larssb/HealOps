@@ -1,15 +1,15 @@
-#resource_types:
-#- name: telegram-notification
-#  type: docker-image
-#  source:
-#    repository: w32blaster/concourse-telegram-notifier
-#    tag: latest
+resource_types:
+- name: telegram-notification
+  type: docker-image
+  source:
+    repository: w32blaster/concourse-telegram-notifier
+    tag: latest
 
 resources:
-#- name: status-message
-#  type: telegram-notification
-#  source:
-#    bot_token: ((tgram_token))
+- name: status-message
+  type: telegram-notification
+  source:
+    bot_token: ((tgram_token))
 - name: repo
   type: git
   source:
@@ -53,7 +53,7 @@ jobs:
         args: ['-Command', "& { Invoke-Build -Task Build, RunAllTests -File repo/Build/HealOps.Build.ps1 }"]
   - put: version
     params: {file: version/version}
-#  - put: status-message
-#    params:
-#      chat_id: ""
-#      text: "HealOps was was build > [The build number is $BUILD_NAME]."
+  - put: status-message
+    params:
+      chat_id: "46668144"
+      text: "HealOps was was build > [The build number is $BUILD_NAME]."
