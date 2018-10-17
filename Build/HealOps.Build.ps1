@@ -53,9 +53,6 @@ task Build {
     if($runmode -eq $true) {
         Write-Build Green "The build completed and its output can be found in: $buildOutputRoot"
     }
-
-    # Update the manifest build
-
 }
 
 task Publish {
@@ -68,7 +65,11 @@ task RunAllTests {
     Import-Module -Name $PSScriptRoot/../Tests/Pester.Tests.Settings.psm1 -Force
 
     # Execute the tests
-    Invoke-Pester $PSScriptRoot/../Tests/CentralBuildLevel -EnableExit -Show Failed -Strict
+    $FailedTests = Invoke-Pester $PSScriptRoot/../Tests/CentralBuildLevel -EnableExit -Show Failed -Strict
+
+    if ($FailedTests) {
+        throw "Pester tests failed. There was this number > $FailedTests < of failed Pester tests."
+    }
 }
 
 task RunConfigurationManagementTests {
