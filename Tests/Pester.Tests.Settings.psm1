@@ -1,6 +1,6 @@
-###########################
-# Set variables to export #
-###########################
+#############################
+# Folder and path logistics #
+#############################
 # Temp. helper variable
 $ModulePath = "$PSScriptRoot/.."
 
@@ -17,6 +17,33 @@ if($PSVersionTable.PSVersion.ToString() -gt 4) {
 } else {
     [Boolean]$global:PSVersionAbove4 = $false
 }
+
+##########################################################################
+# Modules that has to be loaded here for the module being tested to work #
+##########################################################################
+<#
+    - Configure logging
+#>
+# Define log4net variables
+$log4NetConfigFile = "$($Settings.ModuleRoot)/Artefacts/HealOps.Log4Net.xml"
+$LogFilesPath = "$($Settings.ModuleRoot)/Artefacts"
+
+# Initiate the log4net logger
+if($PSCmdlet.ParameterSetName -eq "Tests") {
+    $logfileName_GeneratedPart = (Split-Path -Path $TestsFileName -Leaf) -replace ".ps1",""
+} elseif ($PSCmdlet.ParameterSetName -eq "Stats") {
+    $logfileName_GeneratedPart = (Split-Path -Path $StatsFileName -Leaf) -replace ".ps1",""
+} else {
+    $logfileName_GeneratedPart = "ForceUpdate"
+}
+$global:log4netLogger = initialize-log4net -log4NetConfigFile $log4NetConfigFile -LogFilesPath $LogFilesPath -logfileName "HealOps.$logfileName_GeneratedPart" -loggerName "HealOps_Error"
+$global:log4netLoggerDebug = initialize-log4net -log4NetConfigFile $log4NetConfigFile -LogFilesPath $LogFilesPath -logfileName "HealOps.$logfileName_GeneratedPart" -loggerName "HealOps_Debug"
+
+# Make the log more viewable.
+$log4netLoggerDebug.debug("--------------------------------------------------")
+$log4netLoggerDebug.debug("------------- HealOps logging started ------------")
+$log4netLoggerDebug.debug("------------- $((get-date).ToString()) -----------")
+$log4netLoggerDebug.debug("--------------------------------------------------")
 
 ############################
 # Find functions to export #
