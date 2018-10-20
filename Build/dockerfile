@@ -5,7 +5,7 @@ LABEL author="https://github.com/larssb"
 SHELL [ "pwsh", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';" ]
 
 # Copy the PowerShellTooling module into the container
-COPY ./PowerShellTooling /usr/local/share/powershell/Modules/PowerShellTooling/
+COPY ./PowerShellTooling /usr/local/share/powershell/Modules/PowerShellTooling/1.0.1/
 
 # Install modules required for building HealOps. Uses force to avoid "the untrusted prompt to stop us"
 RUN Install-Module -Name Pester -Force; Install-Module -Name InvokeBuild -Force
