@@ -35,7 +35,7 @@ function Sync-HealOpsConfig() {
     #############
     Begin {
         if ($null -eq $CurrentConfig.psobject) {
-            $log4netLogger.error("Sync-HealOpsConfig > The psobject property is not on the currentConfig object. Pass a valid object!")
+            #$log4netLogger.error("Sync-HealOpsConfig > The psobject property is not on the currentConfig object. Pass a valid object!")
             throw "Sync-HealOpsConfig > The psobject property is not on the currentConfig object. Pass a valid object!"
         }
 
@@ -53,7 +53,7 @@ function Sync-HealOpsConfig() {
         $ErrorActionPreference = "Stop"
     }
     Process {
-        $log4netLoggerDebug.Debug("ConfigChanges holds > $ConfigChanges")
+        #$log4netLoggerDebug.Debug("ConfigChanges holds > $ConfigChanges")
 
         foreach ($item in $configChanges) {
             switch ($item) {
@@ -74,7 +74,7 @@ function Sync-HealOpsConfig() {
                             $CurrentConfig.psobject.Properties.Remove($intervalValue)
                         } catch {
                             $message = "Sync-HealOpsConfig | Failed to remove the property named > $intervalValue. Failed with > $_"
-                            $log4netLogger.error("$message")
+                            #$log4netLogger.error("$message")
                             throw "$message"
                         }
 
@@ -83,7 +83,7 @@ function Sync-HealOpsConfig() {
                             Add-Member -InputObject $currentConfig -MemberType NoteProperty -Name "$checkForUpdatesInterval" -Value $checkForUpdatesIntervalDefaultValue -TypeName "System.String" -ErrorAction Stop
                         } catch {
                             $message = "$addMemberFailureMessage $_"
-                            $log4netLogger.error("$message")
+                            #$log4netLogger.error("$message")
                             throw "$message"
                         }
                     }
@@ -116,7 +116,7 @@ function Sync-HealOpsConfig() {
                             Add-Member -InputObject $CurrentConfig -MemberType NoteProperty -Name "$JobType" -Value $JobTypeValue -TypeName "System.String" -ErrorAction Stop
                         } catch {
                             $message = "$addMemberFailureMessage $_"
-                            $log4netLogger.error("$message")
+                            #$log4netLogger.error("$message")
                             throw "$message"
                         }
                     }
@@ -136,13 +136,13 @@ function Sync-HealOpsConfig() {
                             Add-Member -InputObject $currentConfig -MemberType NoteProperty -Name "$UpdateMode" -Value "HealOpsPackages" -TypeName "System.String" -ErrorAction Stop
                         } catch {
                             $message = "$addMemberFailureMessage $_"
-                            $log4netLogger.error("$message")
+                            #$log4netLogger.error("$message")
                             throw "$message"
                         }
                     }
                 }
                 Default {
-                    $log4netLoggerDebug.debug("Sync-HealOpsConfig | The item > $item, in the configChanges Array did not match any of the options.")
+                    #$log4netLoggerDebug.debug("Sync-HealOpsConfig | The item > $item, in the configChanges Array did not match any of the options.")
                     Write-Verbose -Message "Sync-HealOpsConfig | The item > $item, in the configChanges Array did not match any of the options."
                 }
             }
