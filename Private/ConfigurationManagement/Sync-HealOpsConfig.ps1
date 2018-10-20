@@ -23,7 +23,7 @@ function Sync-HealOpsConfig() {
     [OutputType([PSCustomObject])]
     Param(
         [Parameter(Mandatory)]
-        [ValidateScript({$_.Count -ge 1})]
+        [ValidateNotNullOrEmpty()]
         [System.Array]$ConfigChanges,
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
@@ -35,8 +35,8 @@ function Sync-HealOpsConfig() {
     #############
     Begin {
         if ($null -eq $CurrentConfig.psobject) {
-            $log4netLogger.error("Sync-HealOpsConfig > The psobject property is not on the currentConfig object. Pass a valid object passed!")
-            throw "Sync-HealOpsConfig > The psobject property is not on the currentConfig object. Pass a valid object passed!"
+            $log4netLogger.error("Sync-HealOpsConfig > The psobject property is not on the currentConfig object. Pass a valid object!")
+            throw "Sync-HealOpsConfig > The psobject property is not on the currentConfig object. Pass a valid object!"
         }
 
         <#
