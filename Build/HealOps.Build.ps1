@@ -56,6 +56,12 @@ task Build {
 }
 
 task Publish {
+    # Get the version set by the semver ConcourseCI resource.
+    [String]$Version = Get-Content -Path /version
+
+    # Update the version in the manifest
+    Update-ModuleManifest -Path /BuildOutput/HealOps/HealOps.psd1 -ModuleVersion $Version
+
     # Publish the module
     Publish-Module -Name $buildOutputRoot -Repository HealOps -NuGetApiKey "" -ErrorAction Stop
 }
@@ -65,11 +71,10 @@ task RunAllTests {
     Import-Module -Name $PSScriptRoot/../Tests/Pester.Tests.Settings.psm1 -Force
 
     # Execute the tests
-    $FailedTests = Invoke-Pester $PSScriptRoot/../Tests/CentralBuildLevel -EnableExit -Show Failed -Strict
+    $PesterRunResult = Invoke-Pester $PSScriptRoot/../Tests/CentralBuildLevel -PassThru -Show Failed -Strict
 
-    if ($FailedTests) {
-        throw "Pester tests failed. There was this number > $FailedTests < of failed Pester tests."
-    }
+    # Evaluate the result of running the tests.
+    Assert ( $PesterRunResult.FailedCount -eq 0 ) "All tests should succeed. There was this number > $($PesterRunResult.FailedCount) < of failed Pester tests."
 }
 
 task RunConfigurationManagementTests {
