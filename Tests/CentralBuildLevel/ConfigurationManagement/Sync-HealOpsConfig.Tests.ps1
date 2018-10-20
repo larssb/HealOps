@@ -20,7 +20,7 @@ if($PSVersionAbove4) {
 }
 
 # Compare the two configs. Their properties (this is what Compare-HealOpsConfig compares on).
-[PSCustomObject]$ConfigComparisonResult = Compare-HealOpsConfig -CurrentConfig $HealOpsConfig_Current -UpdatedConfig $HealOpsConfig_Updated
+[System.Array]$ConfigComparisonResult = Compare-HealOpsConfig -CurrentConfig $HealOpsConfig_Current -UpdatedConfig $HealOpsConfig_Updated
 
 #########
 # Tests #
@@ -36,7 +36,7 @@ Describe "Sync-HealOpsConfig" {
     }
 
     <#
-        Tests on the checkForUpdates property.
+        Tests on the checkForUpdates property. To verify, to a certain extend that a proper HealOpsConfig object was returned.
     #>
     It "The CheckForUpdates property is set" {
         $SyncedConfig.checkForUpdates | Should -Not -BeNullOrEmpty
