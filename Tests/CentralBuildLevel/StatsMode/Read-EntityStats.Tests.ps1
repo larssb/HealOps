@@ -1,12 +1,12 @@
 # Define variables
-$ModuleName = $($Settings.moduleName)
-$ModuleRoot = $($Settings.moduleRoot)
+$ModuleName = $($Settings.ModuleName)
+$ModuleRoot = $($Settings.ModuleRoot)
 
 # Tests
 Describe "Read-EntityStats" {
 
     It "Executes cleanly" {
-        { [PSCustomObject]$global:Stats = Read-EntityStats -StatsFilePath $PSScriptRoot/Read-EntityStats.Helper.ps1 } | Should Not Throw
+        { [PSCustomObject]$Global:Stats = Read-EntityStats -StatsFilePath $PSScriptRoot/Read-EntityStats.Helper.ps1 } | Should Not Throw
     }
 
     It "Does not return $null" {

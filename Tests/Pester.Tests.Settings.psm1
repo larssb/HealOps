@@ -13,9 +13,9 @@ $Settings = @{
 
 # PowerShell below 5 is not module versioning compatible. Reflect this.
 if($PSVersionTable.PSVersion.ToString() -gt 4) {
-    [Boolean]$global:PSVersionAbove4 = $true
+    [Boolean]$PSVersionAbove4 = $true
 } else {
-    [Boolean]$global:PSVersionAbove4 = $false
+    [Boolean]$PSVersionAbove4 = $false
 }
 
 ##########################################################################
@@ -44,6 +44,11 @@ $log4netLoggerDebug.debug("--------------------------------------------------")
 $log4netLoggerDebug.debug("------------- HealOps logging started ------------")
 $log4netLoggerDebug.debug("------------- $((get-date).ToString()) -----------")
 $log4netLoggerDebug.debug("--------------------------------------------------")
+
+<#
+    - Metric object class
+#>
+. $($Settings.ModuleRoot)/Private/MetricsSystem/MetricItem.Class.ps1
 
 ############################
 # Find functions to export #
@@ -82,4 +87,4 @@ $Functions = $PublicFunctions += $PrivateFunctions
 ##########
 # Export #
 ##########
-Export-ModuleMember -Variable Settings -Function $Functions
+Export-ModuleMember -Variable PSVersionAbove4,Settings -Function $Functions

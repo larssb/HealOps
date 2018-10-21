@@ -1,6 +1,6 @@
 # Define variables
-$ModuleName = $($Settings.moduleName)
-$ModuleRoot = $($Settings.moduleRoot)
+$ModuleName = $($Settings.ModuleName)
+$ModuleRoot = $($Settings.ModuleRoot)
 
 ########
 # PREP #
@@ -43,6 +43,6 @@ Describe "Sync-HealOpsConfig" {
     }
 
     It "The CheckForUpdates should be either true or false" {
-        $SyncedConfig.checkForUpdates | Should -BeOfType [bool]
+        $SyncedConfig.checkForUpdates | Should -MatchExactly "True" #-BeOfType [bool]
     }
 }

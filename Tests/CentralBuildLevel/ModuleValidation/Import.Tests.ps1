@@ -1,6 +1,6 @@
 # Define variables
-$moduleName = $($Settings.moduleName)
-$moduleRoot = $($Settings.moduleRoot)
+$ModuleName = $($Settings.ModuleName)
+$ModuleRoot = $($Settings.ModuleRoot)
 
 # Tests
 Describe "Module '$moduleName' can import cleanly" {
@@ -9,6 +9,6 @@ Describe "Module '$moduleName' can import cleanly" {
     #>
     It "Module '$moduleName' can import cleanly" {
         # Assertion
-        { Import-Module -Name $moduleRoot -force -ErrorAction Stop } | Should Not Throw
+        { Import-Module -Name $ModuleRoot -Force -Scope Local -ErrorAction Stop } | Should Not Throw
     }
 }
