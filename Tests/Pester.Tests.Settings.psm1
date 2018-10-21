@@ -2,12 +2,14 @@
 # Folder and path logistics #
 #############################
 # Temp. helper variable
-$ModulePath = "$PSScriptRoot/.."
+$Src_ModulePath = "$PSScriptRoot/.."
+$ModuleName = Get-Item $Src_ModulePath/*.psd1 | Where-Object { $null -ne (Test-ModuleManifest -Path $_ -ErrorAction SilentlyContinue) } | Select-Object -First 1 | Foreach-Object BaseName
+$Build_ModulePath = "$PSScriptRoot/../Build/BuildOutput/$ModuleName"
 
 [System.Diagnostics.CodeAnalysis.SuppressMessage('PSUseDeclaredVarsMoreThanAssigments', '')]
 $Settings = @{
-    ModuleName = Get-Item $ModulePath/*.psd1 | Where-Object { $null -ne (Test-ModuleManifest -Path $_ -ErrorAction SilentlyContinue) } | Select-Object -First 1 | Foreach-Object BaseName
-    ModuleRoot = Resolve-Path $ModulePath
+    ModuleName = $ModuleName
+    ModuleRoot = Resolve-Path $Build_ModulePath
     PesterSettingsModuleName = "Pester.Tests.Settings"
 }
 
