@@ -12,16 +12,16 @@
 #>
 $ModuleRoot = "$BuildRoot/../"
 $ModuleName = (Get-Item -Path $ModuleRoot* -Include *.psm1).BaseName
-$buildOutputRoot = "$BuildRoot/BuildOutput/$ModuleName"
+$BuildOutputRoot = "$BuildRoot/BuildOutput/$ModuleName"
 
 # Handle the buildroot folder
-if(-not (Test-Path -Path $buildOutputRoot)) {
+if(-not (Test-Path -Path $BuildOutputRoot)) {
     # Create the dir
-    New-Item -Path $buildOutputRoot -ItemType Directory | Out-Null
+    New-Item -Path $BuildOutputRoot -ItemType Directory | Out-Null
 } else {
     # clean the dir
     try {
-        Remove-Item -Path $buildOutputRoot -Recurse -Force
+        Remove-Item -Path $BuildOutputRoot -Recurse -Force
     } catch {
         $_
     }
@@ -38,20 +38,25 @@ $runmode = [Environment]::UserInteractive
 #>
 $folderToInclude = @('Artefacts','Private','Public')
 task Build {
-    # Copy folders to buildOutputRoot
+    # Copy folders to BuildOutputRoot
     ForEach ($folder in $folderToInclude) {
         Write-Verbose "Folder info: $ModuleRoot$folder"
-        Copy-item -Recurse -Path $ModuleRoot$folder -Destination $buildOutputRoot/$folder
+        Copy-item -Recurse -Path $ModuleRoot$folder -Destination $BuildOutputRoot/$folder
     }
 
     # Copy relevant files from the module root
-    Get-ChildItem -Path $ModuleRoot\* -File -Exclude "*.gitignore","mkdocs.yml" | Copy-Item -Destination $buildOutputRoot
+    Get-ChildItem -Path $ModuleRoot\* -File -Exclude "*.gitignore","mkdocs.yml" | Copy-Item -Destination $BuildOutputRoot
+
+    # Compile the HealOps dll
+    Push-Location -Path $ModuleRoot/src -StackName "Build"
+    dotnet build --output $BuildOutputRoot/bin
+    Pop-Location -StackName "Build"
 
     <#
         - Give build information on where to find the cooked package
     #>
     if($runmode -eq $true) {
-        Write-Build Green "The build completed and its output can be found in: $buildOutputRoot"
+        Write-Build Green "The build completed and its output can be found in: $BuildOutputRoot"
     }
 }
 
@@ -63,7 +68,7 @@ task Publish {
     Update-ModuleManifest -Path /BuildOutput/HealOps/HealOps.psd1 -ModuleVersion $Version
 
     # Publish the module
-    Publish-Module -Name $buildOutputRoot -Repository HealOps -NuGetApiKey "" -ErrorAction Stop
+    Publish-Module -Name $BuildOutputRoot -Repository HealOps -NuGetApiKey "" -ErrorAction Stop
 }
 
 task RunAllTests {

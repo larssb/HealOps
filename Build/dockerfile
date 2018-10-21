@@ -1,5 +1,8 @@
-FROM mcr.microsoft.com/powershell:6.1.0-ubuntu-18.04
+FROM microsoft/dotnet:2.1.403-sdk-bionic
 LABEL author="https://github.com/larssb"
+
+# Install PowerShell
+COPY --from=mcr.microsoft.com/powershell:6.1.0-ubuntu-18.04 / /
 
 # Change the default shell to PowerShell
 SHELL [ "pwsh", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';" ]
