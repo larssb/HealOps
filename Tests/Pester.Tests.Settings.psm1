@@ -48,7 +48,7 @@ $log4netLoggerDebug.debug("--------------------------------------------------")
 <#
     - Metric object class
 #>
-. $($Settings.ModuleRoot)/Private/MetricsSystem/MetricItem.Class.ps1
+. "$($Settings.ModuleRoot)/Private/MetricsSystem/MetricItem.Class.ps1"
 
 ############################
 # Find functions to export #
