@@ -26,7 +26,7 @@ if($PSVersionTable.PSVersion.ToString() -gt 4) {
 #>
 # Define log4net variables
 $log4NetConfigFile = "$($Settings.ModuleRoot)/Artefacts/HealOps.Log4Net.xml"
-$LogFilesPath = "$($Settings.ModuleRoot)/Artefacts"
+$LogFilesPath = "$($Settings.ModuleRoot)/Artefacts/"
 
 # Initiate the log4net logger
 if($PSCmdlet.ParameterSetName -eq "Tests") {
