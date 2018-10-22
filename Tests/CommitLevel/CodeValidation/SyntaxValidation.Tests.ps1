@@ -1,26 +1,13 @@
-# Define the folders to look through
-$functionFolders = @('Deployment','Private','Public')
+Describe "PowerShell code is syntax valid: $ModuleName" {
+    $functions = Get-ChildItem -Path Function: | Where-Object { $_.Source -eq $Settings.PesterSettingsModuleName }
 
-# Define vars
-$moduleName = $($Settings.moduleName)
-$moduleRoot = $($Settings.moduleRoot)
-Describe "PowerShell code is syntax valid: $moduleName" {
-    ForEach ($folder in $functionFolders) {
-        $folderPath = Join-Path -Path $moduleRoot -ChildPath $folder
-        $files = Get-ChildItem $folderPath -Include *.ps1, *.psm1, *.psd1 -Recurse
-
-        if ($null -ne $files) {
-            # TestCases are splatted to the script so we need hashtables
-            $testCase = $files | Foreach-Object {@{file = $_}}
-            It "<file> should be valid powershell" -TestCases $testCase {
-                param($file)
-
-                $file.fullname | Should Exist
-
-                $contents = Get-Content -Path $file.fullname -ErrorAction Stop
-                $errors = $null
-                $null = [System.Management.Automation.PSParser]::Tokenize($contents, [ref]$errors)
-                $errors.Count | Should Be 0
+    foreach ($function in $functions) {
+        Context "$function - Syntax" {
+            It "Should contain valid PowerShell code" {
+                $AST = [System.Management.Automation.Language.Parser]::ParseInput((Get-Content function:$function), [ref]$null, [ref]$null)
+                $Errors = $null
+                [System.Management.Automation.PSParser]::Tokenize($AST, [ref]$Errors) | Out-Null
+                $Errors.Count | Should Be 0
             }
         }
     }

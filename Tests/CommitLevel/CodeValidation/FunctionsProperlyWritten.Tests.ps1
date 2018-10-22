@@ -1,4 +1,3 @@
-# Tests
 Describe "Functions are properly written." {
     $functions = Get-ChildItem -Path Function: | Where-Object { $_.Source -eq $Settings.PesterSettingsModuleName }
 
@@ -13,17 +12,17 @@ Describe "Functions are properly written." {
             $ast = [System.Management.Automation.Language.Parser]::ParseInput((Get-Content function:$Function), [ref]$null, [ref]$null)
 
             <#
-                - Test the function
+                - Test the functions help section
             #>
-            It "'DESCRIPTION' is not empty." {
+            It "'Help DESCRIPTION' is not empty." {
                 $Help.Description | Should not BeNullOrEmpty
             }
 
-            It "'INPUTS' is not empty." {
+            It "'Help INPUTS' is not empty." {
                 $Help.inputTypes | Should not BeNullOrEmpty
             }
 
-            It "'OUTPUTS' is not empty." {
+            It "'Help OUTPUTS' is not empty." {
                 $Help.returnValues | Should not BeNullOrEmpty
             }
 
