@@ -1,3 +1,6 @@
+param(
+    $BuildType = (property BuildType)
+)
 ###############
 #### PREP. ####
 ###############
@@ -14,19 +17,6 @@ $ModuleRoot = "$BuildRoot/../"
 $ModuleName = (Get-Item -Path $ModuleRoot* -Include *.psm1).BaseName
 $BuildOutputRoot = "$BuildRoot/BuildOutput/$ModuleName"
 
-# Handle the buildroot folder
-if(-not (Test-Path -Path $BuildOutputRoot)) {
-    # Create the dir
-    New-Item -Path $BuildOutputRoot -ItemType Directory | Out-Null
-} else {
-    # clean the dir
-    try {
-        Remove-Item -Path $BuildOutputRoot -Recurse -Force
-    } catch {
-        $_
-    }
-}
-
 # Determine run mode
 $runmode = [Environment]::UserInteractive
 ###############
@@ -36,8 +26,22 @@ $runmode = [Environment]::UserInteractive
     - The below task will be the default build task in the Invoke-Build New-VSCodeTask.ps1 script generated VS Code tasks.json file.
     Simply because it is the first declared task in this build file.
 #>
-$folderToInclude = @('Artefacts','Private','Public')
 task Build {
+    $folderToInclude = @('Artefacts','Private','Public')
+
+    # Ensure proper state of the build output folder
+    if(-not (Test-Path -Path $BuildOutputRoot)) {
+        # Create the dir
+        New-Item -Path $BuildOutputRoot -ItemType Directory | Out-Null
+    } else {
+        # clean the dir
+        try {
+            Remove-Item -Path $BuildOutputRoot -Recurse -Force
+        } catch {
+            $_
+        }
+    }
+
     # Copy folders to BuildOutputRoot
     ForEach ($folder in $folderToInclude) {
         Write-Verbose "Folder info: $ModuleRoot$folder"
@@ -49,8 +53,24 @@ task Build {
 
     # Compile the HealOps dll
     Push-Location -Path $ModuleRoot/src -StackName "Build"
-    dotnet build --output $BuildOutputRoot/bin
-    Pop-Location -StackName "Build"
+    try {
+        dotnet build --output $BuildOutputRoot/bin
+    } finally {
+        Pop-Location -StackName "Build"
+    }
+
+    # Get the version set by the semver ConcourseCI resource. The version variable
+    # needs to be in the "Script" scope in order to be getable by other tasks
+    # that requires it.
+    if($BuildType -ne "ConcourseCI") {
+        [String]$Script:Version = "100.100.100"
+    } else {
+        [String]$Script:Version = Get-Content -Path /version
+    }
+    Write-Build Green "Version is: $Version"
+
+    # Update the version in the manifest
+    Update-ModuleManifest -Path $BuildOutputRoot/HealOps.psd1 -ModuleVersion $Version
 
     <#
         - Give build information on where to find the cooked package
@@ -60,13 +80,22 @@ task Build {
     }
 }
 
+<#
+    - Cleans up after running InvokeBuild. Should always run. Therefore the usage of Exit-Build.
+#>
+<# Exit-Build {
+
+} #>
+
+<#
+    - Install the module on the system where
+#>
+task "Install-PS-Module" {
+    # Get the version to install the module underneath the correct folder.
+    write-build green "Input version is: $Version"
+}
+
 task Publish {
-    # Get the version set by the semver ConcourseCI resource.
-    [String]$Version = Get-Content -Path /version
-
-    # Update the version in the manifest
-    Update-ModuleManifest -Path /BuildOutput/HealOps/HealOps.psd1 -ModuleVersion $Version
-
     # Publish the module
     Publish-Module -Name $BuildOutputRoot -Repository HealOps -NuGetApiKey "" -ErrorAction Stop
 }
@@ -82,8 +111,5 @@ task RunAllTests {
     Assert ( $PesterRunResult.FailedCount -eq 0 ) "All tests should succeed. There was this number > $($PesterRunResult.FailedCount) < of failed Pester tests."
 }
 
-task RunConfigurationManagementTests {
-    #
-}
-
-task BuildPublish Build, Publish
+task "Publish-Build" -Jobs Build, "Install-PS-Module", RunAllTests, Publish
+task "Build-Test" -Jobs Build, RunAllTests

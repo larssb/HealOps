@@ -1,17 +1,15 @@
 # Define variables
-$moduleName = $($Settings.moduleName)
-$moduleRoot = $($Settings.moduleRoot)
+$ModuleName = $($Settings.ModuleName)
+$ModuleRoot = $($Settings.ModuleRoot)
 
 # Tests
-Describe "TEST_NAME" {
-    <#
-        - TEST_DESCRIPTION
-    #>
-    It "EXACTLY_WHAT_IT_TESTS" {
-        # A_COMMENT
+Describe "Get-PS1File" {
 
+    It "Executes cleanly" {
+        { [PSCustomObject]$Global:PS1File = Get-PS1File -FileName Get-PS1File -ModuleName $ModuleName } | Should Not Throw
+    }
 
-        # Assertion
-        $X | Should ....
+    It "Does not return $null" {
+        $PS1File | Should -Not -BeNullOrEmpty
     }
 }
