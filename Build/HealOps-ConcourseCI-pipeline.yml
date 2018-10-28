@@ -50,7 +50,8 @@ jobs:
         path: pwsh
         args: ['-Command', "& { Invoke-Build -Task Publish-Build -File repo/Build/HealOps.Build.ps1 }"]
       params:
-        { "BuildType" : "ConcourseCI" }
+        { "BuildType" : "ConcourseCI",
+          "PublishSecret" : ((publish_module_secret)) }
     on_success:
       put: version
       params: {file: version/version}

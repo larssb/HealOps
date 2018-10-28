@@ -57,8 +57,8 @@ function Install-AvailableUpdate() {
         if(-not $psVersionAbove4) {
             # Determine folders to use
             $modulePackagePath = "$ModuleExtractionPath/$ModuleName.zip"
-            $psProgramFilesModulesPath = Get-PSProgramFilesModulesPath
-            $moduleRoot = "$psProgramFilesModulesPath/$ModuleName"
+            $PSModulesPath = Get-PSModulesPath
+            $moduleRoot = "$PSModulesPath/$ModuleName"
 
             # Remove
             if(Test-Path -Path $moduleRoot) {

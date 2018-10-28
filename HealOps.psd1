@@ -26,7 +26,7 @@
     # Modules that must be imported into the global environment prior to importing this module
     RequiredModules = @(
         @{ModuleName = 'Pester'; ModuleVersion = '4.1.0'; },
-        @{ModuleName = 'PowerShellTooling'; ModuleVersion = '1.0.0'; }
+        @{ModuleName = 'PowerShellTooling'; ModuleVersion = '1.0.2'; }
     )
 
     # Modules to import as nested modules of the module specified in RootModule/ModuleToProcess

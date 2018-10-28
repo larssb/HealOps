@@ -1,12 +1,13 @@
 # Define variables
-$moduleRoot = $($Settings.moduleRoot)
+$ModuleRoot = $($Settings.ModuleRoot)
+$ModuleVersionRoot = $($Settings.ModuleVersionRoot)
 
 # Tests
 Describe "Get-HealOpsConfig" {
 
     It "Executes cleanly" {
         # Call Get-HealOpsConfig to get the HealOps config file.
-        { [PSCustomObject]$global:HealOpsConfig = Get-HealOpsConfig -ModuleBase $moduleRoot } | Should Not Throw
+        { [PSCustomObject]$global:HealOpsConfig = Get-HealOpsConfig -ModuleBase $ModuleVersionRoot } | Should Not Throw
     }
 
     It "Returns the HealOps config file" {

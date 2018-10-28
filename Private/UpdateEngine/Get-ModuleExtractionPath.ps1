@@ -34,16 +34,16 @@ function Get-ModuleExtractionPath() {
     #############
     Begin {
         # Determine the systems PowerShell Program Files Module path.
-        $psProgramFilesModulesPath = Get-PSProgramFilesModulesPath
+        $PSModulesPath = Get-PSModulesPath
     }
     Process {
         # Define the path to extract to
         if($psVersionAbove4) {
             # Version in the extract path def.
-            $extractModulePath = "$psProgramFilesModulesPath/$modulename/$Version"
+            $extractModulePath = "$PSModulesPath/$modulename/$Version"
         } else {
             # No version value in the path def.
-            $extractModulePath = "$psProgramFilesModulesPath/HealOps/Artefacts/Temp"
+            $extractModulePath = "$PSModulesPath/HealOps/Artefacts/Temp"
         }
     }
     End {

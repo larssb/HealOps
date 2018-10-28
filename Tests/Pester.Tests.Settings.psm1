@@ -1,3 +1,9 @@
+param(
+    [Parameter(Mandatory)]
+    [ValidateNotNullOrEmpty()]
+    [String]$Version
+)
+
 #############################
 # Folder and path logistics #
 #############################
@@ -10,6 +16,7 @@ $Build_ModulePath = "$PSScriptRoot/../Build/BuildOutput/$ModuleName"
 $Settings = @{
     ModuleName = $ModuleName
     ModuleRoot = Resolve-Path $Build_ModulePath
+    ModuleVersionRoot = Resolve-Path $Build_ModulePath/$Version
     PesterSettingsModuleName = "Pester.Tests.Settings"
 }
 
@@ -27,8 +34,8 @@ if($PSVersionTable.PSVersion.ToString() -gt 4) {
     - Configure logging
 #>
 # Define log4net variables
-$log4NetConfigFile = "$($Settings.ModuleRoot)/Artefacts/HealOps.Log4Net.xml"
-$LogFilesPath = "$($Settings.ModuleRoot)/Artefacts/"
+$log4NetConfigFile = "$($Settings.ModuleVersionRoot)/Artefacts/HealOps.Log4Net.xml"
+$LogFilesPath = "$($Settings.ModuleVersionRoot)/Artefacts/"
 
 # Initiate the log4net logger
 if($PSCmdlet.ParameterSetName -eq "Tests") {
@@ -50,7 +57,7 @@ $log4netLoggerDebug.debug("--------------------------------------------------")
 <#
     - Metric object class
 #>
-. "$($Settings.ModuleRoot)/Private/MetricsSystem/MetricItem.Class.ps1"
+. "$($Settings.ModuleVersionRoot)/Private/MetricsSystem/MetricItem.Class.ps1"
 
 ############################
 # Find functions to export #
@@ -60,7 +67,7 @@ $FunctionFolders = @('Public', 'Private')
 
 # Run over each folder and look for files to include/inject into the PSD1 manifest file
 ForEach ($folder in $functionFolders) {
-    $folderPath = Join-Path -Path $Settings.moduleRoot -ChildPath $folder
+    $folderPath = Join-Path -Path $Settings.ModuleVersionRoot -ChildPath $folder
 
     If (Test-Path -Path $folderPath) {
         Write-Verbose -Message "Importing from $folder"
@@ -74,14 +81,14 @@ ForEach ($folder in $functionFolders) {
 }
 
 # The public functions to export
-$PublicFunctions = (Get-ChildItem -Path "$($Settings.ModuleRoot)\Public" -Filter '*.ps1' -Recurse).BaseName
+$PublicFunctions = (Get-ChildItem -Path "$($Settings.ModuleVersionRoot)\Public" -Filter '*.ps1' -Recurse).BaseName
 
 <#
     - The private functions to export. Exported in order to be able to run Pester over the private functions. Not using Pesters
     'InModuleScope' feature as the purpose is to use this module as the bootstrapper for Pester tests. Enabling us to import the
     module being tested only once.
 #>
-$PrivateFunctions = (Get-ChildItem -Path "$($Settings.ModuleRoot)\Private" -Filter '*.ps1' -Recurse).BaseName
+$PrivateFunctions = (Get-ChildItem -Path "$($Settings.ModuleVersionRoot)\Private" -Filter '*.ps1' -Recurse).BaseName
 
 # Add the function arrays together
 $Functions = $PublicFunctions += $PrivateFunctions
