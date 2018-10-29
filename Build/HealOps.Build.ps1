@@ -27,7 +27,7 @@ param(
 if($BuildType -ne "ConcourseCI") {
     [String]$Script:Version = "100.100.100"
 } else {
-    [String]$Script:Version = Get-Content -Path /version
+    [String]$Script:Version = Get-Content -Path ./version/number
 }
 
 # Set shared build metadata variables
