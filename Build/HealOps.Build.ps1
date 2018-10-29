@@ -2,8 +2,12 @@
 
 param(
     $BuildType = (property BuildType Direct),
+    $PublishAPIKey = (property PublishAPIKey not_a_key),
+    $PublishSecret = (property PublishSecret not_a_secret),
     $PublishType = (property PublishType Internal),
-    $PublishSecret = (property PublishSecret)
+    [Parameter()]
+    [ValidateSet('CentrailBuildLevel','CommitLevel')]
+    [String]$TestType = "CentralBuildLevel"
 )
 ###############
 #### PREP. ####
@@ -117,41 +121,51 @@ task "Install-PS-Module" {
 }
 
 task Publish {
-    # Define the package management repository to use for the publish
-    if ($PublishType -eq "Internal") {
-        #
-        # Use an internal repository, if eyeball testing is wanted (TEST)
-        #
-        [String]$RepositoryName = "nexusIbigPSGallery"
+    if ($PublishSecret -notmatch "not_*" -or $PublishType -notmatch "not_*") {
+        # Define the package management repository to use for the publish
+        if ($PublishType -eq "Internal") {
+            #
+            # Use an internal repository, if eyeball testing is wanted
+            #
+            [String]$RepositoryName = "nexusIbigPSGallery"
 
-        # Ensure that the repository is available
-        if (-not (Get-PSRepository -Name $RepositoryName -ErrorAction SilentlyContinue)) {
-            Register-PSRepository -Name $RepositoryName -SourceLocation "http://192.168.0.20/nexus/repository/ibigPSGallery/" `
-            -PublishLocation "http://192.168.0.20/nexus/repository/ibigPSGallery/" -ScriptPublishLocation "http://192.168.0.20/nexus/repository/ibigPSGallery/" `
-            -ScriptSourceLocation "http://192.168.0.20/nexus/repository/ibigPSGallery/" -InstallationPolicy Trusted -PackageManagementProvider NuGet
+            # Ensure that the repository is available
+            if (-not (Get-PSRepository -Name $RepositoryName -ErrorAction SilentlyContinue)) {
+                Register-PSRepository -Name $RepositoryName -SourceLocation "http://192.168.0.20/nexus/repository/ibigPSGallery/" `
+                -PublishLocation "http://192.168.0.20/nexus/repository/ibigPSGallery/" -ScriptPublishLocation "http://192.168.0.20/nexus/repository/ibigPSGallery/" `
+                -ScriptSourceLocation "http://192.168.0.20/nexus/repository/ibigPSGallery/" -InstallationPolicy Trusted -PackageManagementProvider NuGet
+            }
+
+            # Create creds objecct
+            $PublishSecretSecureString = $PublishSecret | ConvertTo-SecureString -AsPlainText -Force
+            $PublishCreds = New-Object -typename System.Management.Automation.PSCredential -ArgumentList "ibigCI",$PublishSecretSecureString
+            Publish-Module -Credential $PublishCreds -Name $BuildOutputRoot -NuGetApiKey $PublishAPIKey -Repository $RepositoryName -ErrorAction Stop
+        } else {
+            # Use the PowerShellGallery as the endpoint for publishing the module [SO THE PACKAGE WILL GO LIVE]
+            [String]$RepositoryName = "PSGallery"
+
+            # Publish the module
+            Publish-Module -Name $BuildOutputRoot -Repository $RepositoryName -NuGetApiKey $PublishAPIKey -ErrorAction Stop
         }
-
-        Publish-Module -Name $BuildOutputRoot -Repository $RepositoryName -Credential
     } else {
-        # Use the PowerShellGallery as the endpoint for publishing the module (PROD)
-        [String]$RepositoryName = "PSGallery"
-    } else {
-        # Publish the module
-        Publish-Module -Name $BuildOutputRoot -Repository $RepositoryName -NuGetApiKey $PublishApiKey -ErrorAction Stop
+        throw "The PublishSecret & PublishType parameters needs to be used for the Publish task to work."
     }
 }
 
-task RunAllTests {
+task Tests {
     # First import the Pester Tests Settings module
     Import-Module -Name $PSScriptRoot/../Tests/Pester.Tests.Settings.psm1 -Force -ArgumentList $Version
 
-    # Execute the tests
-    $PesterRunResult = Invoke-Pester $PSScriptRoot/../Tests/CentralBuildLevel -PassThru -Show Failed, Summary -Strict
+    # Execute tests
+    if ($TestType -eq "CommitLevel") {
+        $PesterRunResult = Invoke-Pester $PSScriptRoot/../Tests/CommitLevel -EnableExit -PassThru -Show All -Strict
+    } else {
+        $PesterRunResult = Invoke-Pester $PSScriptRoot/../Tests/CentralBuildLevel -PassThru -Show Failed, Summary -Strict
+    }
 
     # Evaluate the result of running the tests.
     Assert ( $PesterRunResult.FailedCount -eq 0 ) "All tests should succeed. There was this number > $($PesterRunResult.FailedCount) < of failed Pester tests."
 }
 
-#task "Publish-Build" -Jobs Build, "Install-PS-Module", RunAllTests, Publish, CleanUp
-task "Publish-Build" -Jobs Build, RunAllTests, Publish #, CleanUp
-task "Build-Test" -Jobs Build, RunAllTests, CleanUp
+task "Publish-Build" -Jobs Build, Tests, Publish
+task "Build-Test" -Jobs Build, Tests

@@ -41,7 +41,7 @@ jobs:
       image_resource:
         source:
           repository: larssb/healopsci
-          tag: 1.0.4
+          tag: 1.0.5
         type: docker-image
       inputs:
         - name: repo
@@ -51,6 +51,7 @@ jobs:
         args: ['-Command', "& { Invoke-Build -Task Publish-Build -File repo/Build/HealOps.Build.ps1 }"]
       params:
         { "BuildType" : "ConcourseCI",
+          "PublishAPIKey": ((publish_module_nugetapikey)),
           "PublishSecret" : ((publish_module_secret)) }
     on_success:
       put: version
